@@ -1,0 +1,15 @@
+{"caseId": "P0-01", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}, {"tool": "statistics", "status": "ok"}]}
+{"caseId": "P0-02", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 3}, {"tool": "profile_table", "status": "ok"}, {"tool": "statistics", "status": "ok"}]}
+{"caseId": "P0-03", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}, {"tool": "group_compare", "status": "ok"}]}
+{"caseId": "P0-04", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 7}, {"tool": "profile_table", "status": "ok"}, {"tool": "top_n", "status": "ok"}]}
+{"caseId": "P0-05", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}, {"tool": "trend", "status": "ok"}]}
+{"caseId": "P0-06", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 6}, {"tool": "profile_table", "status": "ok"}, {"tool": "anomaly", "status": "ok"}]}
+{"caseId": "P0-07", "toolCalls": []}
+{"caseId": "P0-08", "toolCalls": []}
+{"caseId": "P0-09", "toolCalls": []}
+{"caseId": "P0-10", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}]}
+{"caseId": "BC-01", "toolCalls": []}
+{"caseId": "BC-02", "toolCalls": []}
+{"caseId": "BC-03", "toolCalls": []}
+{"caseId": "BC-04", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}]}
+{"caseId": "BC-05", "toolCalls": [{"tool": "validate_input", "status": "ok"}, {"tool": "load_table", "status": "ok", "rows": 5}, {"tool": "profile_table", "status": "ok"}, {"tool": "trend", "status": "ok"}]}

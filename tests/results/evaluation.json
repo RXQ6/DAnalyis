@@ -1,0 +1,978 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "node": "v24.15.0",
+    "python": "3.12.14",
+    "platform": "win32",
+    "timeoutSeconds": 30,
+    "caseSource": "tests/eval_cases.md"
+  },
+  "metrics": {
+    "p0Passed": 10,
+    "p0Total": 10,
+    "p0PassRate": 1.0,
+    "overallPassed": 15,
+    "overallTotal": 15,
+    "overallAccuracy": 1.0,
+    "badCasePassed": 5,
+    "badCaseTotal": 5,
+    "badCaseRecognitionRate": 1.0,
+    "averageResponseSeconds": 0.25010553333333335,
+    "maximumResponseSeconds": 0.282396,
+    "maximumCostCny": 0.0
+  },
+  "thresholds": {
+    "p0PassRate": {
+      "required": 1.0,
+      "passed": true
+    },
+    "overallAccuracy": {
+      "required": 0.85,
+      "passed": true
+    },
+    "badCaseRecognitionRate": {
+      "required": 0.9,
+      "passed": true
+    },
+    "averageResponseSeconds": {
+      "requiredMaximum": 30,
+      "passed": true
+    },
+    "maximumCostCny": {
+      "requiredMaximum": 0.5,
+      "passed": true
+    }
+  },
+  "passed": true,
+  "cases": [
+    {
+      "caseId": "P0-01",
+      "category": "p0",
+      "description": "CSV column sum",
+      "passed": true,
+      "durationSeconds": 0.282396,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "statistics",
+        "conclusion": "销售额的总和为 1,580（有效记录 5 条）。",
+        "result": {
+          "metric": "销售额",
+          "operation": "sum",
+          "value": 1580,
+          "validCount": 5
+        },
+        "data": {
+          "file": "sales.csv",
+          "rowCount": 5,
+          "columns": [
+            {
+              "name": "日期",
+              "type": "date",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 3
+            },
+            {
+              "name": "地区",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 2
+            },
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "statistics",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 31.544
+        }
+      }
+    },
+    {
+      "caseId": "P0-02",
+      "category": "p0",
+      "description": "XLSX column average",
+      "passed": true,
+      "durationSeconds": 0.263542,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "statistics",
+        "conclusion": "销售额的平均值为 20（有效记录 3 条）。",
+        "result": {
+          "metric": "销售额",
+          "operation": "average",
+          "value": 20,
+          "validCount": 3
+        },
+        "data": {
+          "file": "average.xlsx",
+          "rowCount": 3,
+          "columns": [
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 3,
+              "invalidNumeric": 0,
+              "distinct": 3
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 3,
+              "invalidNumeric": 0,
+              "distinct": 3
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 3
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "statistics",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 41.596
+        }
+      }
+    },
+    {
+      "caseId": "P0-03",
+      "category": "p0",
+      "description": "group sales by region",
+      "passed": true,
+      "durationSeconds": 0.254327,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "group_compare",
+        "conclusion": "共比较 2 个地区分组；华南的销售额总和最高，为 1,200。",
+        "result": {
+          "groupBy": "地区",
+          "metric": "销售额",
+          "operation": "sum",
+          "groups": [
+            {
+              "group": "华南",
+              "value": 1200,
+              "validCount": 2
+            },
+            {
+              "group": "华东",
+              "value": 380,
+              "validCount": 3
+            }
+          ]
+        },
+        "data": {
+          "file": "sales.csv",
+          "rowCount": 5,
+          "columns": [
+            {
+              "name": "日期",
+              "type": "date",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 3
+            },
+            {
+              "name": "地区",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 2
+            },
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "group_compare",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 28.011
+        }
+      }
+    },
+    {
+      "caseId": "P0-04",
+      "category": "p0",
+      "description": "top 5 products",
+      "passed": true,
+      "durationSeconds": 0.224891,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "top_n",
+        "conclusion": "已按销售额从高到低返回前 5 条记录。",
+        "result": {
+          "metric": "销售额",
+          "count": 5,
+          "items": [
+            {
+              "rank": 1,
+              "label": "B",
+              "value": 700,
+              "rowNumber": 3
+            },
+            {
+              "rank": 2,
+              "label": "F",
+              "value": 600,
+              "rowNumber": 7
+            },
+            {
+              "rank": 3,
+              "label": "D",
+              "value": 500,
+              "rowNumber": 5
+            },
+            {
+              "rank": 4,
+              "label": "G",
+              "value": 400,
+              "rowNumber": 8
+            },
+            {
+              "rank": 5,
+              "label": "C",
+              "value": 300,
+              "rowNumber": 4
+            }
+          ]
+        },
+        "data": {
+          "file": "top_products.csv",
+          "rowCount": 7,
+          "columns": [
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 7,
+              "invalidNumeric": 0,
+              "distinct": 7
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 7,
+              "invalidNumeric": 0,
+              "distinct": 7
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 7
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "top_n",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 5.654
+        }
+      }
+    },
+    {
+      "caseId": "P0-05",
+      "category": "p0",
+      "description": "daily sales trend",
+      "passed": true,
+      "durationSeconds": 0.25236,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "trend",
+        "conclusion": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
+        "result": {
+          "dateField": "日期",
+          "metric": "销售额",
+          "operation": "sum",
+          "invalidDateCount": 0,
+          "points": [
+            {
+              "date": "2026-01-01",
+              "value": 300,
+              "validCount": 2
+            },
+            {
+              "date": "2026-01-02",
+              "value": 1150,
+              "validCount": 2
+            },
+            {
+              "date": "2026-01-03",
+              "value": 130,
+              "validCount": 1
+            }
+          ]
+        },
+        "data": {
+          "file": "sales.csv",
+          "rowCount": 5,
+          "columns": [
+            {
+              "name": "日期",
+              "type": "date",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 3
+            },
+            {
+              "name": "地区",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 2
+            },
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "trend",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 29.496
+        }
+      }
+    },
+    {
+      "caseId": "P0-06",
+      "category": "p0",
+      "description": "obvious anomaly",
+      "passed": true,
+      "durationSeconds": 0.245989,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "anomaly",
+        "conclusion": "使用 1.5×IQR 规则识别出 1 个销售额异常值。",
+        "result": {
+          "metric": "销售额",
+          "method": "iqr_1.5",
+          "q1": 10,
+          "q3": 10.75,
+          "lowerBound": 8.875,
+          "upperBound": 11.875,
+          "anomalyCount": 1,
+          "anomalies": [
+            {
+              "rowNumber": 7,
+              "value": 100
+            }
+          ]
+        },
+        "data": {
+          "file": "anomaly.csv",
+          "rowCount": 6,
+          "columns": [
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 6,
+              "invalidNumeric": 0,
+              "distinct": 4
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 6
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "anomaly",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 6.291
+        }
+      }
+    },
+    {
+      "caseId": "P0-07",
+      "category": "p0",
+      "description": "missing field",
+      "passed": true,
+      "durationSeconds": 0.230456,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "missing_field",
+          "message": "字段“利润总和”不存在。",
+          "availableFields": [
+            "日期",
+            "地区",
+            "产品",
+            "销售额"
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 9.154
+        }
+      }
+    },
+    {
+      "caseId": "P0-08",
+      "category": "p0",
+      "description": "empty input",
+      "passed": true,
+      "durationSeconds": 0.256043,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "empty_file",
+          "message": "文件为空，无法分析。"
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 0.936
+        }
+      }
+    },
+    {
+      "caseId": "P0-09",
+      "category": "p0",
+      "description": "dirty numeric input",
+      "passed": true,
+      "durationSeconds": 0.262422,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "dirty_numeric_data",
+          "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
+          "invalidCount": 1
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 5.119
+        }
+      }
+    },
+    {
+      "caseId": "P0-10",
+      "category": "p0",
+      "description": "insufficient question",
+      "passed": true,
+      "durationSeconds": 0.244756,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "needs_input",
+        "message": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
+        "data": {
+          "file": "sales.csv",
+          "profile": {
+            "rowCount": 5,
+            "columnCount": 4,
+            "columns": [
+              {
+                "name": "日期",
+                "type": "date",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 3
+              },
+              {
+                "name": "地区",
+                "type": "text",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 2
+              },
+              {
+                "name": "产品",
+                "type": "text",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 5
+              },
+              {
+                "name": "销售额",
+                "type": "number",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 5
+              }
+            ]
+          }
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 10.307
+        }
+      }
+    },
+    {
+      "caseId": "BC-01",
+      "category": "bad",
+      "description": "missing profit margin",
+      "passed": true,
+      "durationSeconds": 0.255334,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "missing_field",
+          "message": "字段“利润率排序”不存在。",
+          "availableFields": [
+            "日期",
+            "地区",
+            "产品",
+            "销售额"
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 11.336
+        }
+      }
+    },
+    {
+      "caseId": "BC-02",
+      "category": "bad",
+      "description": "empty CSV stops analysis",
+      "passed": true,
+      "durationSeconds": 0.223362,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "empty_file",
+          "message": "文件为空，无法分析。"
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 0.781
+        }
+      }
+    },
+    {
+      "caseId": "BC-03",
+      "category": "bad",
+      "description": "text in numeric field",
+      "passed": true,
+      "durationSeconds": 0.224502,
+      "exitCode": 1,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "error",
+        "error": {
+          "code": "dirty_numeric_data",
+          "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
+          "invalidCount": 1
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "errorRecorded": true,
+          "elapsedMs": 3.168
+        }
+      }
+    },
+    {
+      "caseId": "BC-04",
+      "category": "bad",
+      "description": "vague question",
+      "passed": true,
+      "durationSeconds": 0.25191,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "needs_input",
+        "message": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
+        "data": {
+          "file": "sales.csv",
+          "profile": {
+            "rowCount": 5,
+            "columnCount": 4,
+            "columns": [
+              {
+                "name": "日期",
+                "type": "date",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 3
+              },
+              {
+                "name": "地区",
+                "type": "text",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 2
+              },
+              {
+                "name": "产品",
+                "type": "text",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 5
+              },
+              {
+                "name": "销售额",
+                "type": "number",
+                "missing": 0,
+                "nonEmpty": 5,
+                "invalidNumeric": 0,
+                "distinct": 5
+              }
+            ]
+          }
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 10.812
+        }
+      }
+    },
+    {
+      "caseId": "BC-05",
+      "category": "bad",
+      "description": "trend tool selection",
+      "passed": true,
+      "durationSeconds": 0.279293,
+      "exitCode": 0,
+      "failures": [],
+      "stderr": "",
+      "output": {
+        "status": "ok",
+        "analysis": "trend",
+        "conclusion": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
+        "result": {
+          "dateField": "日期",
+          "metric": "销售额",
+          "operation": "sum",
+          "invalidDateCount": 0,
+          "points": [
+            {
+              "date": "2026-01-01",
+              "value": 300,
+              "validCount": 2
+            },
+            {
+              "date": "2026-01-02",
+              "value": 1150,
+              "validCount": 2
+            },
+            {
+              "date": "2026-01-03",
+              "value": 130,
+              "validCount": 1
+            }
+          ]
+        },
+        "data": {
+          "file": "sales.csv",
+          "rowCount": 5,
+          "columns": [
+            {
+              "name": "日期",
+              "type": "date",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 3
+            },
+            {
+              "name": "地区",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 2
+            },
+            {
+              "name": "产品",
+              "type": "text",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            },
+            {
+              "name": "销售额",
+              "type": "number",
+              "missing": 0,
+              "nonEmpty": 5,
+              "invalidNumeric": 0,
+              "distinct": 5
+            }
+          ]
+        },
+        "audit": {
+          "modelCalls": 0,
+          "estimatedCostCny": 0,
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "trend",
+              "status": "ok"
+            }
+          ],
+          "elapsedMs": 32.495
+        }
+      }
+    }
+  ]
+}
