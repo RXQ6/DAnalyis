@@ -1,0 +1,524 @@
+{
+  "passed": true,
+  "passedCases": 3,
+  "totalCases": 3,
+  "cases": [
+    {
+      "caseId": "SEM-01",
+      "question": "找出总销售额最低的地区，再分析该地区2026年1月至6月趋势",
+      "passed": true,
+      "expectedToolChain": [
+        "group_compare",
+        "trend_analysis"
+      ],
+      "expectedArguments": [
+        {
+          "groupBy": "地区",
+          "metric": "销售额",
+          "operation": "sum"
+        },
+        {
+          "dateField": "日期",
+          "metric": "销售额",
+          "operation": "sum",
+          "filters": {
+            "地区": "华东"
+          }
+        }
+      ],
+      "standardAnswer": "华东总销售额最低，为450；2026年1月至6月销售额从100降至50。",
+      "actualTrace": [
+        {
+          "iteration": 1,
+          "tool_call": {
+            "id": "region-group",
+            "name": "group_compare",
+            "arguments": {
+              "groupBy": "地区",
+              "metric": "销售额",
+              "operation": "sum"
+            },
+            "iteration": 1
+          },
+          "tool_result": {
+            "groupBy": "地区",
+            "metric": "销售额",
+            "operation": "sum",
+            "groups": [
+              {
+                "group": "华南",
+                "value": 1200,
+                "validCount": 6
+              },
+              {
+                "group": "华东",
+                "value": 450,
+                "validCount": 6
+              }
+            ]
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "group_compare",
+            "iteration": 1,
+            "result": {
+              "groupBy": "地区",
+              "metric": "销售额",
+              "operation": "sum",
+              "groups": [
+                {
+                  "group": "华南",
+                  "value": 1200,
+                  "validCount": 6
+                },
+                {
+                  "group": "华东",
+                  "value": 450,
+                  "validCount": 6
+                }
+              ]
+            }
+          },
+          "status": "ok"
+        },
+        {
+          "iteration": 2,
+          "tool_call": {
+            "id": "region-trend",
+            "name": "trend_analysis",
+            "arguments": {
+              "dateField": "日期",
+              "metric": "销售额",
+              "operation": "sum",
+              "filters": {
+                "地区": "华东"
+              }
+            },
+            "iteration": 2
+          },
+          "tool_result": {
+            "dateField": "日期",
+            "metric": "销售额",
+            "operation": "sum",
+            "invalidDateCount": 0,
+            "points": [
+              {
+                "date": "2026-01-01",
+                "value": 100,
+                "validCount": 1
+              },
+              {
+                "date": "2026-02-01",
+                "value": 90,
+                "validCount": 1
+              },
+              {
+                "date": "2026-03-01",
+                "value": 80,
+                "validCount": 1
+              },
+              {
+                "date": "2026-04-01",
+                "value": 70,
+                "validCount": 1
+              },
+              {
+                "date": "2026-05-01",
+                "value": 60,
+                "validCount": 1
+              },
+              {
+                "date": "2026-06-01",
+                "value": 50,
+                "validCount": 1
+              }
+            ]
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "trend_analysis",
+            "iteration": 2,
+            "result": {
+              "dateField": "日期",
+              "metric": "销售额",
+              "operation": "sum",
+              "invalidDateCount": 0,
+              "points": [
+                {
+                  "date": "2026-01-01",
+                  "value": 100,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-02-01",
+                  "value": 90,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-03-01",
+                  "value": 80,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-04-01",
+                  "value": 70,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-05-01",
+                  "value": 60,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-06-01",
+                  "value": 50,
+                  "validCount": 1
+                }
+              ]
+            }
+          },
+          "status": "ok"
+        }
+      ],
+      "actualFinalAnswer": "华东总销售额最低，为450；2026年1月至6月销售额从100降至50。",
+      "stopReason": "final_answer",
+      "iteration": 3,
+      "secondRoundSawObservation": true,
+      "failures": []
+    },
+    {
+      "caseId": "SEM-02",
+      "question": "找出单月销售额最高的产品，再分析该产品2026年4月至6月趋势",
+      "passed": true,
+      "expectedToolChain": [
+        "top_n",
+        "trend_analysis"
+      ],
+      "expectedArguments": [
+        {
+          "metric": "销售额",
+          "label": "产品",
+          "count": 1
+        },
+        {
+          "dateField": "日期",
+          "metric": "销售额",
+          "operation": "sum",
+          "filters": {
+            "产品": "B"
+          }
+        }
+      ],
+      "standardAnswer": "单月销售额最高的产品是B，最高值100；最近3个月销售额依次为10、15、100。",
+      "actualTrace": [
+        {
+          "iteration": 1,
+          "tool_call": {
+            "id": "product-top",
+            "name": "top_n",
+            "arguments": {
+              "metric": "销售额",
+              "label": "产品",
+              "count": 1
+            },
+            "iteration": 1
+          },
+          "tool_result": {
+            "metric": "销售额",
+            "count": 1,
+            "items": [
+              {
+                "rank": 1,
+                "label": "B",
+                "value": 100,
+                "rowNumber": 7
+              }
+            ]
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "top_n",
+            "iteration": 1,
+            "result": {
+              "metric": "销售额",
+              "count": 1,
+              "items": [
+                {
+                  "rank": 1,
+                  "label": "B",
+                  "value": 100,
+                  "rowNumber": 7
+                }
+              ]
+            }
+          },
+          "status": "ok"
+        },
+        {
+          "iteration": 2,
+          "tool_call": {
+            "id": "product-trend",
+            "name": "trend_analysis",
+            "arguments": {
+              "dateField": "日期",
+              "metric": "销售额",
+              "operation": "sum",
+              "filters": {
+                "产品": "B"
+              }
+            },
+            "iteration": 2
+          },
+          "tool_result": {
+            "dateField": "日期",
+            "metric": "销售额",
+            "operation": "sum",
+            "invalidDateCount": 0,
+            "points": [
+              {
+                "date": "2026-04-01",
+                "value": 10,
+                "validCount": 1
+              },
+              {
+                "date": "2026-05-01",
+                "value": 15,
+                "validCount": 1
+              },
+              {
+                "date": "2026-06-01",
+                "value": 100,
+                "validCount": 1
+              }
+            ]
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "trend_analysis",
+            "iteration": 2,
+            "result": {
+              "dateField": "日期",
+              "metric": "销售额",
+              "operation": "sum",
+              "invalidDateCount": 0,
+              "points": [
+                {
+                  "date": "2026-04-01",
+                  "value": 10,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-05-01",
+                  "value": 15,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-06-01",
+                  "value": 100,
+                  "validCount": 1
+                }
+              ]
+            }
+          },
+          "status": "ok"
+        }
+      ],
+      "actualFinalAnswer": "单月销售额最高的产品是B，最高值100；最近3个月销售额依次为10、15、100。",
+      "stopReason": "final_answer",
+      "iteration": 3,
+      "secondRoundSawObservation": true,
+      "failures": []
+    },
+    {
+      "caseId": "SEM-03",
+      "question": "先检查字段，再分析华南2026年第一季度利润趋势",
+      "passed": true,
+      "expectedToolChain": [
+        "inspect_data",
+        "trend_analysis"
+      ],
+      "expectedArguments": [
+        {},
+        {
+          "dateField": "日期",
+          "metric": "利润",
+          "operation": "sum",
+          "filters": {
+            "地区": "华南"
+          }
+        }
+      ],
+      "standardAnswer": "字段检查通过；华南2026年第一季度利润依次为5、10、15，呈逐月上升。",
+      "actualTrace": [
+        {
+          "iteration": 1,
+          "tool_call": {
+            "id": "profit-inspect",
+            "name": "inspect_data",
+            "arguments": {},
+            "iteration": 1
+          },
+          "tool_result": {
+            "headers": [
+              "日期",
+              "地区",
+              "利润"
+            ],
+            "profile": {
+              "rowCount": 6,
+              "columnCount": 3,
+              "columns": [
+                {
+                  "name": "日期",
+                  "type": "date",
+                  "missing": 0,
+                  "nonEmpty": 6,
+                  "invalidNumeric": 0,
+                  "invalidDate": 0,
+                  "distinct": 3
+                },
+                {
+                  "name": "地区",
+                  "type": "text",
+                  "missing": 0,
+                  "nonEmpty": 6,
+                  "invalidNumeric": 0,
+                  "invalidDate": 0,
+                  "distinct": 2
+                },
+                {
+                  "name": "利润",
+                  "type": "number",
+                  "missing": 0,
+                  "nonEmpty": 6,
+                  "invalidNumeric": 0,
+                  "invalidDate": 0,
+                  "distinct": 4
+                }
+              ]
+            }
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "inspect_data",
+            "iteration": 1,
+            "result": {
+              "headers": [
+                "日期",
+                "地区",
+                "利润"
+              ],
+              "profile": {
+                "rowCount": 6,
+                "columnCount": 3,
+                "columns": [
+                  {
+                    "name": "日期",
+                    "type": "date",
+                    "missing": 0,
+                    "nonEmpty": 6,
+                    "invalidNumeric": 0,
+                    "invalidDate": 0,
+                    "distinct": 3
+                  },
+                  {
+                    "name": "地区",
+                    "type": "text",
+                    "missing": 0,
+                    "nonEmpty": 6,
+                    "invalidNumeric": 0,
+                    "invalidDate": 0,
+                    "distinct": 2
+                  },
+                  {
+                    "name": "利润",
+                    "type": "number",
+                    "missing": 0,
+                    "nonEmpty": 6,
+                    "invalidNumeric": 0,
+                    "invalidDate": 0,
+                    "distinct": 4
+                  }
+                ]
+              }
+            }
+          },
+          "status": "ok"
+        },
+        {
+          "iteration": 2,
+          "tool_call": {
+            "id": "profit-trend",
+            "name": "trend_analysis",
+            "arguments": {
+              "dateField": "日期",
+              "metric": "利润",
+              "operation": "sum",
+              "filters": {
+                "地区": "华南"
+              }
+            },
+            "iteration": 2
+          },
+          "tool_result": {
+            "dateField": "日期",
+            "metric": "利润",
+            "operation": "sum",
+            "invalidDateCount": 0,
+            "points": [
+              {
+                "date": "2026-01-01",
+                "value": 5,
+                "validCount": 1
+              },
+              {
+                "date": "2026-02-01",
+                "value": 10,
+                "validCount": 1
+              },
+              {
+                "date": "2026-03-01",
+                "value": 15,
+                "validCount": 1
+              }
+            ]
+          },
+          "observation": {
+            "status": "ok",
+            "tool": "trend_analysis",
+            "iteration": 2,
+            "result": {
+              "dateField": "日期",
+              "metric": "利润",
+              "operation": "sum",
+              "invalidDateCount": 0,
+              "points": [
+                {
+                  "date": "2026-01-01",
+                  "value": 5,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-02-01",
+                  "value": 10,
+                  "validCount": 1
+                },
+                {
+                  "date": "2026-03-01",
+                  "value": 15,
+                  "validCount": 1
+                }
+              ]
+            }
+          },
+          "status": "ok"
+        }
+      ],
+      "actualFinalAnswer": "字段检查通过；华南2026年第一季度利润依次为5、10、15，呈逐月上升。",
+      "stopReason": "final_answer",
+      "iteration": 3,
+      "secondRoundSawObservation": true,
+      "failures": []
+    }
+  ]
+}
