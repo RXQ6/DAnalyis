@@ -14,27 +14,39 @@ const TOOLS = { statistics, top_n: topN, group_compare: groupCompare, trend, ano
 export function analyze({ filePath, question }) {
   const started = performance.now();
   const calls = [];
-  const input = validateInput(filePath, question);
-  calls.push({ tool: 'validate_input', status: 'ok' });
-  const table = loadTable(filePath, input.extension);
-  calls.push({ tool: 'load_table', status: 'ok', rows: table.rows.length });
-  const profile = profileTable(table);
-  calls.push({ tool: 'profile_table', status: 'ok' });
-  const selection = selectTool(input.question, profile);
+  const audit = () => ({ modelCalls: 0, estimatedCostCny: 0, rounds: 1, maxRounds: 3, toolCalls: calls, elapsedMs: roundedMs(started) });
+  const execute = (tool, fn, details = {}) => {
+    const call = { tool, status: 'started', ...details };
+    calls.push(call);
+    try {
+      const value = fn();
+      call.status = 'ok';
+      return value;
+    } catch (error) {
+      call.status = 'error';
+      error.audit = audit();
+      throw error;
+    }
+  };
+  const input = execute('validate_input', () => validateInput(filePath, question));
+  const table = execute('load_table', () => loadTable(filePath, input.extension));
+  calls.at(-1).rows = table.rows.length;
+  const profile = execute('profile_table', () => profileTable(table));
+  const selection = execute('route_question', () => selectTool(input.question, profile));
   if (selection.status === 'needs_input') {
     return {
       status: 'needs_input', message: selection.message,
       data: { file: path.basename(filePath), profile },
-      audit: { modelCalls: 0, estimatedCostCny: 0, rounds: 1, maxRounds: 3, toolCalls: calls, elapsedMs: roundedMs(started) }
+      audit: audit()
     };
   }
-  calls.push({ tool: selection.tool, status: 'selected' });
-  const result = TOOLS[selection.tool](table, profile, selection.args);
-  calls.at(-1).status = 'ok';
+  calls.at(-1).selectedTool = selection.tool;
+  calls.at(-1).args = selection.args;
+  const result = execute(selection.tool, () => TOOLS[selection.tool](table, profile, selection.args), { args: selection.args });
   return {
     status: 'ok', analysis: selection.tool, conclusion: explain(selection.tool, result), result,
     data: { file: path.basename(filePath), rowCount: profile.rowCount, columns: profile.columns },
-    audit: { modelCalls: 0, estimatedCostCny: 0, rounds: 1, maxRounds: 3, toolCalls: calls, elapsedMs: roundedMs(started) }
+    audit: audit()
   };
 }
 

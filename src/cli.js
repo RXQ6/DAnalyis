@@ -25,7 +25,7 @@ try { output = analyze(args); }
 catch (error) {
   output = {
     ...publicError(error),
-    audit: { modelCalls: 0, estimatedCostCny: 0, errorRecorded: true, elapsedMs: Number((performance.now() - started).toFixed(3)) }
+    audit: { ...(error.audit || { modelCalls: 0, estimatedCostCny: 0, elapsedMs: Number((performance.now() - started).toFixed(3)) }), errorRecorded: true }
   };
   process.exitCode = 1;
 }

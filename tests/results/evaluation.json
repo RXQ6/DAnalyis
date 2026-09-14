@@ -17,8 +17,8 @@
     "badCasePassed": 5,
     "badCaseTotal": 5,
     "badCaseRecognitionRate": 1.0,
-    "averageResponseSeconds": 0.25010553333333335,
-    "maximumResponseSeconds": 0.282396,
+    "averageResponseSeconds": 0.250253,
+    "maximumResponseSeconds": 0.330063,
     "maximumCostCny": 0.0
   },
   "thresholds": {
@@ -50,7 +50,7 @@
       "category": "p0",
       "description": "CSV column sum",
       "passed": true,
-      "durationSeconds": 0.282396,
+      "durationSeconds": 0.29207,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -74,6 +74,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             },
             {
@@ -82,6 +83,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 2
             },
             {
@@ -90,6 +92,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             },
             {
@@ -98,6 +101,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             }
           ]
@@ -122,11 +126,24 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "statistics",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
               "tool": "statistics",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
             }
           ],
-          "elapsedMs": 31.544
+          "elapsedMs": 36.98
         }
       }
     },
@@ -135,7 +152,7 @@
       "category": "p0",
       "description": "XLSX column average",
       "passed": true,
-      "durationSeconds": 0.263542,
+      "durationSeconds": 0.330063,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -159,6 +176,7 @@
               "missing": 0,
               "nonEmpty": 3,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             },
             {
@@ -167,6 +185,7 @@
               "missing": 0,
               "nonEmpty": 3,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             }
           ]
@@ -191,11 +210,24 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "statistics",
+              "args": {
+                "metric": "销售额",
+                "operation": "average"
+              }
+            },
+            {
               "tool": "statistics",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "metric": "销售额",
+                "operation": "average"
+              }
             }
           ],
-          "elapsedMs": 41.596
+          "elapsedMs": 40.018
         }
       }
     },
@@ -204,7 +236,7 @@
       "category": "p0",
       "description": "group sales by region",
       "passed": true,
-      "durationSeconds": 0.254327,
+      "durationSeconds": 0.243217,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -239,6 +271,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             },
             {
@@ -247,6 +280,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 2
             },
             {
@@ -255,6 +289,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             },
             {
@@ -263,6 +298,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             }
           ]
@@ -287,11 +323,26 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "group_compare",
+              "args": {
+                "groupBy": "地区",
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
               "tool": "group_compare",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "groupBy": "地区",
+                "metric": "销售额",
+                "operation": "sum"
+              }
             }
           ],
-          "elapsedMs": 28.011
+          "elapsedMs": 29.129
         }
       }
     },
@@ -300,7 +351,7 @@
       "category": "p0",
       "description": "top 5 products",
       "passed": true,
-      "durationSeconds": 0.224891,
+      "durationSeconds": 0.224289,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -354,6 +405,7 @@
               "missing": 0,
               "nonEmpty": 7,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 7
             },
             {
@@ -362,6 +414,7 @@
               "missing": 0,
               "nonEmpty": 7,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 7
             }
           ]
@@ -386,11 +439,26 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "top_n",
+              "args": {
+                "metric": "销售额",
+                "label": "产品",
+                "count": 5
+              }
+            },
+            {
               "tool": "top_n",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "metric": "销售额",
+                "label": "产品",
+                "count": 5
+              }
             }
           ],
-          "elapsedMs": 5.654
+          "elapsedMs": 5.245
         }
       }
     },
@@ -399,7 +467,7 @@
       "category": "p0",
       "description": "daily sales trend",
       "passed": true,
-      "durationSeconds": 0.25236,
+      "durationSeconds": 0.251397,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -440,6 +508,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             },
             {
@@ -448,6 +517,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 2
             },
             {
@@ -456,6 +526,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             },
             {
@@ -464,6 +535,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             }
           ]
@@ -488,11 +560,26 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "trend",
+              "args": {
+                "dateField": "日期",
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
               "tool": "trend",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "dateField": "日期",
+                "metric": "销售额",
+                "operation": "sum"
+              }
             }
           ],
-          "elapsedMs": 29.496
+          "elapsedMs": 31.007
         }
       }
     },
@@ -501,7 +588,7 @@
       "category": "p0",
       "description": "obvious anomaly",
       "passed": true,
-      "durationSeconds": 0.245989,
+      "durationSeconds": 0.221939,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -534,6 +621,7 @@
               "missing": 0,
               "nonEmpty": 6,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 4
             }
           ]
@@ -558,11 +646,22 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "anomaly",
+              "args": {
+                "metric": "销售额"
+              }
+            },
+            {
               "tool": "anomaly",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "metric": "销售额"
+              }
             }
           ],
-          "elapsedMs": 6.291
+          "elapsedMs": 5.427
         }
       }
     },
@@ -571,7 +670,7 @@
       "category": "p0",
       "description": "missing field",
       "passed": true,
-      "durationSeconds": 0.230456,
+      "durationSeconds": 0.23103,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -590,8 +689,29 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 9.154
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "error"
+            }
+          ],
+          "elapsedMs": 8.81,
+          "errorRecorded": true
         }
       }
     },
@@ -600,7 +720,7 @@
       "category": "p0",
       "description": "empty input",
       "passed": true,
-      "durationSeconds": 0.256043,
+      "durationSeconds": 0.230629,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -613,8 +733,16 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 0.936
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "error"
+            }
+          ],
+          "elapsedMs": 0.675,
+          "errorRecorded": true
         }
       }
     },
@@ -623,7 +751,7 @@
       "category": "p0",
       "description": "dirty numeric input",
       "passed": true,
-      "durationSeconds": 0.262422,
+      "durationSeconds": 0.229485,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -637,8 +765,42 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 5.119
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 3
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "statistics",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
+              "tool": "statistics",
+              "status": "error",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            }
+          ],
+          "elapsedMs": 5.486,
+          "errorRecorded": true
         }
       }
     },
@@ -647,7 +809,7 @@
       "category": "p0",
       "description": "insufficient question",
       "passed": true,
-      "durationSeconds": 0.244756,
+      "durationSeconds": 0.239663,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -666,6 +828,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 3
               },
               {
@@ -674,6 +837,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 2
               },
               {
@@ -682,6 +846,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 5
               },
               {
@@ -690,6 +855,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 5
               }
             ]
@@ -713,9 +879,13 @@
             {
               "tool": "profile_table",
               "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "ok"
             }
           ],
-          "elapsedMs": 10.307
+          "elapsedMs": 10.515
         }
       }
     },
@@ -724,7 +894,7 @@
       "category": "bad",
       "description": "missing profit margin",
       "passed": true,
-      "durationSeconds": 0.255334,
+      "durationSeconds": 0.229248,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -743,8 +913,29 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 11.336
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 5
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "error"
+            }
+          ],
+          "elapsedMs": 10.077,
+          "errorRecorded": true
         }
       }
     },
@@ -753,7 +944,7 @@
       "category": "bad",
       "description": "empty CSV stops analysis",
       "passed": true,
-      "durationSeconds": 0.223362,
+      "durationSeconds": 0.216378,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -766,8 +957,16 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 0.781
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "error"
+            }
+          ],
+          "elapsedMs": 0.743,
+          "errorRecorded": true
         }
       }
     },
@@ -776,7 +975,7 @@
       "category": "bad",
       "description": "text in numeric field",
       "passed": true,
-      "durationSeconds": 0.224502,
+      "durationSeconds": 0.216279,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -790,8 +989,42 @@
         "audit": {
           "modelCalls": 0,
           "estimatedCostCny": 0,
-          "errorRecorded": true,
-          "elapsedMs": 3.168
+          "rounds": 1,
+          "maxRounds": 3,
+          "toolCalls": [
+            {
+              "tool": "validate_input",
+              "status": "ok"
+            },
+            {
+              "tool": "load_table",
+              "status": "ok",
+              "rows": 3
+            },
+            {
+              "tool": "profile_table",
+              "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "statistics",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
+              "tool": "statistics",
+              "status": "error",
+              "args": {
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            }
+          ],
+          "elapsedMs": 4.682,
+          "errorRecorded": true
         }
       }
     },
@@ -800,7 +1033,7 @@
       "category": "bad",
       "description": "vague question",
       "passed": true,
-      "durationSeconds": 0.25191,
+      "durationSeconds": 0.315238,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -819,6 +1052,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 3
               },
               {
@@ -827,6 +1061,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 2
               },
               {
@@ -835,6 +1070,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 5
               },
               {
@@ -843,6 +1079,7 @@
                 "missing": 0,
                 "nonEmpty": 5,
                 "invalidNumeric": 0,
+                "invalidDate": 0,
                 "distinct": 5
               }
             ]
@@ -866,9 +1103,13 @@
             {
               "tool": "profile_table",
               "status": "ok"
+            },
+            {
+              "tool": "route_question",
+              "status": "ok"
             }
           ],
-          "elapsedMs": 10.812
+          "elapsedMs": 15.203
         }
       }
     },
@@ -877,7 +1118,7 @@
       "category": "bad",
       "description": "trend tool selection",
       "passed": true,
-      "durationSeconds": 0.279293,
+      "durationSeconds": 0.28287,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -918,6 +1159,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 3
             },
             {
@@ -926,6 +1168,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 2
             },
             {
@@ -934,6 +1177,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             },
             {
@@ -942,6 +1186,7 @@
               "missing": 0,
               "nonEmpty": 5,
               "invalidNumeric": 0,
+              "invalidDate": 0,
               "distinct": 5
             }
           ]
@@ -966,11 +1211,26 @@
               "status": "ok"
             },
             {
+              "tool": "route_question",
+              "status": "ok",
+              "selectedTool": "trend",
+              "args": {
+                "dateField": "日期",
+                "metric": "销售额",
+                "operation": "sum"
+              }
+            },
+            {
               "tool": "trend",
-              "status": "ok"
+              "status": "ok",
+              "args": {
+                "dateField": "日期",
+                "metric": "销售额",
+                "operation": "sum"
+              }
             }
           ],
-          "elapsedMs": 32.495
+          "elapsedMs": 29.474
         }
       }
     }

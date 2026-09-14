@@ -25,9 +25,11 @@ export function profileTable(table) {
     if (nonEmpty.length && numeric === nonEmpty.length) type = 'number';
     else if (nonEmpty.length && dates === nonEmpty.length) type = 'date';
     else if (numeric > 0 && numeric < nonEmpty.length) type = 'mixed';
+    else if (dates > 0 && dates < nonEmpty.length) type = 'mixed_date';
     return {
       name, type, missing: values.length - nonEmpty.length, nonEmpty: nonEmpty.length,
       invalidNumeric: type === 'mixed' ? nonEmpty.length - numeric : 0,
+      invalidDate: type === 'mixed_date' ? nonEmpty.length - dates : 0,
       distinct: new Set(nonEmpty).size
     };
   });

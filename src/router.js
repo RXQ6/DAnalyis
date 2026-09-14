@@ -36,7 +36,7 @@ export function selectTool(question, profile) {
   let intent;
   if (/趋势|随时间|over\s+time|trend/i.test(question)) intent = 'trend';
   else if (/异常|离群|outlier|anomal/i.test(question)) intent = 'anomaly';
-  else if (/top\s*\d*|前\s*\d+|排名|排序/i.test(question)) intent = 'top';
+  else if (/top\s*\d*|前\s*\d+|排名|排序|找出.*最高/i.test(question)) intent = 'top';
   else if (/(?:按|by)\s*.+?(?:分组|统计|对比|group)/i.test(question)) intent = 'group';
   else if (operation) intent = 'statistics';
   else return { status: 'needs_input', message: '请明确分析目标（基础统计、分组对比、趋势或异常识别）以及相关字段。' };
@@ -54,8 +54,8 @@ export function selectTool(question, profile) {
     return { status: 'selected', tool: 'group_compare', args: { groupBy, metric, operation: operation || 'sum' } };
   }
   if (intent === 'trend') {
-    const explicitDate = refs.find(ref => profile.columns.find(c => c.name === ref)?.type === 'date');
-    const dateColumns = profile.columns.filter(c => c.type === 'date');
+    const explicitDate = refs.find(ref => ['date', 'mixed_date'].includes(profile.columns.find(c => c.name === ref)?.type));
+    const dateColumns = profile.columns.filter(c => ['date', 'mixed_date'].includes(c.type));
     const dateField = explicitDate || (dateColumns.length === 1 ? dateColumns[0].name : null);
     const metric = refs.find(ref => ref !== dateField && profile.columns.find(c => c.name === ref)?.type !== 'date') || null;
     if (!dateField || !metric) return { status: 'needs_input', message: '趋势分析需要指定日期字段和数值指标字段。' };
@@ -65,6 +65,9 @@ export function selectTool(question, profile) {
   const metric = intent === 'statistics' && operation === 'count' ? refs[0] : (numericRef || refs[0]);
   if (intent === 'anomaly') return { status: 'selected', tool: 'anomaly', args: { metric } };
   if (intent === 'top') {
+    if (!numericRef) {
+      throw new AgentError('missing_field', '未找到问题中要求用于排序的数值字段。', { availableFields: headers });
+    }
     const count = Number(question.match(/(?:top|前)\s*(\d+)/i)?.[1] || 5);
     const label = refs.find(ref => ref !== metric && profile.columns.find(c => c.name === ref)?.type === 'text') || profile.columns.find(c => c.type === 'text')?.name || null;
     return { status: 'selected', tool: 'top_n', args: { metric, label, count } };

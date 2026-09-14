@@ -85,3 +85,15 @@ test('rejects inconsistent CSV rows', () => {
   assert.throws(() => analyze({ filePath, question: '计算销售额总和' }), error =>
     error instanceof AgentError && error.code === 'inconsistent_columns');
 });
+
+test('rejects mixed date formats before trend calculation', () => {
+  const filePath = fixture('dates.csv', '日期,销售额\n2026-01-01,10\n01/02/2026,20\n');
+  assert.throws(() => analyze({ filePath, question: '分析销售额随日期的趋势' }), error =>
+    error instanceof AgentError && error.code === 'dirty_date_data' && error.audit.toolCalls.at(-1).status === 'error');
+});
+
+test('does not rank a text field when the requested metric is absent', () => {
+  const filePath = fixture('customers.csv', '客户,收入\n甲,10\n乙,20\n');
+  assert.throws(() => analyze({ filePath, question: '找出客户满意度最高的客户' }), error =>
+    error instanceof AgentError && error.code === 'missing_field');
+});
