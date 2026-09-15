@@ -81,10 +81,12 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertEqual(registry.tool_schemas(), [])
 
     def test_unknown_tool_has_stable_error_code(self) -> None:
-        with self.assertRaises(ToolExecutionError) as raised:
-            ToolRegistry().execute("missing", {})
+        result = ToolRegistry().execute("missing", {})
 
-        self.assertEqual(raised.exception.code, "unknown_tool")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "unknown_tool")
+        self.assertIsNone(result["data"])
+        self.assertFalse(result["truncated"])
 
     def test_registration_rejects_schema_requiring_undefined_property(self) -> None:
         invalid_schema = {
@@ -167,9 +169,9 @@ class ToolRegistryTests(unittest.TestCase):
             {"count": 1, "options": {"label": "ok", "extra": True}},
         ):
             with self.subTest(arguments=arguments):
-                with self.assertRaises(ToolExecutionError) as raised:
-                    registry.execute("bounded", arguments)
-                self.assertEqual(raised.exception.code, "invalid_arguments")
+                result = registry.execute("bounded", arguments)
+                self.assertFalse(result["ok"])
+                self.assertEqual(result["error"]["code"], "invalid_arguments")
 
     def test_unexpected_handler_exception_is_sanitized(self) -> None:
         def failing_handler(arguments: dict[str, Any], context: dict[str, Any]) -> None:
@@ -181,12 +183,12 @@ class ToolRegistryTests(unittest.TestCase):
             ToolDefinition("failing", "failing tool", schema(), failing_handler)
         )
 
-        with self.assertRaises(ToolExecutionError) as raised:
-            registry.execute("failing", {})
+        result = registry.execute("failing", {})
 
-        self.assertEqual(raised.exception.code, "handler_error")
-        self.assertNotIn("sensitive", str(raised.exception))
-        self.assertEqual(raised.exception.details, {"exceptionType": "RuntimeError"})
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "handler_error")
+        self.assertNotIn("sensitive", result["error"]["message"])
+        self.assertEqual(result["error"]["details"], {"exceptionType": "RuntimeError"})
 
     def test_large_result_is_truncated_to_a_json_safe_preview(self) -> None:
         registry = ToolRegistry()
@@ -202,10 +204,11 @@ class ToolRegistryTests(unittest.TestCase):
 
         result = registry.execute("large", {})
 
-        self.assertTrue(result["_meta"]["truncated"])
-        self.assertGreater(result["_meta"]["originalSizeBytes"], 512)
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["truncated"])
+        self.assertGreater(result["data"]["meta"]["originalSizeBytes"], 512)
         self.assertLessEqual(
-            len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")),
+            len(json.dumps(result["data"], ensure_ascii=False, separators=(",", ":")).encode("utf-8")),
             512,
         )
 
@@ -213,11 +216,29 @@ class ToolRegistryTests(unittest.TestCase):
         bridge = RecordingBridge()
         registry = build_default_registry(bridge=bridge)
 
-        with self.assertRaises(ToolExecutionError) as raised:
-            registry.execute("top_n", {"metric": "销售额", "count": 1001})
+        result = registry.execute("top_n", {"metric": "销售额", "count": 1001})
 
-        self.assertEqual(raised.exception.code, "invalid_arguments")
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "invalid_arguments")
         self.assertEqual(bridge.calls, [])
+
+    def test_successful_execution_returns_the_uniform_tool_result(self) -> None:
+        registry = ToolRegistry()
+        registry.register(ToolDefinition("echo", "echo tool", schema("value"), handler))
+
+        result = registry.execute("echo", {"value": "ok"}, context={"iteration": 1})
+
+        self.assertEqual(
+            set(result), {"ok", "data", "error", "duration", "truncated"}
+        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(
+            result["data"],
+            {"arguments": {"value": "ok"}, "context": {"iteration": 1}},
+        )
+        self.assertIsNone(result["error"])
+        self.assertGreaterEqual(result["duration"], 0)
+        self.assertFalse(result["truncated"])
 
     def test_node_bridge_timeout_has_a_stable_error(self) -> None:
         timeout = subprocess.TimeoutExpired(cmd=["node"], timeout=0.25)

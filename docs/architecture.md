@@ -61,12 +61,16 @@ ToolRegistry 是工具名称到 Tool Handler 和工具描述的唯一注册入�
 
 ## 4. Observation 回填
 
-Tool Handler 执行完成后返回结构化结果。Agent Loop 将其标准化为 Observation，至少包含：
+Tool Registry 将 Handler 的成功或失败统一为 ToolResult，Agent Loop 将同一结构作为
+Observation 回填模型。ToolResult 固定包含：
 
-- 工具名称。
-- 执行状态。
-- 结构化 `tool_result` 或错误信息。
-- 当前 `iteration`。
+- `ok`：是否执行成功。
+- `data`：成功数据；失败时为 `null`。
+- `error`：结构化错误；成功时为 `null`。
+- `duration`：Registry 记录的执行毫秒数。
+- `truncated`：结果是否因大小限制被截断。
+
+Observation 在此基础上增加工具名称和当前 `iteration`，不再维护另一套结果协议。
 
 Observation 会追加到当前任务上下文并回填给 LLM。LLM 只能基于用户问题、AgentState 和已记录 Observation 决定下一步；不得绕过工具结果自行生成数据结论。
 
@@ -87,12 +91,18 @@ Observation 会追加到当前任务上下文并回填给 LLM。LLM 只能基于
 
 ### execution trace
 
-每轮执行记录形成有序 trace。每条 trace 至少包含：
+每轮执行记录直接追加到现有 `AgentState.execution_trace`。每条 trace 包含：
 
 ```text
 iteration
-tool_call
-tool_result / observation
+call_id
+tool_name
+arguments
+success
+data
+error
+duration
+truncated
 ```
 
 任务级 trace 还应记录最终 `stop_reason`。trace 用于复现决策路径、检查工具和参数、识别重复调用并验证是否遵守 `max_iter`；它不作为 Memory，也不跨任务自动复用。

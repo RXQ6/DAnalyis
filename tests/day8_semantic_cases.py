@@ -51,7 +51,7 @@ def region_decisions() -> list[Decision]:
 
     def continue_from_group(messages: list[dict[str, Any]]) -> dict[str, Any]:
         first = observation(messages)
-        groups = first["result"]["groups"]
+        groups = first["data"]["groups"]
         selected["region"] = min(groups, key=lambda item: item["value"])["group"]
         return {
             "type": "tool_call",
@@ -65,7 +65,7 @@ def region_decisions() -> list[Decision]:
 
     def final_from_trend(messages: list[dict[str, Any]]) -> dict[str, Any]:
         second = observation(messages)
-        points = second["result"]["points"]
+        points = second["data"]["points"]
         return {
             "type": "final_answer",
             "content": f"{selected['region']}总销售额最低，为450；2026年1月至6月销售额从{points[0]['value']}降至{points[-1]['value']}。",
@@ -83,7 +83,7 @@ def product_decisions() -> list[Decision]:
 
     def continue_from_top(messages: list[dict[str, Any]]) -> dict[str, Any]:
         first = observation(messages)
-        selected["product"] = first["result"]["items"][0]["label"]
+        selected["product"] = first["data"]["items"][0]["label"]
         return {
             "type": "tool_call",
             "id": "product-trend",
@@ -96,7 +96,7 @@ def product_decisions() -> list[Decision]:
 
     def final_from_trend(messages: list[dict[str, Any]]) -> dict[str, Any]:
         second = observation(messages)
-        points = second["result"]["points"]
+        points = second["data"]["points"]
         values = "、".join(str(point["value"]) for point in points)
         return {"type": "final_answer", "content": f"单月销售额最高的产品是{selected['product']}，最高值100；最近3个月销售额依次为{values}。"}
 
@@ -110,7 +110,7 @@ def product_decisions() -> list[Decision]:
 def inspect_decisions() -> list[Decision]:
     def continue_from_schema(messages: list[dict[str, Any]]) -> dict[str, Any]:
         first = observation(messages)
-        columns = {column["name"]: column["type"] for column in first["result"]["profile"]["columns"]}
+        columns = {column["name"]: column["type"] for column in first["data"]["profile"]["columns"]}
         if columns.get("日期") != "date" or columns.get("利润") != "number":
             raise AssertionError("inspect_data did not establish the required date and numeric fields")
         return {
@@ -125,7 +125,7 @@ def inspect_decisions() -> list[Decision]:
 
     def final_from_trend(messages: list[dict[str, Any]]) -> dict[str, Any]:
         second = observation(messages)
-        values = "、".join(str(point["value"]) for point in second["result"]["points"])
+        values = "、".join(str(point["value"]) for point in second["data"]["points"])
         return {"type": "final_answer", "content": f"字段检查通过；华南2026年第一季度利润依次为{values}，呈逐月上升。"}
 
     return [
@@ -174,11 +174,11 @@ def evaluate_case(case: SemanticCase, state: AgentState, model: ObservationDrive
         failures.append(f"tool_chain:{chain!r}")
     if arguments != case.expected_arguments:
         failures.append(f"tool_arguments:{arguments!r}")
-    if len(state.execution_trace) != 2 or any(item["status"] != "ok" for item in state.execution_trace):
+    if len(state.execution_trace) != 2 or any(not item["success"] for item in state.execution_trace):
         failures.append("execution_trace_status")
     else:
-        first = state.execution_trace[0]["observation"]["result"]
-        second = state.execution_trace[1]["observation"]["result"]
+        first = state.execution_trace[0]["data"]
+        second = state.execution_trace[1]["data"]
         expected_first, expected_second = case.expected_observations
         if "groups" in expected_first:
             actual = [(item["group"], item["value"]) for item in first.get("groups", [])]
@@ -206,4 +206,3 @@ def evaluate_case(case: SemanticCase, state: AgentState, model: ObservationDrive
     if state.stop_reason != "final_answer" or state.iteration != 3:
         failures.append(f"stop:{state.stop_reason}/iteration:{state.iteration}")
     return failures
-

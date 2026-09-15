@@ -40,7 +40,7 @@ class AgentLoopTests(unittest.TestCase):
             self.assertEqual(messages[-1]["role"], "tool")
             observation = json.loads(messages[-1]["content"])
             self.assertEqual(observation["tool"], "basic_stats")
-            self.assertEqual(observation["result"]["value"], 1580)
+            self.assertEqual(observation["data"]["value"], 1580)
             return {"type": "final_answer", "content": "销售额总和为 1580。"}
 
         model = ScriptedModel([
@@ -53,13 +53,35 @@ class AgentLoopTests(unittest.TestCase):
         self.assertEqual(state.final_answer, "销售额总和为 1580。")
         self.assertEqual(state.iteration, 2)
         self.assertEqual([call["name"] for call in state.tool_calls], ["basic_stats"])
-        self.assertEqual(state.execution_trace[0]["status"], "ok")
+        self.assertTrue(state.execution_trace[0]["success"])
+        self.assertEqual(
+            set(state.execution_trace[0]),
+            {
+                "iteration",
+                "call_id",
+                "tool_name",
+                "arguments",
+                "success",
+                "data",
+                "error",
+                "duration",
+                "truncated",
+            },
+        )
+        self.assertEqual(state.execution_trace[0]["tool_name"], "basic_stats")
+        self.assertEqual(
+            state.execution_trace[0]["arguments"],
+            {"metric": "销售额", "operation": "sum"},
+        )
+        self.assertIsNone(state.execution_trace[0]["error"])
+        self.assertGreaterEqual(state.execution_trace[0]["duration"], 0)
+        self.assertFalse(state.execution_trace[0]["truncated"])
 
     def test_case_b_observation_drives_a_second_different_tool(self) -> None:
         def choose_trend(messages: list[dict[str, Any]]) -> dict[str, Any]:
             first = json.loads(messages[-1]["content"])
             self.assertEqual(first["tool"], "group_compare")
-            self.assertEqual(first["result"]["groups"][0]["group"], "华南")
+            self.assertEqual(first["data"]["groups"][0]["group"], "华南")
             return {
                 "type": "tool_call",
                 "id": "trend-1",
@@ -71,7 +93,7 @@ class AgentLoopTests(unittest.TestCase):
             second = json.loads(messages[-1]["content"])
             self.assertEqual(second["tool"], "trend_analysis")
             self.assertEqual(
-                [(point["date"], point["value"]) for point in second["result"]["points"]],
+                [(point["date"], point["value"]) for point in second["data"]["points"]],
                 [("2026-01-01", 100), ("2026-01-02", 150), ("2026-01-03", 130)],
             )
             return {"type": "final_answer", "content": "已完成地区对比，并基于工具结果分析华东趋势。"}
@@ -111,7 +133,7 @@ class AgentLoopTests(unittest.TestCase):
     def test_recoverable_tool_error_is_observed_before_final_answer(self) -> None:
         def final_after_error(messages: list[dict[str, Any]]) -> dict[str, Any]:
             observation = json.loads(messages[-1]["content"])
-            self.assertEqual(observation["status"], "error")
+            self.assertFalse(observation["ok"])
             self.assertEqual(observation["error"]["code"], "handler_error")
             self.assertTrue(observation["error"]["recoverable"])
             return {"type": "final_answer", "content": "工具不可用，无法完成分析。"}
@@ -137,8 +159,8 @@ class AgentLoopTests(unittest.TestCase):
 
         self.assertEqual(state.stop_reason, "final_answer")
         self.assertEqual(state.iteration, 2)
-        self.assertEqual(state.execution_trace[0]["status"], "error")
-        self.assertEqual(state.execution_trace[0]["observation"]["error"]["code"], "handler_error")
+        self.assertFalse(state.execution_trace[0]["success"])
+        self.assertEqual(state.execution_trace[0]["error"]["code"], "handler_error")
         self.assertEqual(model.calls[1]["messages"][-1]["role"], "tool")
 
     def test_unrecoverable_tool_error_is_observed_and_stops(self) -> None:
@@ -148,9 +170,9 @@ class AgentLoopTests(unittest.TestCase):
         state = AgentLoop(model, build_default_registry()).run("检查数据")
 
         self.assertEqual(state.stop_reason, "unrecoverable_tool_error")
-        self.assertEqual(state.execution_trace[0]["status"], "error")
+        self.assertFalse(state.execution_trace[0]["success"])
         self.assertEqual(
-            state.execution_trace[0]["observation"]["error"]["code"],
+            state.execution_trace[0]["error"]["code"],
             "missing_dataset",
         )
 
@@ -175,7 +197,7 @@ class AgentLoopTests(unittest.TestCase):
 
         def final_after_custom_tool(messages: list[dict[str, Any]]) -> dict[str, Any]:
             observation = json.loads(messages[-1]["content"])
-            self.assertEqual(observation["result"], {"doubled": 42, "iteration": 1})
+            self.assertEqual(observation["data"], {"doubled": 42, "iteration": 1})
             return {"type": "final_answer", "content": "自定义工具执行完成。"}
 
         model = ScriptedModel(

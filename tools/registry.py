@@ -5,11 +5,22 @@ from __future__ import annotations
 import inspect
 import json
 import math
+import time
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, TypedDict
 
 
 ToolHandler = Callable[[dict[str, Any], dict[str, Any]], Any]
+
+
+class ToolResult(TypedDict):
+    """Normalized result returned by every registry execution; duration is milliseconds."""
+
+    ok: bool
+    data: Any
+    error: dict[str, Any] | None
+    duration: float
+    truncated: bool
 
 
 class ToolExecutionError(RuntimeError):
@@ -69,20 +80,46 @@ class ToolRegistry:
         arguments: dict[str, Any],
         *,
         context: dict[str, Any] | None = None,
-    ) -> Any:
+    ) -> ToolResult:
+        started = time.perf_counter()
         try:
             definition = self.get(name)
             self._validate_arguments(definition.parameter_schema, arguments)
             result = definition.handler(arguments, context or {})
-            return self._bounded_result(result, definition.max_result_bytes)
-        except ToolExecutionError:
-            raise
+            data, truncated = self._bounded_result(result, definition.max_result_bytes)
+            return self._result(
+                ok=True,
+                data=data,
+                error=None,
+                started=started,
+                truncated=truncated,
+            )
+        except ToolExecutionError as error:
+            return self._result(
+                ok=False,
+                data=None,
+                error={
+                    "code": error.code,
+                    "message": str(error),
+                    "details": error.details,
+                    "recoverable": error.recoverable,
+                },
+                started=started,
+                truncated=False,
+            )
         except Exception as error:
-            raise ToolExecutionError(
-                "handler_error",
-                "tool execution failed unexpectedly",
-                {"exceptionType": type(error).__name__},
-            ) from error
+            return self._result(
+                ok=False,
+                data=None,
+                error={
+                    "code": "handler_error",
+                    "message": "tool execution failed unexpectedly",
+                    "details": {"exceptionType": type(error).__name__},
+                    "recoverable": True,
+                },
+                started=started,
+                truncated=False,
+            )
 
     def tool_schemas(self) -> list[dict[str, Any]]:
         return [
@@ -175,7 +212,24 @@ class ToolRegistry:
             raise ValueError(f"tool parameter schema contains invalid properties: {name}")
 
     @staticmethod
-    def _bounded_result(result: Any, max_result_bytes: int) -> Any:
+    def _result(
+        *,
+        ok: bool,
+        data: Any,
+        error: dict[str, Any] | None,
+        started: float,
+        truncated: bool,
+    ) -> ToolResult:
+        return {
+            "ok": ok,
+            "data": data,
+            "error": error,
+            "duration": round((time.perf_counter() - started) * 1000, 3),
+            "truncated": truncated,
+        }
+
+    @staticmethod
+    def _bounded_result(result: Any, max_result_bytes: int) -> tuple[Any, bool]:
         try:
             serialized = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
         except (TypeError, ValueError) as error:
@@ -186,7 +240,7 @@ class ToolRegistry:
             ) from error
         original_size = len(serialized.encode("utf-8"))
         if original_size <= max_result_bytes:
-            return result
+            return result, False
 
         metadata = {
             "truncated": True,
@@ -205,7 +259,7 @@ class ToolRegistry:
                 low = middle
             else:
                 high = middle - 1
-        return {"preview": serialized[:low], "_meta": metadata}
+        return {"preview": serialized[:low], "meta": metadata}, True
 
     @staticmethod
     def _validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
