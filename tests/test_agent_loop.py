@@ -7,7 +7,7 @@ from typing import Any
 
 from agent.loop import AgentLoop
 from tools.handlers import build_default_registry
-from tools.registry import ToolDefinition, ToolRegistry
+from tools.registry import ToolDefinition, ToolExecutionError, ToolRegistry
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -175,6 +175,80 @@ class AgentLoopTests(unittest.TestCase):
             state.execution_trace[0]["error"]["code"],
             "missing_dataset",
         )
+
+    def test_timeout_is_observed_and_does_not_crash_agent(self) -> None:
+        def timeout_handler(arguments: dict[str, Any], context: dict[str, Any]) -> None:
+            del arguments, context
+            raise ToolExecutionError(
+                "tool_timeout",
+                "tool execution exceeded 0.1 seconds",
+                {"timeoutSeconds": 0.1},
+            )
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "slow_tool",
+                "timeout test tool",
+                {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+                timeout_handler,
+            )
+        )
+
+        def final_after_timeout(messages: list[dict[str, Any]]) -> dict[str, Any]:
+            observation = json.loads(messages[-1]["content"])
+            self.assertFalse(observation["ok"])
+            self.assertEqual(observation["error"]["code"], "tool_timeout")
+            return {"type": "final_answer", "content": "工具超时，已安全停止分析。"}
+
+        model = ScriptedModel(
+            [
+                {"type": "tool_call", "id": "slow-1", "name": "slow_tool", "arguments": {}},
+                final_after_timeout,
+            ]
+        )
+        state = AgentLoop(model, registry).run("调用慢工具", dataset="unused.csv")
+
+        self.assertEqual(state.stop_reason, "final_answer")
+        self.assertFalse(state.execution_trace[0]["success"])
+        self.assertEqual(state.execution_trace[0]["error"]["code"], "tool_timeout")
+        self.assertGreaterEqual(state.execution_trace[0]["duration"], 0)
+        self.assertFalse(state.execution_trace[0]["truncated"])
+
+    def test_truncated_result_is_recorded_in_existing_trace(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "large_tool",
+                "large result test tool",
+                {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+                lambda arguments, context: {"rows": ["数据" * 1000]},
+                max_result_bytes=512,
+            )
+        )
+
+        def final_after_truncation(messages: list[dict[str, Any]]) -> dict[str, Any]:
+            observation = json.loads(messages[-1]["content"])
+            self.assertTrue(observation["ok"])
+            self.assertTrue(observation["truncated"])
+            return {"type": "final_answer", "content": "已收到截断结果。"}
+
+        model = ScriptedModel(
+            [
+                {"type": "tool_call", "id": "large-1", "name": "large_tool", "arguments": {}},
+                final_after_truncation,
+            ]
+        )
+        state = AgentLoop(model, registry).run("调用大结果工具", dataset="unused.csv")
+
+        trace = state.execution_trace[0]
+        self.assertEqual(trace["tool_name"], "large_tool")
+        self.assertEqual(trace["arguments"], {})
+        self.assertTrue(trace["success"])
+        self.assertIsNone(trace["error"])
+        self.assertGreaterEqual(trace["duration"], 0)
+        self.assertTrue(trace["truncated"])
+        self.assertIn("preview", trace["data"])
 
     def test_agent_loop_executes_a_custom_registered_tool_without_tool_specific_code(self) -> None:
         registry = ToolRegistry()

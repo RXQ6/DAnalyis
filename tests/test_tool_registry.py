@@ -3,11 +3,16 @@ from __future__ import annotations
 import json
 import subprocess
 import unittest
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
 from tools.handlers import NodeToolBridge, build_default_registry
 from tools.registry import ToolDefinition, ToolExecutionError, ToolRegistry
+
+
+ROOT = Path(__file__).resolve().parents[1]
+SALES = ROOT / "tests" / "fixtures" / "sales.csv"
 
 
 def schema(*required: str) -> dict[str, Any]:
@@ -221,6 +226,29 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result["error"]["code"], "invalid_arguments")
         self.assertEqual(bridge.calls, [])
+
+    def test_missing_argument_is_rejected_before_handler(self) -> None:
+        bridge = RecordingBridge()
+        registry = build_default_registry(bridge=bridge)
+
+        result = registry.execute("basic_stats", {"metric": "销售额"})
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "invalid_arguments")
+        self.assertEqual(bridge.calls, [])
+
+    def test_missing_field_from_real_tool_is_a_structured_failure(self) -> None:
+        result = build_default_registry().execute(
+            "basic_stats",
+            {"metric": "不存在字段", "operation": "sum"},
+            context={"dataset": str(SALES)},
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "missing_field")
+        self.assertIsNone(result["data"])
+        self.assertGreaterEqual(result["duration"], 0)
+        self.assertFalse(result["truncated"])
 
     def test_successful_execution_returns_the_uniform_tool_result(self) -> None:
         registry = ToolRegistry()

@@ -9,8 +9,8 @@
     "badCaseRecognitionRate": 1.0,
     "holdoutAccuracy": 1.0,
     "overallAccuracy": 1.0,
-    "averageResponseSeconds": 0.16748719999999997,
-    "maximumResponseSeconds": 0.195759,
+    "averageResponseSeconds": 0.15857343999999998,
+    "maximumResponseSeconds": 0.185563,
     "averageCostCny": 0.0,
     "maximumCostCny": 0.0,
     "averageToolCalls": 4.2,
@@ -32,7 +32,7 @@
       "description": "missing metric field",
       "question": "计算退款金额总和",
       "passed": true,
-      "durationSeconds": 0.161902,
+      "durationSeconds": 0.172313,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -78,7 +78,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 9.019,
+          "elapsedMs": 4.988,
           "errorRecorded": true
         }
       },
@@ -90,7 +90,7 @@
       "description": "empty file",
       "question": "计算金额总和",
       "passed": true,
-      "durationSeconds": 0.150285,
+      "durationSeconds": 0.161866,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -116,7 +116,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 0.456,
+          "elapsedMs": 0.496,
           "errorRecorded": true
         }
       },
@@ -128,7 +128,7 @@
       "description": "mixed date formats",
       "question": "分析销售额随日期的趋势",
       "passed": true,
-      "durationSeconds": 0.157776,
+      "durationSeconds": 0.149363,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -183,7 +183,7 @@
               }
             }
           ],
-          "elapsedMs": 12.142,
+          "elapsedMs": 6.078,
           "errorRecorded": true
         }
       },
@@ -195,7 +195,7 @@
       "description": "string in numeric column",
       "question": "计算销售额平均值",
       "passed": true,
-      "durationSeconds": 0.188257,
+      "durationSeconds": 0.143427,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -248,7 +248,7 @@
               }
             }
           ],
-          "elapsedMs": 4.171,
+          "elapsedMs": 3.803,
           "errorRecorded": true
         }
       },
@@ -260,7 +260,7 @@
       "description": "question asks unavailable information",
       "question": "找出客户满意度最高的客户",
       "passed": true,
-      "durationSeconds": 0.148613,
+      "durationSeconds": 0.142503,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -306,7 +306,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 2.121,
+          "elapsedMs": 2.105,
           "errorRecorded": true
         }
       },
@@ -318,7 +318,7 @@
       "description": "vague request",
       "question": "分析一下",
       "passed": true,
-      "durationSeconds": 0.153093,
+      "durationSeconds": 0.141591,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -408,7 +408,7 @@
               "status": "ok"
             }
           ],
-          "elapsedMs": 2.1
+          "elapsedMs": 1.885
         }
       },
       "stderr": ""
@@ -419,7 +419,7 @@
       "description": "inconsistent CSV width",
       "question": "计算销售额总和",
       "passed": true,
-      "durationSeconds": 0.163401,
+      "durationSeconds": 0.149201,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -455,7 +455,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 8.363,
+          "elapsedMs": 2.988,
           "errorRecorded": true
         }
       },
@@ -467,7 +467,7 @@
       "description": "corrupted XLSX",
       "question": "计算销售额平均值",
       "passed": true,
-      "durationSeconds": 0.17018,
+      "durationSeconds": 0.144609,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -497,7 +497,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 9.633,
+          "elapsedMs": 2.344,
           "errorRecorded": true
         }
       },
@@ -509,7 +509,7 @@
       "description": "invalid UTF-8 CSV",
       "question": "计算金额总和",
       "passed": true,
-      "durationSeconds": 0.162901,
+      "durationSeconds": 0.167681,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -539,7 +539,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 7.033,
+          "elapsedMs": 3.149,
           "errorRecorded": true
         }
       },
@@ -551,7 +551,7 @@
       "description": "file exceeds 20MB",
       "question": "计算金额总和",
       "passed": true,
-      "durationSeconds": 0.14988,
+      "durationSeconds": 0.159784,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -579,7 +579,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 0.462,
+          "elapsedMs": 0.487,
           "errorRecorded": true
         }
       },
@@ -591,7 +591,7 @@
       "description": "semicolon-delimited decimal sum",
       "question": "计算金额总和",
       "passed": true,
-      "durationSeconds": 0.16332,
+      "durationSeconds": 0.166944,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -671,7 +671,7 @@
               }
             }
           ],
-          "elapsedMs": 16.14
+          "elapsedMs": 16.833
         }
       },
       "stderr": ""
@@ -682,7 +682,7 @@
       "description": "average with a missing numeric cell",
       "question": "计算收入平均值",
       "passed": true,
-      "durationSeconds": 0.160975,
+      "durationSeconds": 0.16337,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -789,7 +789,7 @@
               }
             }
           ],
-          "elapsedMs": 15.314
+          "elapsedMs": 13.646
         }
       },
       "stderr": ""
@@ -800,7 +800,7 @@
       "description": "group average ignores missing metric",
       "question": "按地区分组统计收入平均值",
       "passed": true,
-      "durationSeconds": 0.176458,
+      "durationSeconds": 0.156285,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -920,7 +920,7 @@
               }
             }
           ],
-          "elapsedMs": 16.063
+          "elapsedMs": 14.127
         }
       },
       "stderr": ""
@@ -931,7 +931,7 @@
       "description": "negative minimum",
       "question": "计算利润最小值",
       "passed": true,
-      "durationSeconds": 0.167749,
+      "durationSeconds": 0.149086,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1038,7 +1038,7 @@
               }
             }
           ],
-          "elapsedMs": 15.55
+          "elapsedMs": 14.175
         }
       },
       "stderr": ""
@@ -1049,7 +1049,7 @@
       "description": "maximum",
       "question": "计算利润最大值",
       "passed": true,
-      "durationSeconds": 0.16618,
+      "durationSeconds": 0.176042,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1156,7 +1156,7 @@
               }
             }
           ],
-          "elapsedMs": 14.089
+          "elapsedMs": 15.737
         }
       },
       "stderr": ""
@@ -1167,7 +1167,7 @@
       "description": "count nonempty text",
       "question": "统计客户数量",
       "passed": true,
-      "durationSeconds": 0.161932,
+      "durationSeconds": 0.150741,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1274,7 +1274,7 @@
               }
             }
           ],
-          "elapsedMs": 14.076
+          "elapsedMs": 13.595
         }
       },
       "stderr": ""
@@ -1285,7 +1285,7 @@
       "description": "top 3 with deterministic tie ordering",
       "question": "找出金额 Top 3 客户",
       "passed": true,
-      "durationSeconds": 0.176529,
+      "durationSeconds": 0.15039,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1385,7 +1385,7 @@
               }
             }
           ],
-          "elapsedMs": 8.692
+          "elapsedMs": 4.439
         }
       },
       "stderr": ""
@@ -1396,7 +1396,7 @@
       "description": "Chinese date trend",
       "question": "按日期分析访问量趋势",
       "passed": true,
-      "durationSeconds": 0.178681,
+      "durationSeconds": 0.168775,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1490,7 +1490,7 @@
               }
             }
           ],
-          "elapsedMs": 24.516
+          "elapsedMs": 20.992
         }
       },
       "stderr": ""
@@ -1501,7 +1501,7 @@
       "description": "English-header group sum",
       "question": "按region分组统计revenue总和",
       "passed": true,
-      "durationSeconds": 0.184253,
+      "durationSeconds": 0.185563,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1603,7 +1603,7 @@
               }
             }
           ],
-          "elapsedMs": 28.951
+          "elapsedMs": 27.808
         }
       },
       "stderr": ""
@@ -1614,7 +1614,7 @@
       "description": "English trend phrasing",
       "question": "revenue trend over date",
       "passed": true,
-      "durationSeconds": 0.164438,
+      "durationSeconds": 0.157465,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1717,7 +1717,7 @@
               }
             }
           ],
-          "elapsedMs": 15.888
+          "elapsedMs": 19.077
         }
       },
       "stderr": ""
@@ -1728,7 +1728,7 @@
       "description": "no anomaly",
       "question": "识别温度异常值",
       "passed": true,
-      "durationSeconds": 0.150019,
+      "durationSeconds": 0.140792,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1801,7 +1801,7 @@
               }
             }
           ],
-          "elapsedMs": 8.474
+          "elapsedMs": 2.963
         }
       },
       "stderr": ""
@@ -1812,7 +1812,7 @@
       "description": "quoted comma in label",
       "question": "按客户分组统计金额总和",
       "passed": true,
-      "durationSeconds": 0.193897,
+      "durationSeconds": 0.157826,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1905,7 +1905,7 @@
               }
             }
           ],
-          "elapsedMs": 24.41
+          "elapsedMs": 16.435
         }
       },
       "stderr": ""
@@ -1916,7 +1916,7 @@
       "description": "thousands separators",
       "question": "计算金额总和",
       "passed": true,
-      "durationSeconds": 0.195759,
+      "durationSeconds": 0.1633,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -1996,7 +1996,7 @@
               }
             }
           ],
-          "elapsedMs": 21.346
+          "elapsedMs": 16.127
         }
       },
       "stderr": ""
@@ -2007,7 +2007,7 @@
       "description": "new XLSX sum",
       "question": "计算库存总和",
       "passed": true,
-      "durationSeconds": 0.17181,
+      "durationSeconds": 0.179583,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -2087,7 +2087,7 @@
               }
             }
           ],
-          "elapsedMs": 31.517
+          "elapsedMs": 28.935
         }
       },
       "stderr": ""
@@ -2098,7 +2098,7 @@
       "description": "tab-delimited CSV average",
       "question": "计算评分平均值",
       "passed": true,
-      "durationSeconds": 0.168892,
+      "durationSeconds": 0.165836,
       "failures": [],
       "processChecks": {
         "toolSelection": true,
@@ -2178,7 +2178,7 @@
               }
             }
           ],
-          "elapsedMs": 19.331
+          "elapsedMs": 15.989
         }
       },
       "stderr": ""
