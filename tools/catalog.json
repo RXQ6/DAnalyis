@@ -1,0 +1,91 @@
+{
+  "tools": [
+    {
+      "name": "inspect_data",
+      "description": "Inspect columns, types, missing values and row count.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "basic_stats",
+      "description": "Calculate sum, average, count, minimum or maximum for one field.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "metric": { "type": "string" },
+          "operation": {
+            "type": "string",
+            "enum": ["sum", "average", "count", "minimum", "maximum"]
+          }
+        },
+        "required": ["metric", "operation"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "group_compare",
+      "description": "Aggregate a numeric metric by a category.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "groupBy": { "type": "string" },
+          "metric": { "type": "string" },
+          "operation": {
+            "type": "string",
+            "enum": ["sum", "average", "count", "minimum", "maximum"]
+          }
+        },
+        "required": ["groupBy", "metric", "operation"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "trend_analysis",
+      "description": "Aggregate a numeric metric over a date field; optional equality filters narrow the rows.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dateField": { "type": "string" },
+          "metric": { "type": "string" },
+          "operation": {
+            "type": "string",
+            "enum": ["sum", "average", "count", "minimum", "maximum"]
+          },
+          "filters": { "type": "object" }
+        },
+        "required": ["dateField", "metric", "operation"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "detect_anomaly",
+      "description": "Detect numeric outliers using the deterministic 1.5 IQR rule.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "metric": { "type": "string" }
+        },
+        "required": ["metric"],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "top_n",
+      "description": "Return the highest N records for a numeric metric.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "metric": { "type": "string" },
+          "label": { "type": "string" },
+          "count": { "type": "integer" }
+        },
+        "required": ["metric", "count"],
+        "additionalProperties": false
+      }
+    }
+  ]
+}

@@ -10,6 +10,10 @@ import { trend } from './tools/trend.js';
 import { anomaly } from './tools/anomaly.js';
 import { AgentError, publicError } from './errors.js';
 
+const TOOL_CATALOG = JSON.parse(
+  fs.readFileSync(new URL('../tools/catalog.json', import.meta.url), 'utf8')
+);
+
 function filteredTable(table, filters = {}) {
   for (const field of Object.keys(filters)) {
     if (!table.headers.includes(field)) throw new AgentError('missing_field', `字段“${field}”不存在。`);
@@ -24,7 +28,7 @@ function inspectData(table, profile) {
 }
 
 const HANDLERS = {
-  inspect_data: (table, profile) => inspectData(table, profile),
+  inspect_data: (table, profile, _args) => inspectData(table, profile),
   basic_stats: (table, profile, args) => statistics(table, profile, args),
   group_compare: (table, profile, args) => groupCompare(table, profile, args),
   trend_analysis: (table, profile, args) => {
@@ -35,10 +39,27 @@ const HANDLERS = {
   top_n: (table, profile, args) => topN(table, profile, args)
 };
 
+function registeredHandlers(catalog, handlers) {
+  if (!catalog || !Array.isArray(catalog.tools)) throw new Error('Invalid tool catalog.');
+  const names = catalog.tools.map(tool => tool?.name);
+  if (names.some(name => typeof name !== 'string' || !name)) throw new Error('Tool catalog contains an invalid name.');
+  if (new Set(names).size !== names.length) throw new Error('Tool catalog contains duplicate names.');
+  for (const name of names) {
+    const handler = handlers[name];
+    if (typeof handler !== 'function') throw new Error(`Registered tool has no handler: ${name}`);
+    if (handler.length !== 3) throw new Error(`Tool handler must accept (table, profile, args): ${name}`);
+  }
+  const unregistered = Object.keys(handlers).filter(name => !names.includes(name));
+  if (unregistered.length) throw new Error(`Handlers bypass the registry: ${unregistered.join(', ')}`);
+  return new Map(names.map(name => [name, handlers[name]]));
+}
+
+const REGISTERED_HANDLERS = registeredHandlers(TOOL_CATALOG, HANDLERS);
+
 let output;
 try {
   const request = JSON.parse(fs.readFileSync(0, 'utf8'));
-  const handler = HANDLERS[request.tool];
+  const handler = REGISTERED_HANDLERS.get(request.tool);
   if (!handler) throw new AgentError('unknown_tool', `工具“${request.tool}”未注册。`);
   const input = validateInput(request.dataset, 'registered tool execution');
   const table = loadTable(request.dataset, input.extension || path.extname(request.dataset).toLowerCase());
@@ -49,4 +70,3 @@ try {
   process.exitCode = 1;
 }
 console.log(JSON.stringify(output));
-
