@@ -7,6 +7,7 @@ from typing import Any
 
 from agent.loop import AgentLoop
 from tools.handlers import build_default_registry
+from tools.todo import MAX_TODOS, MAX_TODO_CONTENT_LENGTH
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,58 +45,58 @@ class RecordingBridge:
 
 
 def run_todo_multistep_case() -> tuple[Any, ScriptedModel]:
-    initial = [
+    initial_updates = [
         {"id": "compare", "content": "比较各地区销售额", "status": "in_progress"},
         {"id": "trend", "content": "分析华东销售趋势", "status": "pending"},
     ]
-    second_step = [
-        {"id": "compare", "content": "比较各地区销售额", "status": "completed"},
-        {"id": "trend", "content": "分析华东销售趋势", "status": "in_progress"},
-    ]
-    completed = [
-        {"id": "compare", "content": "比较各地区销售额", "status": "completed"},
-        {"id": "trend", "content": "分析华东销售趋势", "status": "completed"},
+    second_updates = [
+        {"id": "compare", "status": "completed"},
+        {"id": "trend", "status": "in_progress"},
     ]
     model = ScriptedModel(
         [
             {
-                "type": "tool_call",
-                "id": "todo-create",
-                "name": "todo_write",
-                "arguments": {"todos": initial},
+                "tool_calls": [
+                    {
+                        "id": "todo-create",
+                        "name": "todo_write",
+                        "arguments": {"updates": initial_updates},
+                    },
+                    {
+                        "id": "compare-regions",
+                        "name": "group_compare",
+                        "arguments": {
+                            "groupBy": "地区",
+                            "metric": "销售额",
+                            "operation": "sum",
+                        },
+                    },
+                ]
             },
             {
-                "type": "tool_call",
-                "id": "compare-regions",
-                "name": "group_compare",
-                "arguments": {
-                    "groupBy": "地区",
-                    "metric": "销售额",
-                    "operation": "sum",
-                },
-            },
-            {
-                "type": "tool_call",
-                "id": "todo-progress",
-                "name": "todo_write",
-                "arguments": {"todos": second_step},
-            },
-            {
-                "type": "tool_call",
-                "id": "analyze-trend",
-                "name": "trend_analysis",
-                "arguments": {
-                    "dateField": "日期",
-                    "metric": "销售额",
-                    "operation": "sum",
-                    "filters": {"地区": "华东"},
-                },
+                "tool_calls": [
+                    {
+                        "id": "todo-progress",
+                        "name": "todo_write",
+                        "arguments": {"updates": second_updates},
+                    },
+                    {
+                        "id": "analyze-trend",
+                        "name": "trend_analysis",
+                        "arguments": {
+                            "dateField": "日期",
+                            "metric": "销售额",
+                            "operation": "sum",
+                            "filters": {"地区": "华东"},
+                        },
+                    },
+                ]
             },
             {
                 "type": "tool_call",
                 "id": "todo-complete",
                 "name": "todo_write",
-                "arguments": {"todos": completed},
+                "arguments": {"updates": [{"id": "trend", "status": "completed"}]},
             },
             {"type": "final_answer", "content": "地区比较与华东趋势分析均已完成。"},
         ]
@@ -138,7 +139,12 @@ class TodoTests(unittest.TestCase):
                 "type": "tool_call",
                 "id": "todo-2",
                 "name": "todo_write",
-                "arguments": {"todos": updated},
+                "arguments": {
+                    "updates": [
+                        {"id": "compare", "status": "completed"},
+                        {"id": "trend", "status": "in_progress"},
+                    ]
+                },
             }
 
         def finish(messages: list[dict[str, Any]]) -> dict[str, Any]:
@@ -153,7 +159,7 @@ class TodoTests(unittest.TestCase):
                     "type": "tool_call",
                     "id": "todo-1",
                     "name": "todo_write",
-                    "arguments": {"todos": initial},
+                    "arguments": {"updates": initial},
                 },
                 update_after_create,
                 finish,
@@ -198,7 +204,7 @@ class TodoTests(unittest.TestCase):
         result = registry.execute(
             "todo_write",
             {
-                "todos": [
+                "updates": [
                     {"id": "a", "content": "任务 A", "status": "in_progress"},
                     {"id": "b", "content": "任务 B", "status": "in_progress"},
                 ]
@@ -224,24 +230,98 @@ class TodoTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertEqual(todos, replacement)
 
+    def test_incremental_update_preserves_omitted_todos_and_supports_remove(self) -> None:
+        registry = build_default_registry()
+        todos = [
+            {"id": "keep", "content": "保留任务", "status": "pending"},
+            {"id": "remove", "content": "删除任务", "status": "pending"},
+        ]
+
+        result = registry.execute(
+            "todo_write",
+            {
+                "updates": [
+                    {"id": "keep", "status": "in_progress"},
+                    {"id": "remove", "remove": True},
+                    {"id": "new", "content": "新增任务", "status": "pending"},
+                ]
+            },
+            context={"todos": todos},
+        )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(
+            todos,
+            [
+                {"id": "keep", "content": "保留任务", "status": "in_progress"},
+                {"id": "new", "content": "新增任务", "status": "pending"},
+            ],
+        )
+
+    def test_todo_count_and_content_length_are_bounded(self) -> None:
+        registry = build_default_registry()
+        todos: list[dict[str, str]] = []
+        too_many = registry.execute(
+            "todo_write",
+            {
+                "updates": [
+                    {"id": str(index), "content": "任务", "status": "pending"}
+                    for index in range(MAX_TODOS + 1)
+                ]
+            },
+            context={"todos": todos},
+        )
+        too_long = registry.execute(
+            "todo_write",
+            {
+                "updates": [
+                    {
+                        "id": "long",
+                        "content": "长" * (MAX_TODO_CONTENT_LENGTH + 1),
+                        "status": "pending",
+                    }
+                ]
+            },
+            context={"todos": todos},
+        )
+
+        self.assertFalse(too_many["ok"])
+        self.assertEqual(too_many["error"]["code"], "invalid_arguments")
+        self.assertFalse(too_long["ok"])
+        self.assertEqual(too_long["error"]["code"], "invalid_arguments")
+        self.assertEqual(todos, [])
+
+    def test_todo_write_requires_one_update_mode(self) -> None:
+        registry = build_default_registry()
+        todos: list[dict[str, str]] = []
+        neither = registry.execute("todo_write", {}, context={"todos": todos})
+        both = registry.execute(
+            "todo_write",
+            {"todos": [], "updates": []},
+            context={"todos": todos},
+        )
+
+        self.assertFalse(neither["ok"])
+        self.assertFalse(both["ok"])
+        self.assertEqual(neither["error"]["code"], "invalid_arguments")
+        self.assertEqual(both["error"]["code"], "invalid_arguments")
+
     def test_pending_in_progress_completed_lifecycle(self) -> None:
         registry = build_default_registry()
         todos: list[dict[str, str]] = []
-        snapshots = [
-            [{"id": "task", "content": "完成分析", "status": status}]
-            for status in ("pending", "in_progress", "completed")
-        ]
-
-        for status, snapshot in zip(
-            ("pending", "in_progress", "completed"), snapshots, strict=True
-        ):
+        for status in ("pending", "in_progress", "completed"):
+            update = {"id": "task", "status": status}
+            if status == "pending":
+                update["content"] = "完成分析"
             result = registry.execute(
-                "todo_write", {"todos": snapshot}, context={"todos": todos}
+                "todo_write", {"updates": [update]}, context={"todos": todos}
             )
             self.assertTrue(result["ok"])
             self.assertEqual(result["data"]["summary"][status][0]["id"], "task")
 
-        self.assertEqual(todos, snapshots[-1])
+        self.assertEqual(
+            todos, [{"id": "task", "content": "完成分析", "status": "completed"}]
+        )
 
     def test_todo_write_does_not_execute_analysis_bridge(self) -> None:
         bridge = RecordingBridge()
@@ -251,7 +331,7 @@ class TodoTests(unittest.TestCase):
         result = registry.execute(
             "todo_write",
             {
-                "todos": [
+                "updates": [
                     {"id": "plan", "content": "规划分析", "status": "in_progress"}
                 ]
             },
@@ -269,7 +349,7 @@ class TodoTests(unittest.TestCase):
                     "id": "todo-open",
                     "name": "todo_write",
                     "arguments": {
-                        "todos": [
+                        "updates": [
                             {
                                 "id": "open",
                                 "content": "仍在进行的检查",
@@ -320,6 +400,9 @@ class TodoTests(unittest.TestCase):
         )
         self.assertTrue(all(entry["success"] for entry in state.execution_trace))
         self.assertEqual(
+            [entry["iteration"] for entry in state.execution_trace], [1, 1, 2, 2, 3]
+        )
+        self.assertEqual(
             [todo["status"] for todo in state.todos], ["completed", "completed"]
         )
         self.assertEqual(state.stop_reason, "final_answer")
@@ -329,7 +412,7 @@ class TodoTests(unittest.TestCase):
             for call in model.calls[1:]
         ]
         self.assertEqual(visible_summaries[0]["in_progress"][0]["id"], "compare")
-        self.assertEqual(visible_summaries[2]["in_progress"][0]["id"], "trend")
+        self.assertEqual(visible_summaries[1]["in_progress"][0]["id"], "trend")
         self.assertEqual(len(visible_summaries[-1]["completed"]), 2)
 
 
