@@ -293,7 +293,7 @@ class AgentLoopTests(unittest.TestCase):
 
     def test_default_registry_exposes_current_tools(self) -> None:
         names = {item["function"]["name"] for item in build_default_registry().tool_schemas()}
-        self.assertTrue({"inspect_data", "basic_stats", "group_compare", "trend_analysis", "detect_anomaly"}.issubset(names))
+        self.assertTrue({"inspect_data", "basic_stats", "group_compare", "trend_analysis", "detect_anomaly", "todo_write"}.issubset(names))
 
     def test_default_max_iter_is_six(self) -> None:
         loop = AgentLoop(RepeatingModel(), ToolRegistry())

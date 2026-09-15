@@ -16,11 +16,19 @@ class AgentState:
     max_iter: int = 6
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     execution_trace: list[dict[str, Any]] = field(default_factory=list)
+    todos: list[dict[str, str]] = field(default_factory=list)
     stop_reason: str | None = None
     final_answer: str | None = None
 
     def add_message(self, role: str, content: Any, **extra: Any) -> None:
         self.messages.append({"role": role, "content": content, **extra})
+
+    def todo_summary(self) -> dict[str, list[dict[str, str]]]:
+        """Return the current plan grouped by status for model context."""
+        return {
+            status: [dict(todo) for todo in self.todos if todo["status"] == status]
+            for status in ("completed", "in_progress", "pending")
+        }
 
     def record_tool_execution(
         self,

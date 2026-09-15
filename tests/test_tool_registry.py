@@ -118,7 +118,11 @@ class ToolRegistryTests(unittest.TestCase):
     def test_factory_binds_each_tool_name_without_late_binding(self) -> None:
         bridge = RecordingBridge()
         registry = build_default_registry(bridge=bridge)
-        names = [item["function"]["name"] for item in registry.tool_schemas()]
+        names = [
+            item["function"]["name"]
+            for item in registry.tool_schemas()
+            if item["function"]["name"] != "todo_write"
+        ]
 
         for name in names:
             definition = registry.get(name)
@@ -126,7 +130,7 @@ class ToolRegistryTests(unittest.TestCase):
 
         self.assertEqual(bridge.calls, names)
 
-    def test_default_catalog_is_the_single_registry_source(self) -> None:
+    def test_default_registry_contains_catalog_tools_and_todo_write(self) -> None:
         names = [
             item["function"]["name"]
             for item in build_default_registry(bridge=RecordingBridge()).tool_schemas()
@@ -141,6 +145,7 @@ class ToolRegistryTests(unittest.TestCase):
                 "trend_analysis",
                 "detect_anomaly",
                 "top_n",
+                "todo_write",
             ],
         )
 
