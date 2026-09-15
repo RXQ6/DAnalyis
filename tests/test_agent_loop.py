@@ -108,17 +108,51 @@ class AgentLoopTests(unittest.TestCase):
         self.assertEqual(len(state.tool_calls), 3)
         self.assertIsNone(state.final_answer)
 
+    def test_recoverable_tool_error_is_observed_before_final_answer(self) -> None:
+        def final_after_error(messages: list[dict[str, Any]]) -> dict[str, Any]:
+            observation = json.loads(messages[-1]["content"])
+            self.assertEqual(observation["status"], "error")
+            self.assertEqual(observation["error"]["code"], "handler_error")
+            self.assertTrue(observation["error"]["recoverable"])
+            return {"type": "final_answer", "content": "工具不可用，无法完成分析。"}
+
+        def failing_handler(arguments: dict[str, Any], context: dict[str, Any]) -> None:
+            del arguments, context
+            raise RuntimeError("tool failed")
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "broken_tool",
+                "broken test tool",
+                {"type": "object", "properties": {}, "required": [], "additionalProperties": False},
+                failing_handler,
+            )
+        )
+        model = ScriptedModel([
+            {"type": "tool_call", "id": "broken-1", "name": "broken_tool", "arguments": {}},
+            final_after_error,
+        ])
+        state = AgentLoop(model, registry).run("调用失败工具", dataset="unused.csv")
+
+        self.assertEqual(state.stop_reason, "final_answer")
+        self.assertEqual(state.iteration, 2)
+        self.assertEqual(state.execution_trace[0]["status"], "error")
+        self.assertEqual(state.execution_trace[0]["observation"]["error"]["code"], "handler_error")
+        self.assertEqual(model.calls[1]["messages"][-1]["role"], "tool")
+
     def test_unrecoverable_tool_error_is_observed_and_stops(self) -> None:
         model = ScriptedModel([
-            {"type": "tool_call", "id": "unknown-1", "name": "not_registered", "arguments": {}},
+            {"type": "tool_call", "id": "inspect-1", "name": "inspect_data", "arguments": {}},
         ])
-        state = AgentLoop(model, ToolRegistry()).run("调用未知工具", dataset="unused.csv")
+        state = AgentLoop(model, build_default_registry()).run("检查数据")
 
         self.assertEqual(state.stop_reason, "unrecoverable_tool_error")
-        self.assertEqual(state.iteration, 1)
         self.assertEqual(state.execution_trace[0]["status"], "error")
-        self.assertEqual(state.execution_trace[0]["observation"]["error"]["code"], "unknown_tool")
-        self.assertEqual(state.messages[-1]["role"], "tool")
+        self.assertEqual(
+            state.execution_trace[0]["observation"]["error"]["code"],
+            "missing_dataset",
+        )
 
     def test_agent_loop_executes_a_custom_registered_tool_without_tool_specific_code(self) -> None:
         registry = ToolRegistry()
