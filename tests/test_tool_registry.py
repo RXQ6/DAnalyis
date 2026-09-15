@@ -74,7 +74,7 @@ class ToolRegistryTests(unittest.TestCase):
 
         with self.assertRaises(ToolExecutionError) as raised:
             registry.get("new_tool")
-        self.assertEqual(raised.exception.code, "unknown_tool")
+        self.assertEqual(raised.exception.code, "TOOL_NOT_FOUND")
 
     def test_register_many_rejects_duplicate_names_inside_batch(self) -> None:
         registry = ToolRegistry()
@@ -89,7 +89,7 @@ class ToolRegistryTests(unittest.TestCase):
         result = ToolRegistry().execute("missing", {})
 
         self.assertFalse(result["ok"])
-        self.assertEqual(result["error"]["code"], "unknown_tool")
+        self.assertEqual(result["error"]["code"], "TOOL_NOT_FOUND")
         self.assertIsNone(result["data"])
         self.assertFalse(result["truncated"])
 
@@ -302,6 +302,14 @@ class ToolRegistryTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.code, "dirty_numeric_data")
         self.assertEqual(raised.exception.details, {"invalidCount": 3})
+
+    def test_node_bridge_uses_the_same_unknown_tool_error_code(self) -> None:
+        with self.assertRaises(ToolExecutionError) as raised:
+            NodeToolBridge().execute(
+                "missing_tool", {}, {"dataset": str(SALES)}
+            )
+
+        self.assertEqual(raised.exception.code, "TOOL_NOT_FOUND")
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ let output;
 try {
   const request = JSON.parse(fs.readFileSync(0, 'utf8'));
   const handler = REGISTERED_HANDLERS.get(request.tool);
-  if (!handler) throw new AgentError('unknown_tool', `工具“${request.tool}”未注册。`);
+  if (!handler) throw new AgentError('TOOL_NOT_FOUND', `工具“${request.tool}”未注册。`);
   const input = validateInput(request.dataset, 'registered tool execution');
   const table = loadTable(request.dataset, input.extension || path.extname(request.dataset).toLowerCase());
   const profile = profileTable(table);
