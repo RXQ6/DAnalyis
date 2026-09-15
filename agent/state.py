@@ -40,10 +40,13 @@ class AgentState:
         self.execution_trace.append(
             {
                 "iteration": self.iteration,
-                "tool_call": call,
-                "tool_result": observation.get("result"),
-                "observation": observation,
-                "status": observation.get("status"),
+                "call_id": call_id,
+                "tool_name": name,
+                "arguments": arguments,
+                "success": observation["ok"],
+                "data": observation["data"],
+                "error": observation["error"],
+                "duration": observation["duration"],
+                "truncated": observation["truncated"],
             }
         )
-

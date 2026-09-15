@@ -8,7 +8,7 @@ from typing import Any, Protocol
 
 from .prompt import SYSTEM_PROMPT
 from .state import AgentState
-from tools.registry import ToolExecutionError, ToolRegistry
+from tools.registry import ToolRegistry
 
 
 class ModelClient(Protocol):
@@ -81,41 +81,27 @@ class AgentLoop:
                 }
             )
             for call in calls:
-                try:
-                    result = self.registry.execute(
-                        call["name"],
-                        call["arguments"],
-                        context={
-                            "dataset": state.dataset,
-                            "dataset_context": state.dataset_context,
-                            "schema": state.schema,
-                            "iteration": state.iteration,
-                        },
-                    )
-                    observation = {
-                        "status": "ok",
-                        "tool": call["name"],
+                tool_result = self.registry.execute(
+                    call["name"],
+                    call["arguments"],
+                    context={
+                        "dataset": state.dataset,
+                        "dataset_context": state.dataset_context,
+                        "schema": state.schema,
                         "iteration": state.iteration,
-                        "result": result,
-                    }
-                except ToolExecutionError as error:
-                    observation = {
-                        "status": "error",
-                        "tool": call["name"],
-                        "iteration": state.iteration,
-                        "error": {
-                            "code": error.code,
-                            "message": str(error),
-                            "details": error.details,
-                            "recoverable": error.recoverable,
-                        },
-                    }
-                    self._record_observation(state, call, observation)
-                    if not error.recoverable:
+                    },
+                )
+                observation = {
+                    "tool": call["name"],
+                    "iteration": state.iteration,
+                    **tool_result,
+                }
+                self._record_observation(state, call, observation)
+                if not tool_result["ok"]:
+                    error = tool_result["error"] or {}
+                    if not error.get("recoverable", True):
                         state.stop_reason = "unrecoverable_tool_error"
                         return state
-                    continue
-                self._record_observation(state, call, observation)
 
         state.stop_reason = "max_iter"
         return state
