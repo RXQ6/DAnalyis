@@ -72,7 +72,7 @@ class ToolRegistry:
         try:
             return self._tools[name]
         except KeyError as error:
-            raise ToolExecutionError("unknown_tool", f"tool is not registered: {name}") from error
+            raise ToolExecutionError("TOOL_NOT_FOUND", f"tool is not registered: {name}") from error
 
     def execute(
         self,
