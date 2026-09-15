@@ -60,7 +60,7 @@ class AgentLoop:
         for iteration in range(1, self.max_iter + 1):
             state.iteration = iteration
             raw_decision = self.model.complete(
-                messages=copy.deepcopy(state.messages),
+                messages=self._messages_for_model(state),
                 tools=self.registry.tool_schemas(),
             )
             decision = self._normalize_decision(raw_decision, iteration)
@@ -89,6 +89,7 @@ class AgentLoop:
                         "dataset_context": state.dataset_context,
                         "schema": state.schema,
                         "iteration": state.iteration,
+                        "todos": state.todos,
                     },
                 )
                 observation = {
@@ -105,6 +106,23 @@ class AgentLoop:
 
         state.stop_reason = "max_iter"
         return state
+
+    @staticmethod
+    def _messages_for_model(state: AgentState) -> list[dict[str, Any]]:
+        messages = copy.deepcopy(state.messages)
+        if not state.todos:
+            return messages
+        messages.insert(
+            1,
+            {
+                "role": "system",
+                "content": (
+                    "当前 Todo 概览（计划状态，不代表工具已执行）："
+                    + json.dumps(state.todo_summary(), ensure_ascii=False)
+                ),
+            },
+        )
+        return messages
 
     @staticmethod
     def _record_observation(

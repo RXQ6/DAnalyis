@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .registry import ToolDefinition, ToolExecutionError, ToolRegistry
+from .todo import todo_definition
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -154,5 +155,6 @@ def build_default_registry(
                 max_result_bytes=max_result_bytes,
             )
         )
+    definitions.append(todo_definition())
     registry.register_many(definitions)
     return registry
