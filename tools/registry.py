@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import inspect
+import json
+import math
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -11,9 +13,18 @@ ToolHandler = Callable[[dict[str, Any], dict[str, Any]], Any]
 
 
 class ToolExecutionError(RuntimeError):
-    def __init__(self, code: str, message: str) -> None:
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        details: dict[str, Any] | None = None,
+        *,
+        recoverable: bool = True,
+    ) -> None:
         super().__init__(message)
         self.code = code
+        self.details = details or {}
+        self.recoverable = recoverable
 
 
 @dataclass(frozen=True)
@@ -22,6 +33,8 @@ class ToolDefinition:
     description: str
     parameter_schema: dict[str, Any]
     handler: ToolHandler
+    timeout_seconds: float = 30.0
+    max_result_bytes: int = 64 * 1024
 
 
 class ToolRegistry:
@@ -57,14 +70,19 @@ class ToolRegistry:
         *,
         context: dict[str, Any] | None = None,
     ) -> Any:
-        definition = self.get(name)
-        self._validate_arguments(definition.parameter_schema, arguments)
         try:
-            return definition.handler(arguments, context or {})
+            definition = self.get(name)
+            self._validate_arguments(definition.parameter_schema, arguments)
+            result = definition.handler(arguments, context or {})
+            return self._bounded_result(result, definition.max_result_bytes)
         except ToolExecutionError:
             raise
         except Exception as error:
-            raise ToolExecutionError("handler_error", str(error)) from error
+            raise ToolExecutionError(
+                "handler_error",
+                "tool execution failed unexpectedly",
+                {"exceptionType": type(error).__name__},
+            ) from error
 
     def tool_schemas(self) -> list[dict[str, Any]]:
         return [
@@ -114,6 +132,19 @@ class ToolRegistry:
             raise ValueError(
                 f"tool handler must accept exactly (arguments, context): {definition.name}"
             )
+        if (
+            isinstance(definition.timeout_seconds, bool)
+            or not isinstance(definition.timeout_seconds, (int, float))
+            or not math.isfinite(definition.timeout_seconds)
+            or definition.timeout_seconds <= 0
+        ):
+            raise ValueError(f"tool timeout must be a positive number: {definition.name}")
+        if (
+            isinstance(definition.max_result_bytes, bool)
+            or not isinstance(definition.max_result_bytes, int)
+            or definition.max_result_bytes < 256
+        ):
+            raise ValueError(f"tool max result bytes must be at least 256: {definition.name}")
 
     @staticmethod
     def _validate_parameter_schema(name: str, schema: dict[str, Any]) -> None:
@@ -144,22 +175,93 @@ class ToolRegistry:
             raise ValueError(f"tool parameter schema contains invalid properties: {name}")
 
     @staticmethod
+    def _bounded_result(result: Any, max_result_bytes: int) -> Any:
+        try:
+            serialized = json.dumps(result, ensure_ascii=False, separators=(",", ":"))
+        except (TypeError, ValueError) as error:
+            raise ToolExecutionError(
+                "invalid_tool_result",
+                "tool result must be JSON serializable",
+                {"exceptionType": type(error).__name__},
+            ) from error
+        original_size = len(serialized.encode("utf-8"))
+        if original_size <= max_result_bytes:
+            return result
+
+        metadata = {
+            "truncated": True,
+            "originalSizeBytes": original_size,
+            "maxResultBytes": max_result_bytes,
+        }
+        low = 0
+        high = len(serialized)
+        while low < high:
+            middle = (low + high + 1) // 2
+            candidate = {"preview": serialized[:middle], "_meta": metadata}
+            candidate_size = len(
+                json.dumps(candidate, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            )
+            if candidate_size <= max_result_bytes:
+                low = middle
+            else:
+                high = middle - 1
+        return {"preview": serialized[:low], "_meta": metadata}
+
+    @staticmethod
     def _validate_arguments(schema: dict[str, Any], arguments: dict[str, Any]) -> None:
         if not isinstance(arguments, dict):
             raise ToolExecutionError("invalid_arguments", "tool arguments must be an object")
-        properties = schema.get("properties", {})
-        missing = [name for name in schema.get("required", []) if name not in arguments]
-        if missing:
-            raise ToolExecutionError("invalid_arguments", f"missing required arguments: {', '.join(missing)}")
-        if schema.get("additionalProperties") is False:
-            unknown = [name for name in arguments if name not in properties]
-            if unknown:
-                raise ToolExecutionError("invalid_arguments", f"unknown arguments: {', '.join(unknown)}")
-        expected_types = {"string": str, "integer": int, "number": (int, float), "object": dict, "array": list}
-        for name, value in arguments.items():
-            rule = properties.get(name, {})
-            expected = expected_types.get(rule.get("type"))
-            if expected and (not isinstance(value, expected) or isinstance(value, bool)):
-                raise ToolExecutionError("invalid_arguments", f"argument {name} has invalid type")
-            if "enum" in rule and value not in rule["enum"]:
-                raise ToolExecutionError("invalid_arguments", f"argument {name} is not an allowed value")
+        ToolRegistry._validate_value(schema, arguments, "arguments")
+
+    @staticmethod
+    def _validate_value(rule: dict[str, Any], value: Any, path: str) -> None:
+        expected_types = {
+            "string": str,
+            "integer": int,
+            "number": (int, float),
+            "object": dict,
+            "array": list,
+            "boolean": bool,
+        }
+        rule_type = rule.get("type")
+        expected = expected_types.get(rule_type)
+        if expected and (
+            not isinstance(value, expected)
+            or (rule_type in {"integer", "number"} and isinstance(value, bool))
+        ):
+            raise ToolExecutionError("invalid_arguments", f"{path} has invalid type")
+        if rule_type == "number" and not math.isfinite(value):
+            raise ToolExecutionError("invalid_arguments", f"{path} must be finite")
+        if "enum" in rule and value not in rule["enum"]:
+            raise ToolExecutionError("invalid_arguments", f"{path} is not an allowed value")
+
+        if rule_type == "string":
+            if "minLength" in rule and len(value) < rule["minLength"]:
+                raise ToolExecutionError("invalid_arguments", f"{path} is too short")
+            if "maxLength" in rule and len(value) > rule["maxLength"]:
+                raise ToolExecutionError("invalid_arguments", f"{path} is too long")
+        if rule_type in {"integer", "number"}:
+            if "minimum" in rule and value < rule["minimum"]:
+                raise ToolExecutionError("invalid_arguments", f"{path} is below minimum")
+            if "maximum" in rule and value > rule["maximum"]:
+                raise ToolExecutionError("invalid_arguments", f"{path} exceeds maximum")
+        if rule_type == "array" and isinstance(rule.get("items"), dict):
+            for index, item in enumerate(value):
+                ToolRegistry._validate_value(rule["items"], item, f"{path}[{index}]")
+        if rule_type == "object":
+            properties = rule.get("properties", {})
+            missing = [name for name in rule.get("required", []) if name not in value]
+            if missing:
+                raise ToolExecutionError(
+                    "invalid_arguments", f"missing required arguments: {', '.join(missing)}"
+                )
+            if rule.get("additionalProperties") is False:
+                unknown = [name for name in value if name not in properties]
+                if unknown:
+                    raise ToolExecutionError(
+                        "invalid_arguments", f"unknown arguments: {', '.join(unknown)}"
+                    )
+            for name, item in value.items():
+                nested_rule = properties.get(name)
+                if isinstance(nested_rule, dict):
+                    ToolRegistry._validate_value(nested_rule, item, f"{path}.{name}")

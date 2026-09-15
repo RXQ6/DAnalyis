@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
+import subprocess
 import unittest
 from typing import Any
+from unittest.mock import patch
 
-from tools.handlers import build_default_registry
+from tools.handlers import NodeToolBridge, build_default_registry
 from tools.registry import ToolDefinition, ToolExecutionError, ToolRegistry
 
 
@@ -25,8 +28,14 @@ class RecordingBridge:
         self.calls: list[str] = []
 
     def execute(
-        self, name: str, arguments: dict[str, Any], context: dict[str, Any]
+        self,
+        name: str,
+        arguments: dict[str, Any],
+        context: dict[str, Any],
+        *,
+        timeout_seconds: float = 30.0,
     ) -> dict[str, Any]:
+        del arguments, context, timeout_seconds
         self.calls.append(name)
         return {"name": name}
 
@@ -127,6 +136,123 @@ class ToolRegistryTests(unittest.TestCase):
                 "top_n",
             ],
         )
+
+    def test_nested_arguments_and_numeric_bounds_are_validated(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "bounded",
+                "bounded test tool",
+                {
+                    "type": "object",
+                    "properties": {
+                        "count": {"type": "integer", "minimum": 1, "maximum": 3},
+                        "options": {
+                            "type": "object",
+                            "properties": {"label": {"type": "string", "minLength": 1}},
+                            "required": ["label"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "required": ["count", "options"],
+                    "additionalProperties": False,
+                },
+                handler,
+            )
+        )
+
+        for arguments in (
+            {"count": 0, "options": {"label": "ok"}},
+            {"count": 1, "options": {"label": ""}},
+            {"count": 1, "options": {"label": "ok", "extra": True}},
+        ):
+            with self.subTest(arguments=arguments):
+                with self.assertRaises(ToolExecutionError) as raised:
+                    registry.execute("bounded", arguments)
+                self.assertEqual(raised.exception.code, "invalid_arguments")
+
+    def test_unexpected_handler_exception_is_sanitized(self) -> None:
+        def failing_handler(arguments: dict[str, Any], context: dict[str, Any]) -> None:
+            del arguments, context
+            raise RuntimeError("sensitive implementation detail")
+
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition("failing", "failing tool", schema(), failing_handler)
+        )
+
+        with self.assertRaises(ToolExecutionError) as raised:
+            registry.execute("failing", {})
+
+        self.assertEqual(raised.exception.code, "handler_error")
+        self.assertNotIn("sensitive", str(raised.exception))
+        self.assertEqual(raised.exception.details, {"exceptionType": "RuntimeError"})
+
+    def test_large_result_is_truncated_to_a_json_safe_preview(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "large",
+                "large result tool",
+                schema(),
+                lambda arguments, context: {"rows": ["数据" * 1000]},
+                max_result_bytes=512,
+            )
+        )
+
+        result = registry.execute("large", {})
+
+        self.assertTrue(result["_meta"]["truncated"])
+        self.assertGreater(result["_meta"]["originalSizeBytes"], 512)
+        self.assertLessEqual(
+            len(json.dumps(result, ensure_ascii=False, separators=(",", ":")).encode("utf-8")),
+            512,
+        )
+
+    def test_default_catalog_rejects_out_of_range_top_n_before_handler(self) -> None:
+        bridge = RecordingBridge()
+        registry = build_default_registry(bridge=bridge)
+
+        with self.assertRaises(ToolExecutionError) as raised:
+            registry.execute("top_n", {"metric": "销售额", "count": 1001})
+
+        self.assertEqual(raised.exception.code, "invalid_arguments")
+        self.assertEqual(bridge.calls, [])
+
+    def test_node_bridge_timeout_has_a_stable_error(self) -> None:
+        timeout = subprocess.TimeoutExpired(cmd=["node"], timeout=0.25)
+        with patch("tools.handlers.subprocess.run", side_effect=timeout) as run:
+            with self.assertRaises(ToolExecutionError) as raised:
+                NodeToolBridge().execute(
+                    "inspect_data", {}, {"dataset": "data.csv"}, timeout_seconds=0.25
+                )
+
+        self.assertEqual(raised.exception.code, "tool_timeout")
+        self.assertEqual(raised.exception.details, {"timeoutSeconds": 0.25})
+        self.assertEqual(run.call_args.kwargs["timeout"], 0.25)
+
+    def test_node_bridge_preserves_structured_error_details(self) -> None:
+        response = subprocess.CompletedProcess(
+            args=["node"],
+            returncode=1,
+            stdout=json.dumps(
+                {
+                    "status": "error",
+                    "error": {
+                        "code": "dirty_numeric_data",
+                        "message": "数据不干净",
+                        "invalidCount": 3,
+                    },
+                }
+            ),
+            stderr="",
+        )
+        with patch("tools.handlers.subprocess.run", return_value=response):
+            with self.assertRaises(ToolExecutionError) as raised:
+                NodeToolBridge().execute("basic_stats", {}, {"dataset": "data.csv"})
+
+        self.assertEqual(raised.exception.code, "dirty_numeric_data")
+        self.assertEqual(raised.exception.details, {"invalidCount": 3})
 
 
 if __name__ == "__main__":

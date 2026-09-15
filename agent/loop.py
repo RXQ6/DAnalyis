@@ -103,11 +103,18 @@ class AgentLoop:
                         "status": "error",
                         "tool": call["name"],
                         "iteration": state.iteration,
-                        "error": {"code": error.code, "message": str(error)},
+                        "error": {
+                            "code": error.code,
+                            "message": str(error),
+                            "details": error.details,
+                            "recoverable": error.recoverable,
+                        },
                     }
                     self._record_observation(state, call, observation)
-                    state.stop_reason = "unrecoverable_tool_error"
-                    return state
+                    if not error.recoverable:
+                        state.stop_reason = "unrecoverable_tool_error"
+                        return state
+                    continue
                 self._record_observation(state, call, observation)
 
         state.stop_reason = "max_iter"
@@ -177,4 +184,3 @@ class AgentLoop:
                 }
             )
         return {"type": "tool_calls", "content": raw.get("content"), "tool_calls": calls}
-

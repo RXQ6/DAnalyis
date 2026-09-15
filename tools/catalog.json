@@ -1,4 +1,8 @@
 {
+  "executionDefaults": {
+    "timeoutSeconds": 30,
+    "maxResultBytes": 65536
+  },
   "tools": [
     {
       "name": "inspect_data",
@@ -16,7 +20,7 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "metric": { "type": "string" },
+          "metric": { "type": "string", "minLength": 1 },
           "operation": {
             "type": "string",
             "enum": ["sum", "average", "count", "minimum", "maximum"]
@@ -32,8 +36,8 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "groupBy": { "type": "string" },
-          "metric": { "type": "string" },
+          "groupBy": { "type": "string", "minLength": 1 },
+          "metric": { "type": "string", "minLength": 1 },
           "operation": {
             "type": "string",
             "enum": ["sum", "average", "count", "minimum", "maximum"]
@@ -49,8 +53,8 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "dateField": { "type": "string" },
-          "metric": { "type": "string" },
+          "dateField": { "type": "string", "minLength": 1 },
+          "metric": { "type": "string", "minLength": 1 },
           "operation": {
             "type": "string",
             "enum": ["sum", "average", "count", "minimum", "maximum"]
@@ -67,7 +71,7 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "metric": { "type": "string" }
+          "metric": { "type": "string", "minLength": 1 }
         },
         "required": ["metric"],
         "additionalProperties": false
@@ -79,9 +83,9 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "metric": { "type": "string" },
-          "label": { "type": "string" },
-          "count": { "type": "integer" }
+          "metric": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "count": { "type": "integer", "minimum": 1, "maximum": 1000 }
         },
         "required": ["metric", "count"],
         "additionalProperties": false
