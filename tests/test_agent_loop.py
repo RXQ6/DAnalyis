@@ -120,6 +120,47 @@ class AgentLoopTests(unittest.TestCase):
         self.assertEqual(state.execution_trace[0]["observation"]["error"]["code"], "unknown_tool")
         self.assertEqual(state.messages[-1]["role"], "tool")
 
+    def test_agent_loop_executes_a_custom_registered_tool_without_tool_specific_code(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            ToolDefinition(
+                "custom_metric",
+                "custom test tool",
+                {
+                    "type": "object",
+                    "properties": {"value": {"type": "integer"}},
+                    "required": ["value"],
+                    "additionalProperties": False,
+                },
+                lambda arguments, context: {
+                    "doubled": arguments["value"] * 2,
+                    "iteration": context["iteration"],
+                },
+            )
+        )
+
+        def final_after_custom_tool(messages: list[dict[str, Any]]) -> dict[str, Any]:
+            observation = json.loads(messages[-1]["content"])
+            self.assertEqual(observation["result"], {"doubled": 42, "iteration": 1})
+            return {"type": "final_answer", "content": "自定义工具执行完成。"}
+
+        model = ScriptedModel(
+            [
+                {
+                    "type": "tool_call",
+                    "id": "custom-1",
+                    "name": "custom_metric",
+                    "arguments": {"value": 21},
+                },
+                final_after_custom_tool,
+            ]
+        )
+
+        state = AgentLoop(model, registry).run("执行自定义工具", dataset="unused.csv")
+
+        self.assertEqual(state.stop_reason, "final_answer")
+        self.assertEqual([call["name"] for call in state.tool_calls], ["custom_metric"])
+
     def test_default_registry_exposes_current_tools(self) -> None:
         names = {item["function"]["name"] for item in build_default_registry().tool_schemas()}
         self.assertTrue({"inspect_data", "basic_stats", "group_compare", "trend_analysis", "detect_anomaly"}.issubset(names))
@@ -131,4 +172,3 @@ class AgentLoopTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

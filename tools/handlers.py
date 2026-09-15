@@ -13,6 +13,7 @@ from .registry import ToolDefinition, ToolExecutionError, ToolRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BRIDGE = ROOT / "src" / "tool_bridge.js"
+DEFAULT_CATALOG = ROOT / "tools" / "catalog.json"
 
 
 class NodeToolBridge:
@@ -47,31 +48,52 @@ class NodeToolBridge:
         return response["result"]
 
 
-def _schema(properties: dict[str, Any], required: list[str]) -> dict[str, Any]:
-    return {"type": "object", "properties": properties, "required": required, "additionalProperties": False}
+def _bridge_handler(bridge: NodeToolBridge, tool_name: str):
+    """Bind one tool name without relying on a loop variable closure."""
+
+    def handler(arguments: dict[str, Any], context: dict[str, Any]) -> Any:
+        return bridge.execute(tool_name, arguments, context)
+
+    return handler
+
+
+def _load_catalog(catalog_path: Path) -> list[dict[str, Any]]:
+    try:
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise ValueError(f"unable to load tool catalog: {catalog_path}") from error
+    tools = catalog.get("tools") if isinstance(catalog, dict) else None
+    if not isinstance(tools, list):
+        raise ValueError("tool catalog must contain a tools array")
+    return tools
 
 
 def build_default_registry(
-    *, node_binary: str | None = None, bridge_path: Path | None = None
+    *,
+    node_binary: str | None = None,
+    bridge_path: Path | None = None,
+    catalog_path: Path | None = None,
+    bridge: NodeToolBridge | None = None,
 ) -> ToolRegistry:
-    bridge = NodeToolBridge(node_binary=node_binary, bridge_path=bridge_path)
+    active_bridge = bridge or NodeToolBridge(node_binary=node_binary, bridge_path=bridge_path)
     registry = ToolRegistry()
-    definitions = [
-        ("inspect_data", "Inspect columns, types, missing values and row count.", _schema({}, [])),
-        ("basic_stats", "Calculate sum, average, count, minimum or maximum for one field.", _schema({"metric": {"type": "string"}, "operation": {"type": "string", "enum": ["sum", "average", "count", "minimum", "maximum"]}}, ["metric", "operation"])),
-        ("group_compare", "Aggregate a numeric metric by a category.", _schema({"groupBy": {"type": "string"}, "metric": {"type": "string"}, "operation": {"type": "string", "enum": ["sum", "average", "count", "minimum", "maximum"]}}, ["groupBy", "metric", "operation"])),
-        ("trend_analysis", "Aggregate a numeric metric over a date field; optional equality filters narrow the rows.", _schema({"dateField": {"type": "string"}, "metric": {"type": "string"}, "operation": {"type": "string", "enum": ["sum", "average", "count", "minimum", "maximum"]}, "filters": {"type": "object"}}, ["dateField", "metric", "operation"])),
-        ("detect_anomaly", "Detect numeric outliers using the deterministic 1.5 IQR rule.", _schema({"metric": {"type": "string"}}, ["metric"])),
-        ("top_n", "Return the highest N records for a numeric metric.", _schema({"metric": {"type": "string"}, "label": {"type": "string"}, "count": {"type": "integer"}}, ["metric", "count"])),
-    ]
-    for name, description, parameter_schema in definitions:
-        registry.register(
+    definitions = []
+    for item in _load_catalog(catalog_path or DEFAULT_CATALOG):
+        if not isinstance(item, dict):
+            raise ValueError("tool catalog entries must be objects")
+        try:
+            name = item["name"]
+            description = item["description"]
+            parameter_schema = item["parameters"]
+        except KeyError as error:
+            raise ValueError(f"tool catalog entry is missing {error.args[0]}") from error
+        definitions.append(
             ToolDefinition(
                 name=name,
                 description=description,
                 parameter_schema=parameter_schema,
-                handler=lambda arguments, context, tool_name=name: bridge.execute(tool_name, arguments, context),
+                handler=_bridge_handler(active_bridge, name),
             )
         )
+    registry.register_many(definitions)
     return registry
-
