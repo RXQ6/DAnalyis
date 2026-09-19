@@ -2,7 +2,7 @@
 
 ## 1. 范围
 
-Day8 在现有 P0 数据读取、统计、分组、趋势和异常分析工具之上增加受控的多步执行机制。该变化不推倒重构现有项目结构，不改变 P0 / P1 功能范围，也不提前设计 Day9 安全层、RAG、Memory 或 Multi-Agent。
+Day8 在现有 P0 数据读取、统计、分组、趋势和异常分析工具之上增加受控的多步执行机制。P1 图表能力继续复用该执行机制和现有分析结果，不推倒重构现有项目结构。
 
 ## 2. 执行链路
 
@@ -46,7 +46,8 @@ AgentState 保存一次任务执行期间的最小状态，包括：
 - 可供下一轮 LLM 决策使用的消息上下文。
 - 当前执行状态与最终 `stop_reason`。
 
-AgentState 仅在当前任务内使用。本阶段不提供跨任务 Memory，也不承担历史对话产品能力。
+AgentState 仅在当前一次 `AgentLoop.run()` 内使用。P1 历史对话由外层
+`ConversationRunner` 管理，不把跨轮生命周期塞入 Agent Loop。
 
 ### ToolRegistry
 
@@ -112,4 +113,118 @@ truncated
 - 现有输入校验、数据画像、统计、分组、趋势和异常工具继续保留。
 - Day8 只在现有工具调用链外增加 AgentLoop、AgentState 和 ToolRegistry。
 - P0 评测指标及 `tests/eval_cases.md` 保持不变。
-- P1 的图表、多文件和历史对话仍按原计划执行，不在 Day8 架构中提前实现。
+- P1 第一版图表已按下述最小链路接入；多文件和历史对话仍按原计划执行。
+
+## 7. P1 第一版图表链路
+
+图表生成遵循 `分析 ToolResult → Chart Spec → SVG`：
+
+```text
+group_compare / top_n / trend_analysis
+  → 标准 ToolResult
+  → generate_chart(sourceCallId, chartType)
+  → 从当前运行的 prior ToolResult 读取真实数据
+  → 结构化 Chart Spec
+  → 确定性 SVG renderer
+  → spec + artifact ToolResult
+```
+
+- `generate_chart` 通过 Tool Registry 注册，Agent Loop 不包含图表工具名称或数据映射逻辑。
+- 模型只能提交来源调用 ID、图表类型和可选标题，不能提交或覆盖图表数据点。
+- `group_compare`、`top_n` 支持柱状图，`trend_analysis` 支持折线图。
+- 失败、截断、来源不兼容或超过 100 个点的 ToolResult 不生成图表。
+- artifact 只能写入调用方提供的受控目录；第一版输出 SVG，不引入第三方渲染依赖。
+
+## 8. P1 第一版多文件链路
+
+多文件由任务级 `DatasetRegistry` 管理。Registry 保存 `dataset_id → 可信文件路径`、文件指纹、安全摘要和派生 lineage；模型只看到文件名、字段、类型、行数和日期范围等摘要。
+
+```text
+多个 CSV/XLSX
+  → DatasetRegistry 注册并生成唯一 dataset_id
+  → 安全摘要进入 Agent 上下文
+  → 现有分析工具(datasetId)
+  → compare_datasets 引用真实 ToolResult
+  → 可选 generate_chart
+```
+
+受控 merge 使用独立的两阶段链路：
+
+```text
+inspect_merge
+  → 检查字段、类型、空 key、重复 key、join 基数和输出行数
+  → 成功且无风险的 preflight ToolResult
+  → merge_datasets(preflightCallId)
+  → 重新核对文件指纹和计划
+  → 生成并注册派生 dataset_id
+```
+
+- 第一版 merge 只支持一对一的 `inner` 和 `left join`。
+- 一对多、多对一、多对多、类型不兼容、空 key 和过大输出均阻止执行。
+- merge 结果写入 Registry 受控目录，ToolResult 只返回摘要和 lineage，不返回完整数据行。
+- 未启用 DatasetRegistry 时，原单文件路径和 P0 行为保持不变。
+
+## 9. P1 第一版历史对话链路
+
+历史对话在 Agent Loop 外增加会话编排层，不改变现有工具决策主循环：
+
+```text
+ConversationRunner / ConversationState
+  → 注入历史 messages、活动 dataset 摘要、历史 ToolResult 和未完成 Todo
+  → AgentLoop.run()
+  → 当前轮 ToolResult / Final Answer
+  → 更新临时 ConversationState
+```
+
+- `ConversationState` 保存 `current_dataset_id`、`last_dataset_ids`、
+  `last_metric`、`last_group`、`last_time_range`、最近消息、可复用 ToolResult
+  和未完成 Todo。
+- 同一会话复用 DatasetRegistry；模型与工具默认只能访问当前活动 dataset ID。
+- 上传新文件默认替换活动数据集。旧 Registry 映射可以保留，但旧 ToolResult
+  不再注入当前工具上下文，防止混用旧文件。
+- 历史 ToolResult 可继续被 `generate_chart`、`compare_datasets` 等现有注册工具引用；
+  当前轮 ToolResult 始终排在历史结果之后并优先匹配。
+- 会话状态只存在于当前 `ConversationRunner` 生命周期，不写入长期 Memory。
+  长期偏好仍通过现有显式 `remember` 写入 KV / Semantic Memory。
+- 未配置 Historical Summary 时最多直接回放最近 12 轮，并保留最多 24 条可复用 ToolResult。
+- 信息不足时模型可返回 `needs_user_input`，未完成 Todo 可在同一会话下一轮继续。
+
+## 10. Context Compression 上下文视图
+
+Context Compression 只作用于 `model.complete()` 前的消息深拷贝，不修改
+`AgentState.messages`、ToolResult、Todo、Memory 或 DatasetRegistry：
+
+```text
+ConversationState 完整 turns
+  → HistoricalSummaryCompactor（每个会话轮次最多一次、达到阈值时）
+  → 较老历史摘要 + 最近原文 turns
+  → AgentState / messages
+  → Todo summary
+  → ContextCompressor（达到阈值时）
+  → 临时 ContextView
+  → model.complete()
+
+ToolRegistry / Tool Handler
+  ← 始终读取完整 state 和完整 previous_tool_results
+```
+
+- 默认总上下文达到 28,000 字符、消息达到 36 条、单条 ToolResult 达到 8,000 字符，
+  或 Dataset profile 达到 80 列时触发；目标总视图约 20,000 字符。
+- system prompt、当前用户问题、当前任务 Todo 和最新 ToolResult 优先保留。
+- 历史消息按完整 turn 截断，不产生孤立 tool call / tool message。
+- 旧 ToolResult 去除执行耗时、空错误等传输字段；会话中更旧结果只保留 call ID、
+  工具名和参数引用，真实结果仍完整保存在 ConversationState。
+- Todo 保留进行中/待处理项，已完成项只展示数量和最近若干项。
+- Memory 视图触发后限制为 2,000 字符并优先保留 KV；底层 recall 和 Memory 数据不变。
+- Dataset profile 默认最多展示 40 个字段名，当前问题相关字段优先，并输出
+  `omittedColumnCount`；真实 Dataset metadata 不变。
+- 压缩器异常时 Agent Loop 记录 `context_errors` 并将原始上下文传给模型，任务继续执行。
+- Historical Summary 是 `ConversationRunner` 的可选依赖，不改变 Agent Loop。默认历史达到
+  48,000 字符、可摘要旧历史达到 24,000 字符且至少 6 个完整 turn 时触发；最近 4 轮保留原文。
+- 若全局最新 ToolResult 位于最近 4 轮之外，其所在 turn 会额外固定为原文，不进入摘要。
+- 摘要按 conversation/source hash 缓存；少于 2 个新旧 turn 且新增旧历史不足 8,000 字符时
+  复用摘要，并把尚未覆盖的 turn 继续作为原文传入，不会每轮重新摘要。
+- 摘要只允许结构化意图、动作、约束、不确定上下文和成功 ToolResult 引用；不确定内容进入
+  confirmed 区域、引用未知/失败 call ID、超长或非法输出都会触发 fallback。
+- Historical Summary 失败时恢复现有最近 12 轮视图，并继续经过规则型 Context Compression
+  v1.1；两层都只修改 LLM 视图，不修改 ConversationState、ToolResult 或 DatasetRegistry。
