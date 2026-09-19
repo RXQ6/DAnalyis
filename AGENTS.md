@@ -30,3 +30,14 @@
 ## 进度记录规则
 
 - 每个阶段性开发任务完成并通过相关测试/回归后，自动根据当前真实代码和测试结果更新 `processed.md`；不要记录 Agent 运行时 Todo，不要编造未完成内容，不要修改业务代码或评测标准来配合进度记录。
+
+## Memory 长期规则
+
+- Memory 只提供上下文，不控制 Agent Loop，也不替代 Todo / Tool Registry。
+- 当前文件数据和 ToolResult 优先于历史 Memory。
+- 不把完整 CSV / XLSX、全部对话、Todo、工具 Observation 自动写入长期 Memory。
+- 第一版长期 Memory 使用显式 remember。
+- Memory 改动尽量保持最小侵入。
+- Memory 改动后必须运行 Memory 专项测试、P0 和 robustness 回归。
+- 阶段完成并验证通过后更新 `processed.md`。
+- 只有长期项目规则变化时才修改 `AGENTS.md`。
