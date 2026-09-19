@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "passedCases": 5,
+  "totalCases": 5,
+  "cases": [
+    {
+      "caseId": "MF-01",
+      "passed": true,
+      "ok": true,
+      "errorCode": null
+    },
+    {
+      "caseId": "MF-02",
+      "passed": true,
+      "ok": true,
+      "errorCode": null
+    },
+    {
+      "caseId": "MF-03",
+      "passed": true,
+      "ok": true,
+      "errorCode": null
+    },
+    {
+      "caseId": "MF-04",
+      "passed": true,
+      "ok": false,
+      "errorCode": "unsafe_merge_plan"
+    },
+    {
+      "caseId": "MF-05",
+      "passed": true,
+      "ok": false,
+      "errorCode": "missing_join_field"
+    }
+  ]
+}
