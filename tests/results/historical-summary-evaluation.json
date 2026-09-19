@@ -1,0 +1,125 @@
+{
+  "passed": true,
+  "passedCases": 8,
+  "totalCases": 8,
+  "cases": [
+    {
+      "caseId": "HS-01",
+      "passed": true,
+      "details": {
+        "phase": "historical_summary",
+        "triggered": false,
+        "fallback": false,
+        "historyChars": 2372,
+        "eligibleChars": 1186,
+        "eligibleTurns": 2,
+        "recentRawTurns": 2,
+        "pinnedRawTurns": 0,
+        "policy": {
+          "trigger_history_chars": 100000,
+          "trigger_eligible_chars": 100000,
+          "min_eligible_turns": 2,
+          "keep_recent_turns": 2,
+          "refresh_new_turns": 2,
+          "refresh_new_chars": 100000,
+          "max_summary_chars": 4000
+        }
+      }
+    },
+    {
+      "caseId": "HS-02",
+      "passed": true,
+      "details": {
+        "phase": "historical_summary",
+        "triggered": true,
+        "fallback": false,
+        "historyChars": 30326,
+        "eligibleChars": 24250,
+        "eligibleTurns": 16,
+        "recentRawTurns": 4,
+        "pinnedRawTurns": 0,
+        "policy": {
+          "trigger_history_chars": 1,
+          "trigger_eligible_chars": 1,
+          "min_eligible_turns": 2,
+          "keep_recent_turns": 4,
+          "refresh_new_turns": 2,
+          "refresh_new_chars": 100000,
+          "max_summary_chars": 4000
+        },
+        "summaryReused": false,
+        "coveredTurns": 16,
+        "uncoveredRawTurns": 0,
+        "summaryChars": 476,
+        "viewChars": 6531,
+        "sourceHash": "c9bf6fadeeb8ee63d855ed1b8d18fe5334fb8f88976f4671313cae7bc1910b30",
+        "originalChars": 29595,
+        "reductionRatio": 0.7793,
+        "factRefsConsistent": true,
+        "confirmedToolRefs": [
+          {
+            "callId": "call-1",
+            "toolName": "basic_stats"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "HS-03",
+      "passed": true,
+      "details": {
+        "conversationStateUnchanged": true
+      }
+    },
+    {
+      "caseId": "HS-04",
+      "passed": true,
+      "details": {
+        "summaryCalls": 1,
+        "sameSourceReused": true,
+        "uncoveredRawTurns": 1
+      }
+    },
+    {
+      "caseId": "HS-05",
+      "passed": true,
+      "details": {
+        "modelFailureFallback": true,
+        "unsafeSummaryFallback": true,
+        "fallbackTo": "context_compression_v1_1"
+      }
+    },
+    {
+      "caseId": "HS-06",
+      "passed": true,
+      "details": {
+        "protected": {
+          "system": true,
+          "currentUser": true,
+          "taskGoal": true,
+          "latestToolResult": true
+        },
+        "answer": "上下文完整。"
+      }
+    },
+    {
+      "caseId": "HS-07",
+      "passed": true,
+      "details": {
+        "baselineAnswer": "最新结果为 6。",
+        "summaryAnswer": "最新结果为 6。",
+        "semanticEqual": true
+      }
+    },
+    {
+      "caseId": "HS-08",
+      "passed": true,
+      "details": {
+        "summaryFallback": true,
+        "fallbackTo": "context_compression_v1_1",
+        "v11Triggered": true,
+        "answer": "上下文完整。"
+      }
+    }
+  ]
+}

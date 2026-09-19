@@ -1,0 +1,157 @@
+{
+  "passed": true,
+  "passedCases": 9,
+  "totalCases": 9,
+  "cases": [
+    {
+      "caseId": "CTX-01",
+      "passed": true,
+      "details": {
+        "triggered": false,
+        "originalChars": 7554,
+        "viewChars": 7554,
+        "strategies": [],
+        "triggerReasons": [],
+        "policy": {
+          "trigger_total_chars": 28000,
+          "target_total_chars": 20000,
+          "single_tool_result_chars": 8000,
+          "message_count_trigger": 36,
+          "dataset_column_trigger": 80,
+          "dataset_profile_column_limit": 40,
+          "keep_recent_turns": 4,
+          "keep_recent_tool_results": 4,
+          "memory_view_chars": 2000,
+          "keep_completed_todos": 3
+        }
+      }
+    },
+    {
+      "caseId": "CTX-02",
+      "passed": true,
+      "details": {
+        "triggered": true,
+        "originalChars": 89689,
+        "viewChars": 22373,
+        "strategies": [
+          "tool_result_metadata",
+          "history_turn_truncation"
+        ],
+        "triggerReasons": [
+          "total_chars",
+          "message_count"
+        ],
+        "removedHistoryTurns": 9,
+        "latestToolResultPreserved": true,
+        "policy": {
+          "trigger_total_chars": 28000,
+          "target_total_chars": 20000,
+          "single_tool_result_chars": 8000,
+          "message_count_trigger": 36,
+          "dataset_column_trigger": 80,
+          "dataset_profile_column_limit": 40,
+          "keep_recent_turns": 4,
+          "keep_recent_tool_results": 4,
+          "memory_view_chars": 2000,
+          "keep_completed_todos": 3
+        },
+        "reductionRatio": 0.7505,
+        "systemPreserved": true,
+        "currentUserPreserved": true,
+        "oldMessagesReduced": true
+      }
+    },
+    {
+      "caseId": "CTX-03",
+      "passed": true,
+      "details": {
+        "stateUnchanged": true
+      }
+    },
+    {
+      "caseId": "CTX-04",
+      "passed": true,
+      "details": {
+        "stopReason": "final_answer",
+        "contextErrors": [
+          {
+            "phase": "compression",
+            "error_type": "RuntimeError"
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "CTX-05",
+      "passed": true,
+      "details": {
+        "taskGoal": [
+          {
+            "id": "goal",
+            "content": "比较华东销售额",
+            "status": "in_progress"
+          }
+        ],
+        "pending": [
+          {
+            "id": "chart",
+            "content": "生成趋势图",
+            "status": "pending"
+          }
+        ],
+        "completedCount": 5,
+        "visibleCompleted": 3
+      }
+    },
+    {
+      "caseId": "CTX-06",
+      "passed": true,
+      "details": {
+        "memoryViewChars": 291,
+        "kvPreserved": true
+      }
+    },
+    {
+      "caseId": "CTX-07",
+      "passed": true,
+      "details": {
+        "originalColumns": 1200,
+        "visibleColumnNames": 40,
+        "compactProfileChars": 586,
+        "originalProfileChars": 98809,
+        "profileReductionRatio": 0.9941,
+        "hasBoundedColumnView": true,
+        "sourceMetadataUnchanged": true,
+        "omittedColumnCount": 1160,
+        "profileUsesTypeGroups": true,
+        "relevantColumn": [
+          {
+            "name": "销售额",
+            "type": "number",
+            "missing": 0,
+            "nonEmpty": 100,
+            "distinct": 20
+          }
+        ]
+      }
+    },
+    {
+      "caseId": "CTX-08",
+      "passed": true,
+      "details": {
+        "uncompressedAnswer": "销售额总和为 1580。",
+        "compressedAnswer": "销售额总和为 1580。",
+        "toolResultEqual": true
+      }
+    },
+    {
+      "caseId": "CTX-09",
+      "passed": true,
+      "details": {
+        "uncompressedAnswer": "两个文件结果为 [30, 100]。",
+        "compressedAnswer": "两个文件结果为 [30, 100]。",
+        "toolResultEqual": true
+      }
+    }
+  ]
+}

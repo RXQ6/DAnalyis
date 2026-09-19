@@ -1,0 +1,254 @@
+{
+  "passed": true,
+  "passedCases": 5,
+  "totalCases": 5,
+  "cases": [
+    {
+      "caseId": "CHART-01",
+      "passed": true,
+      "toolChain": [
+        "trend_analysis",
+        "generate_chart"
+      ],
+      "chartTrace": {
+        "arguments": {
+          "sourceCallId": "trend-1",
+          "chartType": "line"
+        },
+        "success": true,
+        "spec": {
+          "version": "1.0",
+          "chartType": "line",
+          "title": "销售额总和趋势",
+          "data": {
+            "values": [
+              {
+                "x": "2026-01-01",
+                "y": 300
+              },
+              {
+                "x": "2026-01-02",
+                "y": 1150
+              },
+              {
+                "x": "2026-01-03",
+                "y": 130
+              }
+            ]
+          },
+          "encoding": {
+            "x": {
+              "field": "x",
+              "type": "temporal",
+              "title": "日期"
+            },
+            "y": {
+              "field": "y",
+              "type": "quantitative",
+              "title": "销售额"
+            }
+          },
+          "meta": {
+            "sourceCallId": "trend-1",
+            "sourceTool": "trend_analysis",
+            "metric": "销售额",
+            "operation": "sum",
+            "pointCount": 3
+          }
+        },
+        "artifact": {
+          "mediaType": "image/svg+xml",
+          "width": 800,
+          "height": 480,
+          "sha256": "7964cf433fbff50bee45f479131da6b58aa8562c151071f12cce9d15c4dc3c39"
+        },
+        "error": null
+      },
+      "failures": []
+    },
+    {
+      "caseId": "CHART-02",
+      "passed": true,
+      "toolChain": [
+        "group_compare",
+        "generate_chart"
+      ],
+      "chartTrace": {
+        "arguments": {
+          "sourceCallId": "group-1",
+          "chartType": "bar"
+        },
+        "success": true,
+        "spec": {
+          "version": "1.0",
+          "chartType": "bar",
+          "title": "按地区统计销售额总和",
+          "data": {
+            "values": [
+              {
+                "x": "华南",
+                "y": 1200
+              },
+              {
+                "x": "华东",
+                "y": 380
+              }
+            ]
+          },
+          "encoding": {
+            "x": {
+              "field": "x",
+              "type": "nominal",
+              "title": "地区"
+            },
+            "y": {
+              "field": "y",
+              "type": "quantitative",
+              "title": "销售额"
+            }
+          },
+          "meta": {
+            "sourceCallId": "group-1",
+            "sourceTool": "group_compare",
+            "metric": "销售额",
+            "operation": "sum",
+            "pointCount": 2
+          }
+        },
+        "artifact": {
+          "mediaType": "image/svg+xml",
+          "width": 800,
+          "height": 480,
+          "sha256": "608a486f3394b6d11f9a9ddb565500014240be91cb799c446eb59c2d01463e19"
+        },
+        "error": null
+      },
+      "failures": []
+    },
+    {
+      "caseId": "CHART-03",
+      "passed": true,
+      "toolChain": [
+        "top_n",
+        "generate_chart"
+      ],
+      "chartTrace": {
+        "arguments": {
+          "sourceCallId": "top-1",
+          "chartType": "bar"
+        },
+        "success": true,
+        "spec": {
+          "version": "1.0",
+          "chartType": "bar",
+          "title": "销售额排名",
+          "data": {
+            "values": [
+              {
+                "x": "B",
+                "y": 700
+              },
+              {
+                "x": "F",
+                "y": 600
+              },
+              {
+                "x": "D",
+                "y": 500
+              },
+              {
+                "x": "G",
+                "y": 400
+              },
+              {
+                "x": "C",
+                "y": 300
+              }
+            ]
+          },
+          "encoding": {
+            "x": {
+              "field": "x",
+              "type": "nominal",
+              "title": "项目"
+            },
+            "y": {
+              "field": "y",
+              "type": "quantitative",
+              "title": "销售额"
+            }
+          },
+          "meta": {
+            "sourceCallId": "top-1",
+            "sourceTool": "top_n",
+            "metric": "销售额",
+            "operation": null,
+            "pointCount": 5
+          }
+        },
+        "artifact": {
+          "mediaType": "image/svg+xml",
+          "width": 800,
+          "height": 480,
+          "sha256": "a2280ac989f3192dfed33e5a52521f947dc5390d9913e2db98c6d58543e3c571"
+        },
+        "error": null
+      },
+      "failures": []
+    },
+    {
+      "caseId": "CHART-04",
+      "passed": true,
+      "toolChain": [
+        "group_compare",
+        "generate_chart"
+      ],
+      "chartTrace": {
+        "arguments": {
+          "sourceCallId": "group-wrong",
+          "chartType": "line"
+        },
+        "success": false,
+        "spec": null,
+        "artifact": {},
+        "error": {
+          "code": "incompatible_chart_type",
+          "message": "group_compare only supports bar charts",
+          "details": {
+            "sourceTool": "group_compare",
+            "requestedChartType": "line",
+            "supportedChartType": "bar"
+          },
+          "recoverable": true
+        }
+      },
+      "failures": []
+    },
+    {
+      "caseId": "CHART-05",
+      "passed": true,
+      "toolChain": [
+        "basic_stats",
+        "generate_chart"
+      ],
+      "chartTrace": {
+        "arguments": {
+          "sourceCallId": "stats-1",
+          "chartType": "bar"
+        },
+        "success": false,
+        "spec": null,
+        "artifact": {},
+        "error": {
+          "code": "unsupported_chart_source",
+          "message": "tool result cannot be charted in the first chart version: basic_stats",
+          "details": {
+            "sourceTool": "basic_stats"
+          },
+          "recoverable": true
+        }
+      },
+      "failures": []
+    }
+  ]
+}

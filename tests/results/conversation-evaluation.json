@@ -1,0 +1,166 @@
+{
+  "passed": true,
+  "passedCases": 8,
+  "totalCases": 8,
+  "cases": [
+    {
+      "caseId": "CONV-01",
+      "description": "那华东呢继承分析对象",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-02",
+      "description": "还是看销售额继承 metric/group",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-03",
+      "description": "继续刚才两个文件恢复 dataset 与 ToolResult",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-04",
+      "description": "显式新字段覆盖旧会话状态",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-05",
+      "description": "临时 dataset/Todo 不进入长期 Memory",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-06",
+      "description": "长期偏好 recall",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-07",
+      "description": "当前 ToolResult 覆盖冲突 Memory",
+      "passed": true
+    },
+    {
+      "caseId": "CONV-08",
+      "description": "新会话不继承旧临时状态",
+      "passed": true
+    }
+  ],
+  "continuousTrace": [
+    {
+      "turn": 1,
+      "question": "按地区看销售额",
+      "toolCalls": [
+        {
+          "name": "group_compare",
+          "arguments": {
+            "datasetId": "ds_ae036a58c768",
+            "groupBy": "地区",
+            "metric": "销售额",
+            "operation": "sum"
+          }
+        }
+      ],
+      "answer": "华南销售额最高。",
+      "stopReason": "final_answer",
+      "conversationState": {
+        "currentDatasetId": "ds_ae036a58c768",
+        "lastDatasetIds": [
+          "ds_ae036a58c768"
+        ],
+        "lastMetric": "销售额",
+        "lastGroup": "地区",
+        "lastTimeRange": null,
+        "openTodos": []
+      }
+    },
+    {
+      "turn": 2,
+      "question": "还是看销售额",
+      "toolCalls": [
+        {
+          "name": "group_compare",
+          "arguments": {
+            "datasetId": "ds_ae036a58c768",
+            "groupBy": "地区",
+            "metric": "销售额",
+            "operation": "sum"
+          }
+        }
+      ],
+      "answer": "仍按地区查看销售额。",
+      "stopReason": "final_answer",
+      "conversationState": {
+        "currentDatasetId": "ds_ae036a58c768",
+        "lastDatasetIds": [
+          "ds_ae036a58c768"
+        ],
+        "lastMetric": "销售额",
+        "lastGroup": "地区",
+        "lastTimeRange": null,
+        "openTodos": []
+      }
+    },
+    {
+      "turn": 3,
+      "question": "那华东呢",
+      "toolCalls": [
+        {
+          "name": "trend_analysis",
+          "arguments": {
+            "datasetId": "ds_ae036a58c768",
+            "dateField": "日期",
+            "metric": "销售额",
+            "operation": "sum",
+            "filters": {
+              "地区": "华东"
+            }
+          }
+        }
+      ],
+      "answer": "华东销售额从 10 上升到 20。",
+      "stopReason": "final_answer",
+      "conversationState": {
+        "currentDatasetId": "ds_ae036a58c768",
+        "lastDatasetIds": [
+          "ds_ae036a58c768"
+        ],
+        "lastMetric": "销售额",
+        "lastGroup": "地区",
+        "lastTimeRange": {
+          "start": "2026-01-01",
+          "end": "2026-01-02",
+          "dateField": "日期"
+        },
+        "openTodos": []
+      }
+    },
+    {
+      "turn": 4,
+      "question": "把刚才结果画成图",
+      "toolCalls": [
+        {
+          "name": "generate_chart",
+          "arguments": {
+            "sourceCallId": "east-trend",
+            "chartType": "line"
+          }
+        }
+      ],
+      "answer": "已生成华东销售额趋势图。",
+      "stopReason": "final_answer",
+      "conversationState": {
+        "currentDatasetId": "ds_ae036a58c768",
+        "lastDatasetIds": [
+          "ds_ae036a58c768"
+        ],
+        "lastMetric": "销售额",
+        "lastGroup": "地区",
+        "lastTimeRange": {
+          "start": "2026-01-01",
+          "end": "2026-01-02",
+          "dateField": "日期"
+        },
+        "openTodos": []
+      }
+    }
+  ]
+}

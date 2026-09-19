@@ -1,0 +1,456 @@
+{
+  "schemaVersion": 1,
+  "source": "tests/eval_cases.md#P1-Evaluation-Cases",
+  "passed": true,
+  "metrics": {
+    "passedCases": 20,
+    "totalCases": 20,
+    "passRate": 1.0,
+    "averageResponseSeconds": 0.463624,
+    "maximumResponseSeconds": 0.795611,
+    "averageCostCny": 0.0,
+    "maximumCostCny": 0.0
+  },
+  "categories": {
+    "chart": {
+      "passed": 5,
+      "total": 5
+    },
+    "multifile": {
+      "passed": 7,
+      "total": 7
+    },
+    "conversation": {
+      "passed": 8,
+      "total": 8
+    }
+  },
+  "cases": [
+    {
+      "caseId": "P1-01",
+      "category": "chart",
+      "description": "根据时间序列生成折线图",
+      "inputFixture": "tests/fixtures/sales.csv",
+      "capability": "趋势 ToolResult → line chart",
+      "mappedTest": "tests/eval_chart.py CHART-01",
+      "expected": "生成 line SVG，来源为 trend_analysis",
+      "actual": {
+        "success": true,
+        "chartType": "line"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.238777,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-02",
+      "category": "chart",
+      "description": "根据类别占比生成柱状图",
+      "inputFixture": "tests/fixtures/sales.csv",
+      "capability": "类别占比 → bar chart",
+      "mappedTest": "tests/test_chart_tool.py + tests/eval_p1.py",
+      "expected": "柱高表示占比，总计为 1 或 100",
+      "actual": {
+        "success": true,
+        "values": [
+          {
+            "x": "华南",
+            "y": 0.759493670886076
+          },
+          {
+            "x": "华东",
+            "y": 0.24050632911392406
+          }
+        ],
+        "valueTotal": 1.0
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.218048,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-03",
+      "category": "chart",
+      "description": "根据两个数值字段生成散点图",
+      "inputFixture": "generated scatter.csv",
+      "capability": "scatter chart",
+      "mappedTest": "tests/test_chart_tool.py + tests/eval_p1.py",
+      "expected": "成功生成 scatter chart",
+      "actual": {
+        "success": true,
+        "chartType": "scatter"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.193197,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-04",
+      "category": "chart",
+      "description": "用户指定图表类型时正确生成",
+      "inputFixture": "tests/fixtures/sales.csv",
+      "capability": "显式 line chart",
+      "mappedTest": "tests/eval_chart.py CHART-01/04",
+      "expected": "按用户指定生成 line chart",
+      "actual": {
+        "success": true,
+        "chartType": "line"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.196234,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-05",
+      "category": "chart",
+      "description": "数据不适合画图时给出提示",
+      "inputFixture": "tests/fixtures/sales.csv",
+      "capability": "不支持的单值图表来源",
+      "mappedTest": "tests/eval_chart.py CHART-05",
+      "expected": "拒绝生成并返回 unsupported_chart_source",
+      "actual": {
+        "success": false,
+        "errorCode": "unsupported_chart_source"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.196688,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-06",
+      "category": "multifile",
+      "description": "合并两个字段一致的 CSV",
+      "inputFixture": "generated same-left.csv + same-right.csv",
+      "capability": "CSV 一对一安全合并",
+      "mappedTest": "tests/test_multifile_tools.py + tests/eval_p1.py",
+      "expected": "preflight 安全且生成派生数据集",
+      "actual": {
+        "preflightOk": true,
+        "safeToExecute": true,
+        "mergeOk": true,
+        "rowCount": 2
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.795611,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-07",
+      "category": "multifile",
+      "description": "合并两个 Excel 文件",
+      "inputFixture": "generated left.xlsx + right.xlsx",
+      "capability": "XLSX 一对一安全合并",
+      "mappedTest": "tests/eval_p1.py",
+      "expected": "preflight 安全且生成派生数据集",
+      "actual": {
+        "preflightOk": true,
+        "safeToExecute": true,
+        "mergeOk": true,
+        "rowCount": 3
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.791528,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-08",
+      "category": "multifile",
+      "description": "字段名称略有差异时提示映射问题",
+      "inputFixture": "generated 客户/客户ID CSV",
+      "capability": "join 字段映射校验",
+      "mappedTest": "tests/eval_p1.py",
+      "expected": "明确返回 missing_join_field，不执行合并",
+      "actual": {
+        "ok": false,
+        "errorCode": "missing_join_field"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.559591,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-09",
+      "category": "multifile",
+      "description": "对两个文件做同比分析",
+      "inputFixture": "generated sales-2025.csv + sales-2026.csv",
+      "capability": "跨文件同比计算",
+      "mappedTest": "tests/test_multifile_tools.py + tests/eval_p1.py",
+      "expected": "确定性返回同比变化率",
+      "actual": {
+        "ok": true,
+        "groups": [
+          {
+            "group": "sales-2025.csv",
+            "datasetId": "ds_261987f823a3",
+            "value": 50,
+            "validCount": 2
+          },
+          {
+            "group": "sales-2026.csv",
+            "datasetId": "ds_1c1eb7ee9bba",
+            "value": 100,
+            "validCount": 2
+          }
+        ],
+        "yearOverYearRate": 1.0
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.697026,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-10",
+      "category": "multifile",
+      "description": "对两个文件做分类对比",
+      "inputFixture": "generated category-a.csv + category-b.csv",
+      "capability": "跨文件分组对比",
+      "mappedTest": "tests/test_multifile_tools.py + tests/eval_p1.py",
+      "expected": "按类别比较两个文件的分组结果",
+      "actual": {
+        "ok": true,
+        "categories": [
+          {
+            "group": "B",
+            "values": [
+              {
+                "datasetId": "ds_79631190973b",
+                "filename": "category-a.csv",
+                "value": 40,
+                "validCount": 1,
+                "missing": false
+              },
+              {
+                "datasetId": "ds_41cdd804fe60",
+                "filename": "category-b.csv",
+                "value": 70,
+                "validCount": 1,
+                "missing": false
+              }
+            ]
+          },
+          {
+            "group": "A",
+            "values": [
+              {
+                "datasetId": "ds_79631190973b",
+                "filename": "category-a.csv",
+                "value": 10,
+                "validCount": 1,
+                "missing": false
+              },
+              {
+                "datasetId": "ds_41cdd804fe60",
+                "filename": "category-b.csv",
+                "value": 30,
+                "validCount": 1,
+                "missing": false
+              }
+            ]
+          }
+        ]
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.715566,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-11",
+      "category": "multifile",
+      "description": "文件之一为空时正确处理",
+      "inputFixture": "generated empty-p1.csv",
+      "capability": "空文件注册校验",
+      "mappedTest": "tests/test_dataset_registry.py + tests/eval_p1.py",
+      "expected": "拒绝空文件且不继续分析",
+      "actual": {
+        "accepted": false,
+        "errorCode": "empty_file"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.207095,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-12",
+      "category": "multifile",
+      "description": "文件结构不一致时不给出错误结论",
+      "inputFixture": "generated structure-left/right.csv",
+      "capability": "结构/关联字段校验",
+      "mappedTest": "tests/test_multifile_tools.py + tests/eval_p1.py",
+      "expected": "拒绝不兼容合并，不产生结论",
+      "actual": {
+        "ok": false,
+        "errorCode": "missing_join_field"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.598444,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-13",
+      "category": "conversation",
+      "description": "追问刚才哪个地区最高",
+      "inputFixture": "generated history.csv + 2 turns",
+      "capability": "历史 ToolResult recall",
+      "mappedTest": "tests/test_conversation.py + tests/eval_p1.py",
+      "expected": "回答华南",
+      "actual": {
+        "answer": "华南"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.395903,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-14",
+      "category": "conversation",
+      "description": "追问那最低的呢",
+      "inputFixture": "generated history.csv + 2 turns",
+      "capability": "历史对象与结果 recall",
+      "mappedTest": "tests/eval_p1.py",
+      "expected": "回答华东",
+      "actual": {
+        "answer": "华东"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.393993,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-15",
+      "category": "conversation",
+      "description": "修改筛选条件后重新分析",
+      "inputFixture": "generated history.csv + 2 turns",
+      "capability": "filter 覆盖",
+      "mappedTest": "tests/eval_conversation.py CONV-01 + tests/eval_p1.py",
+      "expected": "第二轮使用华南筛选",
+      "actual": {
+        "filters": {
+          "地区": "华南"
+        }
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.567439,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-16",
+      "category": "conversation",
+      "description": "更换指标后继续分析",
+      "inputFixture": "generated history.csv + 2 turns",
+      "capability": "metric 覆盖",
+      "mappedTest": "tests/eval_conversation.py CONV-04 + tests/eval_p1.py",
+      "expected": "第二轮改用利润",
+      "actual": {
+        "metric": "利润"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.591663,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-17",
+      "category": "conversation",
+      "description": "上传新文件后不混用旧数据",
+      "inputFixture": "generated old/new-history.csv",
+      "capability": "活动数据集隔离",
+      "mappedTest": "tests/test_conversation.py + tests/eval_p1.py",
+      "expected": "只使用新文件并得到 100",
+      "actual": {
+        "value": 100,
+        "oldDatasetId": "ds_a1e40588404c",
+        "currentDatasetId": "ds_0410df5484ba"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.763684,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-18",
+      "category": "conversation",
+      "description": "长对话后仍引用正确分析结果",
+      "inputFixture": "generated history.csv + 15 turns",
+      "capability": "长历史 ToolResult recall",
+      "mappedTest": "tests/test_conversation.py + tests/eval_p1.py",
+      "expected": "仍回答华南",
+      "actual": {
+        "answer": "华南",
+        "turns": 15
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.460539,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-19",
+      "category": "conversation",
+      "description": "前后问题冲突时能识别",
+      "inputFixture": "generated history.csv + 2 turns",
+      "capability": "当前问题覆盖旧 metric",
+      "mappedTest": "tests/eval_conversation.py CONV-04 + tests/eval_p1.py",
+      "expected": "按当前请求改用利润",
+      "actual": {
+        "metric": "利润",
+        "answer": "已识别冲突并改看利润"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.540266,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    },
+    {
+      "caseId": "P1-20",
+      "category": "conversation",
+      "description": "历史上下文不足时要求重新提供信息",
+      "inputFixture": "no dataset/history",
+      "capability": "needs_user_input",
+      "mappedTest": "tests/eval_conversation.py CONV-08 + tests/eval_p1.py",
+      "expected": "stop_reason=needs_user_input",
+      "actual": {
+        "stopReason": "needs_user_input",
+        "answer": "请重新提供文件和分析目标。"
+      },
+      "passed": true,
+      "failures": [],
+      "durationSeconds": 0.151188,
+      "costCny": 0.0,
+      "costBasis": "deterministic scripted model; no external LLM call"
+    }
+  ]
+}
