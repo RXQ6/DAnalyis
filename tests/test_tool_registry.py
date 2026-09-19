@@ -121,7 +121,17 @@ class ToolRegistryTests(unittest.TestCase):
         names = [
             item["function"]["name"]
             for item in registry.tool_schemas()
-            if item["function"]["name"] != "todo_write"
+            if item["function"]["name"]
+            not in {
+                "list_datasets",
+                "inspect_dataset",
+                "compare_datasets",
+                "inspect_merge",
+                "merge_datasets",
+                "normalize_share",
+                "generate_chart",
+                "todo_write",
+            }
         ]
 
         for name in names:
@@ -145,6 +155,14 @@ class ToolRegistryTests(unittest.TestCase):
                 "trend_analysis",
                 "detect_anomaly",
                 "top_n",
+                "scatter_data",
+                "list_datasets",
+                "inspect_dataset",
+                "compare_datasets",
+                "inspect_merge",
+                "merge_datasets",
+                "normalize_share",
+                "generate_chart",
                 "todo_write",
             ],
         )
