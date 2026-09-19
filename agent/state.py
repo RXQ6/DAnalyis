@@ -8,6 +8,8 @@ from typing import Any
 
 @dataclass
 class AgentState:
+    conversation_id: str | None = None
+    turn_id: str | None = None
     messages: list[dict[str, Any]] = field(default_factory=list)
     dataset: str | None = None
     dataset_context: dict[str, Any] = field(default_factory=dict)
@@ -16,7 +18,14 @@ class AgentState:
     max_iter: int = 6
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     execution_trace: list[dict[str, Any]] = field(default_factory=list)
+    prior_tool_results: list[dict[str, Any]] = field(default_factory=list)
     todos: list[dict[str, str]] = field(default_factory=list)
+    memory_context: str = ""
+    recalled_memories: list[dict[str, Any]] = field(default_factory=list)
+    remembered_memories: list[dict[str, Any]] = field(default_factory=list)
+    memory_errors: list[dict[str, str]] = field(default_factory=list)
+    context_reports: list[dict[str, Any]] = field(default_factory=list)
+    context_errors: list[dict[str, str]] = field(default_factory=list)
     stop_reason: str | None = None
     final_answer: str | None = None
 

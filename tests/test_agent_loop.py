@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 from typing import Any
@@ -291,9 +292,56 @@ class AgentLoopTests(unittest.TestCase):
         self.assertEqual(state.stop_reason, "final_answer")
         self.assertEqual([call["name"] for call in state.tool_calls], ["custom_metric"])
 
+    def test_chart_tool_uses_prior_tool_result_without_model_supplied_values(self) -> None:
+        def request_chart(messages: list[dict[str, Any]]) -> dict[str, Any]:
+            observation = json.loads(messages[-1]["content"])
+            self.assertEqual(observation["tool"], "group_compare")
+            return {
+                "type": "tool_call",
+                "id": "chart-1",
+                "name": "generate_chart",
+                "arguments": {"sourceCallId": "group-1", "chartType": "bar"},
+            }
+
+        model = ScriptedModel(
+            [
+                {
+                    "type": "tool_call",
+                    "id": "group-1",
+                    "name": "group_compare",
+                    "arguments": {
+                        "groupBy": "地区",
+                        "metric": "销售额",
+                        "operation": "sum",
+                    },
+                },
+                request_chart,
+                {"type": "final_answer", "content": "柱状图已生成。"},
+            ]
+        )
+        with tempfile.TemporaryDirectory() as artifacts:
+            state = AgentLoop(model, build_default_registry()).run(
+                "按地区生成销售额柱状图",
+                dataset=str(SALES),
+                artifact_dir=artifacts,
+            )
+
+            source_values = [
+                {"x": item["group"], "y": item["value"]}
+                for item in state.execution_trace[0]["data"]["groups"]
+            ]
+            chart = state.execution_trace[1]["data"]
+            self.assertEqual(chart["spec"]["data"]["values"], source_values)
+            self.assertTrue(Path(chart["artifact"]["path"]).is_file())
+
+        self.assertEqual(
+            [call["name"] for call in state.tool_calls],
+            ["group_compare", "generate_chart"],
+        )
+
     def test_default_registry_exposes_current_tools(self) -> None:
         names = {item["function"]["name"] for item in build_default_registry().tool_schemas()}
-        self.assertTrue({"inspect_data", "basic_stats", "group_compare", "trend_analysis", "detect_anomaly", "todo_write"}.issubset(names))
+        self.assertTrue({"inspect_data", "basic_stats", "group_compare", "trend_analysis", "detect_anomaly", "list_datasets", "inspect_dataset", "compare_datasets", "inspect_merge", "merge_datasets", "generate_chart", "todo_write"}.issubset(names))
 
     def test_default_max_iter_is_six(self) -> None:
         loop = AgentLoop(RepeatingModel(), ToolRegistry())
