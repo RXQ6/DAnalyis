@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from .chart import chart_definition, share_definition
+from .multifile import multifile_definitions
 from .registry import ToolDefinition, ToolExecutionError, ToolRegistry
 from .todo import todo_definition
 
@@ -30,14 +32,45 @@ class NodeToolBridge:
         *,
         timeout_seconds: float = 30.0,
     ) -> Any:
-        dataset = context.get("dataset")
+        effective_arguments = dict(arguments)
+        dataset_id = effective_arguments.pop("datasetId", None)
+        dataset_registry = context.get("dataset_registry")
+        if dataset_registry is not None:
+            if not dataset_id:
+                raise ToolExecutionError(
+                    "dataset_id_required",
+                    "datasetId is required when DatasetRegistry is active",
+                )
+            try:
+                active_dataset_ids = context.get("active_dataset_ids")
+                if active_dataset_ids is not None and dataset_id not in active_dataset_ids:
+                    raise ToolExecutionError(
+                        "inactive_dataset",
+                        f"dataset is not active in the current conversation: {dataset_id}",
+                    )
+                dataset = dataset_registry.resolve(dataset_id)
+            except ToolExecutionError:
+                raise
+            except Exception as error:
+                raise ToolExecutionError(
+                    getattr(error, "code", "dataset_not_found"),
+                    str(error),
+                    getattr(error, "details", {}),
+                ) from error
+        else:
+            if dataset_id:
+                raise ToolExecutionError(
+                    "dataset_registry_unavailable",
+                    "datasetId cannot be used without DatasetRegistry",
+                )
+            dataset = context.get("dataset")
         if not dataset:
             raise ToolExecutionError(
                 "missing_dataset",
                 "a dataset is required for this tool",
                 recoverable=False,
             )
-        request = {"tool": name, "dataset": dataset, "arguments": arguments}
+        request = {"tool": name, "dataset": dataset, "arguments": effective_arguments}
         try:
             process = subprocess.run(
                 [self.node_binary, str(self.bridge_path)],
@@ -155,6 +188,7 @@ def build_default_registry(
                 max_result_bytes=max_result_bytes,
             )
         )
-    definitions.append(todo_definition())
+    definitions.extend(multifile_definitions())
+    definitions.extend([share_definition(), chart_definition(), todo_definition()])
     registry.register_many(definitions)
     return registry

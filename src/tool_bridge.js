@@ -8,6 +8,7 @@ import { statistics, topN } from './tools/statistics.js';
 import { groupCompare } from './tools/group.js';
 import { trend } from './tools/trend.js';
 import { anomaly } from './tools/anomaly.js';
+import { scatterData } from './tools/scatter.js';
 import { AgentError, publicError } from './errors.js';
 
 const TOOL_CATALOG = JSON.parse(
@@ -36,7 +37,8 @@ const HANDLERS = {
     return trend(selected, profileTable(selected), args);
   },
   detect_anomaly: (table, profile, args) => anomaly(table, profile, args),
-  top_n: (table, profile, args) => topN(table, profile, args)
+  top_n: (table, profile, args) => topN(table, profile, args),
+  scatter_data: (table, profile, args) => scatterData(table, profile, args)
 };
 
 function registeredHandlers(catalog, handlers) {
