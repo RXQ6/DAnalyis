@@ -3,6 +3,9 @@
 一个支持上传 CSV/XLSX、使用自然语言完成单文件或受控多文件分析的数据分析 Agent。
 项目已完成 PRD v1.1 的 M1–M3：P0 确定性分析、受控多步 Agent、图表、多文件、
 历史对话、Todo、三层 Memory、Context Compression、Historical Summary 和 Bad Case 优化。
+在这些能力外层提供规则优先的 Workflow / Router 统一入口，将请求分流到
+`chat`、`analysis`、`calc` 或 `memory_recall`；其中 `analysis` 继续复用现有
+ConversationRunner 和 Agent Loop。
 
 LLM 只负责理解问题、选择受控工具、决定是否继续分析和解释结果。数据读取、统计、
 分组、趋势、异常、占比、同比等真实计算由确定性工具执行。项目不运行用户提供的代码，
@@ -35,8 +38,9 @@ underspecified question returns `status: "needs_input"`. See
 | P0 整体（含原 Bad Cases） | 15/15 |
 | P1 | 20/20 |
 | Robustness | 25/25 |
-| Python 全量 | 113/113 |
+| Python 全量 | 129/129 |
 | Node 全量 | 13/13 |
+| Workflow / Router 专项 | 16/16 |
 | Memory / Todo | 16/16、12/12 |
 | Context Compression / Historical Summary | 9/9、8/8 |
 | 多步语义 | 3/3 |
@@ -55,6 +59,7 @@ underspecified question returns `status: "needs_input"`. See
 | `charts/` | P1 图表规格与确定性 SVG 渲染：只消费已有分析 ToolResult，不重新计算业务数字。 |
 | `datasets/` | P1 任务/会话级 DatasetRegistry：管理多个数据集 ID、安全摘要、可信路径、活动数据集和派生 lineage。 |
 | `tools/` | 受控工具注册表与处理器：提供 Agent 可调用的确定性计算能力，禁止执行任意 Python 代码。 |
+| `workflow/` | Agent Loop 外层的规则优先请求编排：通过统一 dict state 和 `Workflow.invoke()` 分流到 chat、analysis、calc、memory_recall。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |
 | `package.json` | Node.js 项目信息及 `npm test` 测试入口。 |

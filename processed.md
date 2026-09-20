@@ -211,6 +211,17 @@
 - P1 正式评测 20/20（100%）；P0 10/10、总体 15/15；robustness 25/25；Python 单元测试 105/105；Node 13/13。
 - Memory 15/15、DatasetRegistry 4/4、Chart 5/5、Multi-file 5/5、Conversation 8/8、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3 均通过。
 
+## Workflow / Router 最小接入
+
+- 新增 `workflow/` 外层编排包，提供统一的 `Workflow.invoke(state)` dict 入口；输入会被深拷贝，Node 之间统一使用 state / dict 传递结果。
+- 第一版 route 固定为 `chat`、`analysis`、`calc`、`memory_recall`；Node Registry 启动时必须与固定集合完全一致，Router 输出和 dispatch 均进行注册校验。
+- Router 采用规则优先：数据分析及活动数据集追问进入 analysis，明确长期记忆查询进入 memory_recall，可完整解析的纯算术进入 calc，明确问候进入 chat；只有不明确请求才使用可选 LLM 兜底。
+- LLM fallback 不获得工具，只做分类；非法、空白或异常输出会按是否存在活动数据集安全回退到 analysis/chat，不会产生不存在的 intent。
+- AnalysisNode 只适配现有 `ConversationRunner.run()`，继续复用 Agent Loop、ToolRegistry、Todo、Memory、DatasetRegistry 和 Context Compression，未修改现有 P0/P1 业务实现及评测标准。
+- CalcNode 使用受限 AST 算术解析，禁止变量、函数、属性和任意代码执行；MemoryRecallNode 只调用现有 `recall()`，不自动写长期 Memory。
+- 新增 16 条 Workflow / Router 专项测试，覆盖四类规则、规则优先级、LLM 仅兜底、非法 route 防护、Node 职责、输入不变性、四条路径的统一返回契约、活动数据集追问以及真实 Agent Loop 复用。
+- 完成 Workflow 16/16、Python 全量 129/129、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。

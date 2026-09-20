@@ -228,3 +228,32 @@ ToolRegistry / Tool Handler
   confirmed 区域、引用未知/失败 call ID、超长或非法输出都会触发 fallback。
 - Historical Summary 失败时恢复现有最近 12 轮视图，并继续经过规则型 Context Compression
   v1.1；两层都只修改 LLM 视图，不修改 ConversationState、ToolResult 或 DatasetRegistry。
+
+## 11. Workflow / Router 外层编排
+
+Workflow 位于 ConversationRunner 和 Agent Loop 外层，只决定请求进入哪条处理路径，
+不替代 Agent Loop 的工具选择和多步执行：
+
+```text
+Workflow.invoke(state)
+  → RuleRouter
+  ├─ chat → ChatNode
+  ├─ calc → CalcNode
+  ├─ memory_recall → MemoryRecallNode
+  └─ analysis → AnalysisNode → ConversationRunner.run() → AgentLoop.run()
+```
+
+- 第一版 route 固定为 `chat`、`analysis`、`calc`、`memory_recall`，Workflow 启动时要求
+  Node Registry 与该集合完全一致，dispatch 前再次校验 route。
+- Router 优先使用确定性规则识别数据分析、长期记忆查询、纯算术和明确闲聊；只有规则
+  无法判断时才调用可选的 LLM 分类器，分类器没有工具且只允许选择已注册 route。
+- LLM 返回非法值或调用失败时，有活动数据集回退 `analysis`，否则回退 `chat`；未知
+  route 永远不会进入 Node。
+- 所有 Node 使用同一个 dict state；`Workflow.invoke()` 深拷贝输入，不修改调用方状态，
+  并统一返回 `status`、`route`、`response`、`data`、`error` 和 `routing`。
+- AnalysisNode 只做参数和结果适配，继续复用 ConversationRunner，因此现有 DatasetRegistry、
+  Todo、Memory、Context Compression、ToolRegistry 与 Agent Loop 执行链保持不变。
+- CalcNode 使用受限 AST 解析器，仅接受有长度、复杂度和数值上限的算术表达式，不使用
+  `eval()`，也不执行函数、属性、变量或任意 Python 代码。
+- MemoryRecallNode 只调用现有 Memory 的只读 `recall()`；显式 remember 仍沿用现有
+  analysis 调用参数，不由 Router 自动写入长期 Memory。
