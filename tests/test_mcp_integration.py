@@ -64,7 +64,9 @@ class MCPIntegrationTests(unittest.TestCase):
     def test_mcp_failure_does_not_stop_main_agent(self) -> None:
         registry = build_default_registry()
         MCPToolAdapter(
-            MockMCPClient(MockMCPServer(fail_calls=True)), server_id="mock"
+            MockMCPClient(MockMCPServer(fail_calls=True)),
+            server_id="mock",
+            allowed_tools={"echo"},
         ).register_into(registry)
 
         def recover(messages: list[dict[str, Any]]) -> dict[str, Any]:
@@ -101,7 +103,9 @@ class MCPIntegrationTests(unittest.TestCase):
         self.assertFalse(any(name.startswith("mcp_") for name in default_names))
 
         MCPToolAdapter(
-            MockMCPClient(MockMCPServer()), server_id="mock"
+            MockMCPClient(MockMCPServer()),
+            server_id="mock",
+            allowed_tools={"echo"},
         ).register_into(source)
         restricted = build_restricted_registry(
             source,

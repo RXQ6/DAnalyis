@@ -17,12 +17,14 @@ from .contracts import (
     MCPClient,
     MCPProtocolError,
     MCPRemoteError,
+    MCPSchemaCompatibilityError,
     MCPToolSpec,
     MCPUnknownToolError,
 )
 
 
 _NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+_TOOL_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+$")
 _T = TypeVar("_T")
 
 
@@ -48,7 +50,7 @@ class MCPToolAdapter:
         client: MCPClient,
         *,
         server_id: str,
-        allowed_tools: set[str] | frozenset[str] | None = None,
+        allowed_tools: set[str] | frozenset[str],
         discovery_timeout_seconds: float = 5.0,
         call_timeout_seconds: float = 5.0,
         max_result_bytes: int = 64 * 1024,
@@ -58,6 +60,8 @@ class MCPToolAdapter:
     ) -> None:
         if not isinstance(server_id, str) or not _NAME_PATTERN.fullmatch(server_id):
             raise ValueError("MCP server_id must contain only letters, numbers, '_' or '-'")
+        if not isinstance(allowed_tools, (set, frozenset)):
+            raise TypeError("MCP Adapter requires an explicit allowed_tools set")
         if (
             isinstance(discovery_timeout_seconds, bool)
             or isinstance(call_timeout_seconds, bool)
@@ -75,7 +79,7 @@ class MCPToolAdapter:
             raise ValueError("MCP max_tools must be at least 1")
         self.client = client
         self.server_id = server_id.replace("-", "_")
-        self.allowed_tools = None if allowed_tools is None else frozenset(allowed_tools)
+        self.allowed_tools = frozenset(allowed_tools)
         self.discovery_timeout_seconds = float(discovery_timeout_seconds)
         self.call_timeout_seconds = float(call_timeout_seconds)
         self.max_result_bytes = max_result_bytes
@@ -87,21 +91,22 @@ class MCPToolAdapter:
         """Fail open: a discovery failure leaves the existing registry untouched."""
 
         try:
-            remote_tools = self._run_with_timeout(
-                lambda: self.client.list_tools(
-                    timeout_seconds=self.discovery_timeout_seconds
-                ),
-                self.discovery_timeout_seconds,
-            )
+            remote_tools = self._discover_tools()
             definitions = self._definitions(remote_tools)
             registry.register_many(definitions)
         except TimeoutError:
+            self._cancel_pending()
             return self._registration_error(
                 "mcp_discovery_timeout", "MCP tool discovery timed out"
             )
         except MCPProtocolError:
             return self._registration_error(
                 "mcp_protocol_error", "MCP tool discovery returned an invalid response"
+            )
+        except MCPSchemaCompatibilityError:
+            return self._registration_error(
+                "mcp_schema_incompatible",
+                "MCP tool schema is not supported by the current ToolRegistry",
             )
         except MCPRemoteError:
             return self._registration_error(
@@ -119,17 +124,41 @@ class MCPToolAdapter:
             registered_tools=tuple(definition.name for definition in definitions),
         )
 
-    def _definitions(self, response: Any) -> list[ToolDefinition]:
-        if not isinstance(response, list):
-            raise MCPProtocolError("list_tools response must be a list")
-        if len(response) > self.max_tools:
-            raise MCPProtocolError("list_tools response exceeds the configured tool limit")
+    def _discover_tools(self) -> list[MCPToolSpec]:
+        tools: list[MCPToolSpec] = []
+        cursor: str | None = None
+        seen_cursors: set[str] = set()
+        while True:
+            page = self._run_with_timeout(
+                lambda current=cursor: self.client.list_tools(
+                    cursor=current,
+                    timeout_seconds=self.discovery_timeout_seconds,
+                ),
+                self.discovery_timeout_seconds,
+            )
+            if not isinstance(page, dict) or not isinstance(page.get("tools"), list):
+                raise MCPProtocolError("list_tools response must contain a tools list")
+            tools.extend(page["tools"])
+            if len(tools) > self.max_tools:
+                raise MCPProtocolError(
+                    "list_tools response exceeds the configured tool limit"
+                )
+            next_cursor = page.get("nextCursor")
+            if next_cursor is None:
+                return tools
+            if not isinstance(next_cursor, str) or not next_cursor:
+                raise MCPProtocolError("list_tools nextCursor must be a non-empty string")
+            if next_cursor in seen_cursors:
+                raise MCPProtocolError("list_tools returned a repeated cursor")
+            seen_cursors.add(next_cursor)
+            cursor = next_cursor
 
+    def _definitions(self, response: Any) -> list[ToolDefinition]:
         definitions: list[ToolDefinition] = []
         local_names: set[str] = set()
         for raw in response:
             spec = self._validate_tool_spec(raw)
-            if self.allowed_tools is not None and spec["name"] not in self.allowed_tools:
+            if spec["name"] not in self.allowed_tools:
                 continue
             local_name = self._local_name(spec["name"])
             if local_name in local_names:
@@ -140,7 +169,7 @@ class MCPToolAdapter:
                     name=local_name,
                     description=f"[MCP:{self.server_id}] {spec['description']}",
                     parameter_schema=copy.deepcopy(spec["inputSchema"]),
-                    handler=self._handler(spec["name"]),
+                    handler=self._handler(spec["name"], spec.get("outputSchema")),
                     timeout_seconds=self.call_timeout_seconds,
                     max_result_bytes=self.max_result_bytes,
                 )
@@ -148,7 +177,9 @@ class MCPToolAdapter:
         try:
             ToolRegistry().register_many(definitions)
         except (TypeError, ValueError) as error:
-            raise MCPProtocolError("MCP tool definition is incompatible") from error
+            raise MCPSchemaCompatibilityError(
+                "MCP tool definition is incompatible"
+            ) from error
         return definitions
 
     def _validate_tool_spec(self, raw: Any) -> MCPToolSpec:
@@ -160,33 +191,53 @@ class MCPToolAdapter:
         if (
             not isinstance(name, str)
             or not name
-            or len(name) > 64
-            or not _NAME_PATTERN.fullmatch(name)
+            or len(name) > 128
+            or not _TOOL_NAME_PATTERN.fullmatch(name)
         ):
             raise MCPProtocolError("MCP tool name is invalid")
-        if (
-            not isinstance(description, str)
-            or not description.strip()
-            or len(description) > self.max_description_chars
-        ):
+        title = raw.get("title")
+        if title is not None and (not isinstance(title, str) or not title.strip()):
+            raise MCPProtocolError("MCP tool title is invalid")
+        if description is not None and not isinstance(description, str):
+            raise MCPProtocolError("MCP tool description is invalid")
+        description = (description or title or f"MCP tool {name}").strip()
+        if not description or len(description) > self.max_description_chars:
             raise MCPProtocolError("MCP tool description is invalid")
         if not isinstance(schema, dict):
             raise MCPProtocolError("MCP tool inputSchema must be an object")
+        schema = self._normalize_input_schema(schema)
+        output_schema = raw.get("outputSchema")
+        if output_schema is not None and not isinstance(output_schema, dict):
+            raise MCPProtocolError("MCP tool outputSchema must be an object")
         try:
-            schema_size = len(
-                json.dumps(schema, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            schemas = [schema] + ([output_schema] if output_schema is not None else [])
+            schema_size = sum(
+                len(json.dumps(item, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+                for item in schemas
             )
         except (TypeError, ValueError) as error:
-            raise MCPProtocolError("MCP tool inputSchema must be JSON serializable") from error
+            raise MCPProtocolError("MCP tool schemas must be JSON serializable") from error
         if schema_size > self.max_schema_bytes:
-            raise MCPProtocolError("MCP tool inputSchema is too large")
-        return {
+            raise MCPProtocolError("MCP tool schemas are too large")
+        spec: MCPToolSpec = {
             "name": name,
-            "description": description.strip(),
+            "description": description,
             "inputSchema": copy.deepcopy(schema),
         }
+        if isinstance(title, str):
+            spec["title"] = title.strip()
+        if output_schema is not None:
+            spec["outputSchema"] = copy.deepcopy(output_schema)
+        annotations = raw.get("annotations")
+        if annotations is not None:
+            if not isinstance(annotations, dict):
+                raise MCPProtocolError("MCP tool annotations must be an object")
+            spec["annotations"] = copy.deepcopy(annotations)
+        return spec
 
-    def _handler(self, remote_name: str):
+    def _handler(self, remote_name: str, output_schema: dict[str, Any] | None):
+        expected_output = copy.deepcopy(output_schema)
+
         def handler(arguments: dict[str, Any], context: dict[str, Any]) -> Any:
             del context
             try:
@@ -198,10 +249,13 @@ class MCPToolAdapter:
                     ),
                     self.call_timeout_seconds,
                 )
-                return self._normalize_call_result(remote_name, response)
+                return self._normalize_call_result(
+                    remote_name, response, output_schema=expected_output
+                )
             except ToolExecutionError:
                 raise
             except TimeoutError as error:
+                self._cancel_pending()
                 raise ToolExecutionError(
                     "mcp_timeout",
                     "MCP tool call timed out",
@@ -238,12 +292,29 @@ class MCPToolAdapter:
 
         return handler
 
-    def _normalize_call_result(self, remote_name: str, raw: Any) -> dict[str, Any]:
+    def _normalize_call_result(
+        self,
+        remote_name: str,
+        raw: Any,
+        *,
+        output_schema: dict[str, Any] | None,
+    ) -> dict[str, Any]:
         if not isinstance(raw, dict):
             raise MCPProtocolError("call_tool response must be an object")
+        result_type = raw.get("resultType", "complete")
+        if result_type == "input_required":
+            raise ToolExecutionError(
+                "mcp_input_required_unsupported",
+                "MCP tool requires additional input that this Host does not support",
+                {"server": self.server_id, "tool": remote_name},
+            )
+        if result_type != "complete":
+            raise MCPProtocolError("call_tool resultType is invalid")
         content = raw.get("content", [])
         if not isinstance(content, list) or any(not isinstance(item, dict) for item in content):
             raise MCPProtocolError("call_tool content must be a list of objects")
+        for item in content:
+            self._validate_content_block(item)
         is_error = raw.get("isError", False)
         if not isinstance(is_error, bool):
             raise MCPProtocolError("call_tool isError must be a boolean")
@@ -259,11 +330,94 @@ class MCPToolAdapter:
             "content": copy.deepcopy(content),
         }
         if "structuredContent" in raw:
+            if output_schema is not None:
+                self._validate_output(raw["structuredContent"], output_schema, "structuredContent")
             result["structuredContent"] = copy.deepcopy(raw["structuredContent"])
+        elif output_schema is not None:
+            raise MCPProtocolError(
+                "call_tool omitted structuredContent required by outputSchema"
+            )
         return result
 
     def _local_name(self, remote_name: str) -> str:
-        return f"mcp_{self.server_id}__{remote_name.replace('-', '_')}"
+        normalized = remote_name.replace("-", "_").replace(".", "_")
+        return f"mcp_{self.server_id}__{normalized}"
+
+    @staticmethod
+    def _normalize_input_schema(schema: dict[str, Any]) -> dict[str, Any]:
+        normalized = copy.deepcopy(schema)
+        if normalized.get("type") != "object":
+            raise MCPProtocolError("MCP tool inputSchema must describe an object")
+        normalized.setdefault("properties", {})
+        normalized.setdefault("required", [])
+        return normalized
+
+    @staticmethod
+    def _validate_content_block(item: dict[str, Any]) -> None:
+        block_type = item.get("type")
+        if block_type == "text":
+            valid = isinstance(item.get("text"), str)
+        elif block_type in {"image", "audio"}:
+            valid = isinstance(item.get("data"), str) and isinstance(
+                item.get("mimeType"), str
+            )
+        elif block_type == "resource_link":
+            valid = isinstance(item.get("uri"), str) and isinstance(
+                item.get("name"), str
+            )
+        elif block_type == "resource":
+            resource = item.get("resource")
+            valid = isinstance(resource, dict) and isinstance(resource.get("uri"), str)
+        else:
+            valid = False
+        if not valid:
+            raise MCPProtocolError("call_tool contains an invalid content block")
+
+    @classmethod
+    def _validate_output(cls, value: Any, schema: dict[str, Any], path: str) -> None:
+        if "enum" in schema and value not in schema["enum"]:
+            raise MCPProtocolError(f"{path} does not satisfy outputSchema")
+        schema_type = schema.get("type")
+        expected = {
+            "object": dict,
+            "array": list,
+            "string": str,
+            "integer": int,
+            "number": (int, float),
+            "boolean": bool,
+            "null": type(None),
+        }.get(schema_type)
+        if expected is None:
+            raise MCPProtocolError("MCP outputSchema uses an unsupported shape")
+        if not isinstance(value, expected) or (
+            schema_type in {"integer", "number"} and isinstance(value, bool)
+        ):
+            raise MCPProtocolError(f"{path} does not satisfy outputSchema")
+        if schema_type == "object":
+            properties = schema.get("properties", {})
+            required = schema.get("required", [])
+            if not isinstance(properties, dict) or not isinstance(required, list):
+                raise MCPProtocolError("MCP outputSchema is invalid")
+            if any(name not in value for name in required):
+                raise MCPProtocolError(f"{path} does not satisfy outputSchema")
+            if schema.get("additionalProperties") is False and any(
+                name not in properties for name in value
+            ):
+                raise MCPProtocolError(f"{path} does not satisfy outputSchema")
+            for name, item in value.items():
+                if isinstance(properties.get(name), dict):
+                    cls._validate_output(item, properties[name], f"{path}.{name}")
+        elif schema_type == "array" and isinstance(schema.get("items"), dict):
+            for index, item in enumerate(value):
+                cls._validate_output(item, schema["items"], f"{path}[{index}]")
+
+    def _cancel_pending(self) -> None:
+        cancel = getattr(self.client, "cancel_pending", None)
+        if callable(cancel):
+            try:
+                cancel()
+            except Exception:
+                pass
 
     def _registration_error(
         self, code: str, message: str, *, exception_type: str | None = None

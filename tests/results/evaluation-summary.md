@@ -4,24 +4,24 @@
 - P0 pass rate: 10/10 (100.0%)
 - Overall accuracy: 15/15 (100.0%)
 - Bad-case recognition: 5/5 (100.0%)
-- Average response: 0.284s
-- Maximum response: 0.365s
+- Average response: 0.182s
+- Maximum response: 0.215s
 - Maximum reported cost: CNY 0.000
 
 ## Cases
 
-- PASS P0-01: CSV column sum (0.272s)
-- PASS P0-02: XLSX column average (0.365s)
-- PASS P0-03: group sales by region (0.303s)
-- PASS P0-04: top 5 products (0.268s)
-- PASS P0-05: daily sales trend (0.295s)
-- PASS P0-06: obvious anomaly (0.302s)
-- PASS P0-07: missing field (0.245s)
-- PASS P0-08: empty input (0.287s)
-- PASS P0-09: dirty numeric input (0.327s)
-- PASS P0-10: insufficient question (0.252s)
-- PASS BC-01: missing profit margin (0.275s)
-- PASS BC-02: empty CSV stops analysis (0.254s)
-- PASS BC-03: text in numeric field (0.256s)
-- PASS BC-04: vague question (0.287s)
-- PASS BC-05: trend tool selection (0.272s)
+- PASS P0-01: CSV column sum (0.176s)
+- PASS P0-02: XLSX column average (0.199s)
+- PASS P0-03: group sales by region (0.189s)
+- PASS P0-04: top 5 products (0.155s)
+- PASS P0-05: daily sales trend (0.182s)
+- PASS P0-06: obvious anomaly (0.157s)
+- PASS P0-07: missing field (0.166s)
+- PASS P0-08: empty input (0.160s)
+- PASS P0-09: dirty numeric input (0.199s)
+- PASS P0-10: insufficient question (0.215s)
+- PASS BC-01: missing profit margin (0.185s)
+- PASS BC-02: empty CSV stops analysis (0.157s)
+- PASS BC-03: text in numeric field (0.179s)
+- PASS BC-04: vague question (0.203s)
+- PASS BC-05: trend tool selection (0.205s)

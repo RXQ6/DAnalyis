@@ -242,6 +242,18 @@
 - 新增 15 条 MCP 专项测试，覆盖发现、命名空间映射、参数校验、标准 ToolResult、Agent Loop 集成、主 Agent 失败恢复、allowlist、原子注册、结果截断、调用/发现 timeout、协议错误、远端异常、Registry/远端未知工具以及 Sub-agent 权限隔离。
 - 完成 MCP 专项 15/15、Python 全量 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
 - 再次完成 MCP 专项与全量回归复测：`list_tools`、Registry 注册、Agent 按名称调用、统一 ToolResult、未知工具、协议错误、远端异常、timeout 和失败后继续执行均通过；额外验证 `mcp_multi__alpha`、`mcp_multi__beta` 与本地 `local_echo` 同时注册和调用时 handler 不串联。复测结果仍为 MCP 15/15、Workflow 16/16、Sub-agent 12/12、Memory 16/16、Todo 12/12、Python 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+- 完成 MCP Tools 最小协议优化：新增 `MCPHost` 管理一对一 Client 生命周期、显式工具 allowlist 与 close；Adapter 自身也改为默认拒绝隐式全量授权。`MCPClient.list_tools(cursor)` 支持分页，Mock Client 与未来真实 SDK facade 使用同一独立接口；Resources / Prompts 仅保留未接线的 Protocol 扩展位。
+- MCP Tool 映射支持标准无参数 object schema、最长 128 字符及点号名称、本地名称归一化碰撞检查、可选 `outputSchema` 和 annotations。调用结果增加 `resultType`、content block 与 structuredContent contract 校验；协议错误、本地 schema 不兼容、未知工具、远端异常、timeout 和暂不支持的 input-required 均返回独立结构化错误，timeout 同时调用 Client 的可选取消钩子。
+- MCP 专项扩充为 22/22，覆盖分页、Host 生命周期、权限默认关闭、标准无参 schema、outputSchema、content block、input-required、server unavailable、schema 不兼容、late-binding 和多工具 handler 隔离。完成 Python 181/181、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 全量回归，未修改 Agent Loop、ToolRegistry、ToolResult 或其他业务层逻辑。
+- 2026-09-21 MCP 协议优化复评再次通过：专项 22/22；额外使用独立 `AlternateClient` 完成 Host 注册、分页 Client 合约、Agent Loop 调用和完整 trace，确认 Client 可替换且 `local_echo` 与 `mcp_alt__echo` 可同时工作。复评结果保持 Python 181/181、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+
+## Day18.1 官方 MCP SDK stdio 与请求取消
+
+- 新增可选 `MCPStdioClient`，使用官方 MCP Python SDK 2.2.0 的 `Client` 与 `StdioServerParameters` 启动真实 stdio Server；在专用后台事件循环中保持单一 SDK Client 生命周期，并把 SDK typed result 转换成现有同步 `MCPClient` 合约。MCPHost、Adapter、ToolRegistry、ToolResult 和 Agent Loop 调用链保持不变。
+- `MCPStdioClient` 跟踪当前 SDK asyncio task。Adapter timeout 或 facade 自身等待超时时调用 `cancel_pending()`，线程安全地取消当前 task，由官方 SDK 向 stdio Server 传播 cancellation；取消后 Client 连接仍可继续处理后续工具调用。
+- 新增官方 SDK 测试 Server，提供 `echo` 与可取消的 `slow_echo`；真实集成测试验证 list/call、Adapter 复用、Agent Loop trace、structuredContent，以及 Server 捕获取消并写入 marker。保留全部 MockMCPClient / MockMCPServer 测试。
+- MCP 专项 24/24、Python 183/183、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 全部通过。未实现 Streamable HTTP、Resources、Prompts、动态通知或复杂 JSON Schema。
+- 2026-09-21 Day18.1 专项复验通过：官方 SDK stdio Client/Server 可连接，真实 `tools/list` 动态发现 `echo` / `slow_echo`，现有 Adapter 原样完成 ToolDefinition 映射、ToolResult 转换及 Agent trace。timeout 后 Server 捕获 `CancelledError` 并写入 marker，证明底层请求已停止；取消后同一连接仍可调用。额外让真实 stdio Server 在工具执行中以退出码 17 终止，Adapter 返回可恢复的 `mcp_server_unavailable`，Agent 记录失败 trace 后正常输出最终答案。专项保持 24/24，全量保持 Python 183/183、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
 
 ## Day16 data-diagnosis Skill 最小接入
 

@@ -1,8 +1,8 @@
 # P1 Formal Evaluation
 
 - Passed: 20/20 (100.0%)
-- Average response: 0.884s
-- Maximum response: 1.768s
+- Average response: 0.634s
+- Maximum response: 1.115s
 - Average cost: CNY 0.000
 - Maximum cost: CNY 0.000
 
@@ -10,23 +10,23 @@
 
 | Case | Category | Input / fixture | Capability | Test mapping | Expected | Actual | Result | Time | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |
-| P1-01 | chart | tests/fixtures/sales.csv | 趋势 ToolResult → line chart | tests/eval_chart.py CHART-01 | 生成 line SVG，来源为 trend_analysis | {"success":true,"chartType":"line"} | PASS | 0.391s | CNY 0.000 |
-| P1-02 | chart | tests/fixtures/sales.csv | 类别占比 → bar chart | tests/test_chart_tool.py + tests/eval_p1.py | 柱高表示占比，总计为 1 或 100 | {"success":true,"values":[{"x":"华南","y":0.759493670886076},{"x":"华东","y":0.24050632911392406}],"valueTotal":1.0} | PASS | 0.334s | CNY 0.000 |
-| P1-03 | chart | generated scatter.csv | scatter chart | tests/test_chart_tool.py + tests/eval_p1.py | 成功生成 scatter chart | {"success":true,"chartType":"scatter"} | PASS | 0.315s | CNY 0.000 |
-| P1-04 | chart | tests/fixtures/sales.csv | 显式 line chart | tests/eval_chart.py CHART-01/04 | 按用户指定生成 line chart | {"success":true,"chartType":"line"} | PASS | 0.366s | CNY 0.000 |
-| P1-05 | chart | tests/fixtures/sales.csv | 不支持的单值图表来源 | tests/eval_chart.py CHART-05 | 拒绝生成并返回 unsupported_chart_source | {"success":false,"errorCode":"unsupported_chart_source"} | PASS | 0.368s | CNY 0.000 |
-| P1-06 | multifile | generated same-left.csv + same-right.csv | CSV 一对一安全合并 | tests/test_multifile_tools.py + tests/eval_p1.py | preflight 安全且生成派生数据集 | {"preflightOk":true,"safeToExecute":true,"mergeOk":true,"rowCount":2} | PASS | 1.433s | CNY 0.000 |
-| P1-07 | multifile | generated left.xlsx + right.xlsx | XLSX 一对一安全合并 | tests/eval_p1.py | preflight 安全且生成派生数据集 | {"preflightOk":true,"safeToExecute":true,"mergeOk":true,"rowCount":3} | PASS | 1.768s | CNY 0.000 |
-| P1-08 | multifile | generated 客户/客户ID CSV | join 字段映射校验 | tests/eval_p1.py | 明确返回 missing_join_field，不执行合并 | {"ok":false,"errorCode":"missing_join_field"} | PASS | 1.099s | CNY 0.000 |
-| P1-09 | multifile | generated sales-2025.csv + sales-2026.csv | 跨文件同比计算 | tests/test_multifile_tools.py + tests/eval_p1.py | 确定性返回同比变化率 | {"ok":true,"groups":[{"group":"sales-2025.csv","datasetId":"ds_0b4cbd6f25ce","value":50,"validCount":2},{"group":"sales-2026.csv","datasetId":"ds_36c4b7ac8fdd","value":100,"validCount":2}],"yearOverYearRate":1.0} | PASS | 1.320s | CNY 0.000 |
-| P1-10 | multifile | generated category-a.csv + category-b.csv | 跨文件分组对比 | tests/test_multifile_tools.py + tests/eval_p1.py | 按类别比较两个文件的分组结果 | {"ok":true,"categories":[{"group":"B","values":[{"datasetId":"ds_9a1ac2fc156b","filename":"category-a.csv","value":40,"validCount":1,"missing":false},{"datasetId":"ds_b39dabb647b3","filename":"category-b.csv","value":70,"validCount":1,"missing":false}]},{"group":"A","values":[{"datasetId":"ds_9a1ac2fc156b","filename":"category-a.csv","value":10,"validCount":1,"missing":false},{"datasetId":"ds_b39dabb647b3","filename":"category-b.csv","value":30,"validCount":1,"missing":false}]}]} | PASS | 1.356s | CNY 0.000 |
-| P1-11 | multifile | generated empty-p1.csv | 空文件注册校验 | tests/test_dataset_registry.py + tests/eval_p1.py | 拒绝空文件且不继续分析 | {"accepted":false,"errorCode":"empty_file"} | PASS | 0.471s | CNY 0.000 |
-| P1-12 | multifile | generated structure-left/right.csv | 结构/关联字段校验 | tests/test_multifile_tools.py + tests/eval_p1.py | 拒绝不兼容合并，不产生结论 | {"ok":false,"errorCode":"missing_join_field"} | PASS | 1.070s | CNY 0.000 |
-| P1-13 | conversation | generated history.csv + 2 turns | 历史 ToolResult recall | tests/test_conversation.py + tests/eval_p1.py | 回答华南 | {"answer":"华南"} | PASS | 0.819s | CNY 0.000 |
-| P1-14 | conversation | generated history.csv + 2 turns | 历史对象与结果 recall | tests/eval_p1.py | 回答华东 | {"answer":"华东"} | PASS | 0.848s | CNY 0.000 |
-| P1-15 | conversation | generated history.csv + 2 turns | filter 覆盖 | tests/eval_conversation.py CONV-01 + tests/eval_p1.py | 第二轮使用华南筛选 | {"filters":{"地区":"华南"}} | PASS | 1.188s | CNY 0.000 |
-| P1-16 | conversation | generated history.csv + 2 turns | metric 覆盖 | tests/eval_conversation.py CONV-04 + tests/eval_p1.py | 第二轮改用利润 | {"metric":"利润"} | PASS | 1.093s | CNY 0.000 |
-| P1-17 | conversation | generated old/new-history.csv | 活动数据集隔离 | tests/test_conversation.py + tests/eval_p1.py | 只使用新文件并得到 100 | {"value":100,"oldDatasetId":"ds_d90de0baeea3","currentDatasetId":"ds_8d3200282465"} | PASS | 1.383s | CNY 0.000 |
-| P1-18 | conversation | generated history.csv + 15 turns | 长历史 ToolResult recall | tests/test_conversation.py + tests/eval_p1.py | 仍回答华南 | {"answer":"华南","turns":15} | PASS | 0.818s | CNY 0.000 |
-| P1-19 | conversation | generated history.csv + 2 turns | 当前问题覆盖旧 metric | tests/eval_conversation.py CONV-04 + tests/eval_p1.py | 按当前请求改用利润 | {"metric":"利润","answer":"已识别冲突并改看利润"} | PASS | 0.998s | CNY 0.000 |
-| P1-20 | conversation | no dataset/history | needs_user_input | tests/eval_conversation.py CONV-08 + tests/eval_p1.py | stop_reason=needs_user_input | {"stopReason":"needs_user_input","answer":"请重新提供文件和分析目标。"} | PASS | 0.242s | CNY 0.000 |
+| P1-01 | chart | tests/fixtures/sales.csv | 趋势 ToolResult → line chart | tests/eval_chart.py CHART-01 | 生成 line SVG，来源为 trend_analysis | {"success":true,"chartType":"line"} | PASS | 0.270s | CNY 0.000 |
+| P1-02 | chart | tests/fixtures/sales.csv | 类别占比 → bar chart | tests/test_chart_tool.py + tests/eval_p1.py | 柱高表示占比，总计为 1 或 100 | {"success":true,"values":[{"x":"华南","y":0.759493670886076},{"x":"华东","y":0.24050632911392406}],"valueTotal":1.0} | PASS | 0.236s | CNY 0.000 |
+| P1-03 | chart | generated scatter.csv | scatter chart | tests/test_chart_tool.py + tests/eval_p1.py | 成功生成 scatter chart | {"success":true,"chartType":"scatter"} | PASS | 0.247s | CNY 0.000 |
+| P1-04 | chart | tests/fixtures/sales.csv | 显式 line chart | tests/eval_chart.py CHART-01/04 | 按用户指定生成 line chart | {"success":true,"chartType":"line"} | PASS | 0.278s | CNY 0.000 |
+| P1-05 | chart | tests/fixtures/sales.csv | 不支持的单值图表来源 | tests/eval_chart.py CHART-05 | 拒绝生成并返回 unsupported_chart_source | {"success":false,"errorCode":"unsupported_chart_source"} | PASS | 0.261s | CNY 0.000 |
+| P1-06 | multifile | generated same-left.csv + same-right.csv | CSV 一对一安全合并 | tests/test_multifile_tools.py + tests/eval_p1.py | preflight 安全且生成派生数据集 | {"preflightOk":true,"safeToExecute":true,"mergeOk":true,"rowCount":2} | PASS | 1.115s | CNY 0.000 |
+| P1-07 | multifile | generated left.xlsx + right.xlsx | XLSX 一对一安全合并 | tests/eval_p1.py | preflight 安全且生成派生数据集 | {"preflightOk":true,"safeToExecute":true,"mergeOk":true,"rowCount":3} | PASS | 1.105s | CNY 0.000 |
+| P1-08 | multifile | generated 客户/客户ID CSV | join 字段映射校验 | tests/eval_p1.py | 明确返回 missing_join_field，不执行合并 | {"ok":false,"errorCode":"missing_join_field"} | PASS | 0.711s | CNY 0.000 |
+| P1-09 | multifile | generated sales-2025.csv + sales-2026.csv | 跨文件同比计算 | tests/test_multifile_tools.py + tests/eval_p1.py | 确定性返回同比变化率 | {"ok":true,"groups":[{"group":"sales-2025.csv","datasetId":"ds_93d8618d13aa","value":50,"validCount":2},{"group":"sales-2026.csv","datasetId":"ds_e812789cbd19","value":100,"validCount":2}],"yearOverYearRate":1.0} | PASS | 0.931s | CNY 0.000 |
+| P1-10 | multifile | generated category-a.csv + category-b.csv | 跨文件分组对比 | tests/test_multifile_tools.py + tests/eval_p1.py | 按类别比较两个文件的分组结果 | {"ok":true,"categories":[{"group":"B","values":[{"datasetId":"ds_9914c8dd927b","filename":"category-a.csv","value":40,"validCount":1,"missing":false},{"datasetId":"ds_fa161abf8c65","filename":"category-b.csv","value":70,"validCount":1,"missing":false}]},{"group":"A","values":[{"datasetId":"ds_9914c8dd927b","filename":"category-a.csv","value":10,"validCount":1,"missing":false},{"datasetId":"ds_fa161abf8c65","filename":"category-b.csv","value":30,"validCount":1,"missing":false}]}]} | PASS | 0.967s | CNY 0.000 |
+| P1-11 | multifile | generated empty-p1.csv | 空文件注册校验 | tests/test_dataset_registry.py + tests/eval_p1.py | 拒绝空文件且不继续分析 | {"accepted":false,"errorCode":"empty_file"} | PASS | 0.281s | CNY 0.000 |
+| P1-12 | multifile | generated structure-left/right.csv | 结构/关联字段校验 | tests/test_multifile_tools.py + tests/eval_p1.py | 拒绝不兼容合并，不产生结论 | {"ok":false,"errorCode":"missing_join_field"} | PASS | 0.796s | CNY 0.000 |
+| P1-13 | conversation | generated history.csv + 2 turns | 历史 ToolResult recall | tests/test_conversation.py + tests/eval_p1.py | 回答华南 | {"answer":"华南"} | PASS | 0.642s | CNY 0.000 |
+| P1-14 | conversation | generated history.csv + 2 turns | 历史对象与结果 recall | tests/eval_p1.py | 回答华东 | {"answer":"华东"} | PASS | 0.614s | CNY 0.000 |
+| P1-15 | conversation | generated history.csv + 2 turns | filter 覆盖 | tests/eval_conversation.py CONV-01 + tests/eval_p1.py | 第二轮使用华南筛选 | {"filters":{"地区":"华南"}} | PASS | 0.782s | CNY 0.000 |
+| P1-16 | conversation | generated history.csv + 2 turns | metric 覆盖 | tests/eval_conversation.py CONV-04 + tests/eval_p1.py | 第二轮改用利润 | {"metric":"利润"} | PASS | 0.759s | CNY 0.000 |
+| P1-17 | conversation | generated old/new-history.csv | 活动数据集隔离 | tests/test_conversation.py + tests/eval_p1.py | 只使用新文件并得到 100 | {"value":100,"oldDatasetId":"ds_2d5384f4a6ee","currentDatasetId":"ds_4fa671fd2bf8"} | PASS | 0.927s | CNY 0.000 |
+| P1-18 | conversation | generated history.csv + 15 turns | 长历史 ToolResult recall | tests/test_conversation.py + tests/eval_p1.py | 仍回答华南 | {"answer":"华南","turns":15} | PASS | 0.701s | CNY 0.000 |
+| P1-19 | conversation | generated history.csv + 2 turns | 当前问题覆盖旧 metric | tests/eval_conversation.py CONV-04 + tests/eval_p1.py | 按当前请求改用利润 | {"metric":"利润","answer":"已识别冲突并改看利润"} | PASS | 0.832s | CNY 0.000 |
+| P1-20 | conversation | no dataset/history | needs_user_input | tests/eval_conversation.py CONV-08 + tests/eval_p1.py | stop_reason=needs_user_input | {"stopReason":"needs_user_input","answer":"请重新提供文件和分析目标。"} | PASS | 0.218s | CNY 0.000 |

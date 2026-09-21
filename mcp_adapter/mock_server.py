@@ -6,7 +6,14 @@ import copy
 import time
 from typing import Any
 
-from .contracts import MCPCallResult, MCPRemoteError, MCPToolSpec, MCPUnknownToolError
+from .contracts import (
+    MCPCallResult,
+    MCPListToolsResult,
+    MCPProtocolError,
+    MCPRemoteError,
+    MCPToolSpec,
+    MCPUnknownToolError,
+)
 
 
 class MockMCPServer:
@@ -35,6 +42,12 @@ class MockMCPServer:
                     "required": ["text"],
                     "additionalProperties": False,
                 },
+                "outputSchema": {
+                    "type": "object",
+                    "properties": {"echo": {"type": "string"}},
+                    "required": ["echo"],
+                    "additionalProperties": False,
+                },
             }
         ]
 
@@ -59,10 +72,21 @@ class MockMCPClient:
 
     def __init__(self, server: MockMCPServer) -> None:
         self.server = server
+        self.closed = False
+        self.cancel_count = 0
 
-    def list_tools(self, *, timeout_seconds: float) -> list[MCPToolSpec]:
+    def list_tools(
+        self,
+        *,
+        cursor: str | None = None,
+        timeout_seconds: float,
+    ) -> MCPListToolsResult:
         del timeout_seconds
-        return self.server.list_tools()
+        if self.closed:
+            raise MCPRemoteError("MCP client is closed")
+        if cursor is not None:
+            raise MCPProtocolError("mock MCP server has no additional tool pages")
+        return {"tools": self.server.list_tools()}
 
     def call_tool(
         self,
@@ -72,5 +96,12 @@ class MockMCPClient:
         timeout_seconds: float,
     ) -> MCPCallResult:
         del timeout_seconds
+        if self.closed:
+            raise MCPRemoteError("MCP client is closed")
         return self.server.call_tool(name, arguments)
 
+    def cancel_pending(self) -> None:
+        self.cancel_count += 1
+
+    def close(self) -> None:
+        self.closed = True

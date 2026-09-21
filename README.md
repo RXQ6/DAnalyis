@@ -10,7 +10,8 @@ ConversationRunner 和 Agent Loop。
 固定工具白名单和独立迭代/超时预算，只把结构化摘要与证据回填主 Agent。
 当前还提供可选的 MCP Adapter：它在 Registry 组装阶段发现 MCP 工具并映射成现有
 `ToolDefinition`，因此本地工具和 MCP 工具共用参数校验、`ToolResult`、结果截断和 trace；
-第一版仅包含内存模拟 MCP Server，不连接外部服务。
+默认测试保留内存模拟 MCP Server，Day18.1 另以官方 MCP Python SDK 验证真实 stdio
+Client/Server，并把 Adapter timeout 传播为底层 pending request cancellation。
 Day16 在 analysis route 内增加可选的项目级 SkillRuntime：Router 先完成粗粒度分流，
 SkillRegistry 只使用轻量目录发现 `data-diagnosis`，命中后才加载完整 `SKILL.md`，并通过
 受限 ToolRegistry 视图复用现有 Agent Loop，最后校验结构化诊断输出并记录 SkillInvocation。
@@ -19,9 +20,11 @@ LLM 只负责理解问题、选择受控工具、决定是否继续分析和解�
 分组、趋势、异常、占比、同比等真实计算由确定性工具执行。项目不运行用户提供的代码，
 不让模型动态生成并执行任意 Python，也不修改原始数据。
 
-Requirements: Node.js 20 or newer. No third-party packages are required.
+Requirements: Node.js 20 or newer. 核心 CLI 不需要第三方包；真实 MCP stdio 集成需要
+Python 3.10+ 并安装 `requirements-mcp.txt`。
 
 ```powershell
+python -m pip install -r requirements-mcp.txt
 node src/cli.js --file .\sales.csv --question "按地区分组统计销售额总和"
 node src/cli.js --file .\sales.xlsx --question "销售额平均值" --log .\audit.jsonl
 npm test
@@ -46,12 +49,12 @@ underspecified question returns `status: "needs_input"`. See
 | P0 整体（含原 Bad Cases） | 15/15 |
 | P1 | 20/20 |
 | Robustness | 25/25 |
-| Python 全量 | 172/172 |
+| Python 全量 | 183/183 |
 | Node 全量 | 13/13 |
 | Workflow / Router 专项 | 16/16 |
 | Sub-agent 专项 | 12/12 |
-| MCP Adapter 专项 | 15/15 |
-| Day16 Skill 专项 | 16/16 |
+| MCP Adapter 专项 | 24/24 |
+| Day16 Skill 专项 | 18/18 |
 | Memory / Todo | 16/16、12/12 |
 | Context Compression / Historical Summary | 9/9、8/8 |
 | 多步语义 | 3/3 |
@@ -72,7 +75,7 @@ underspecified question returns `status: "needs_input"`. See
 | `tools/` | 受控工具注册表与处理器：提供 Agent 可调用的确定性计算能力，禁止执行任意 Python 代码。 |
 | `workflow/` | Agent Loop 外层的规则优先请求编排：通过统一 dict state 和 `Workflow.invoke()` 分流到 chat、analysis、calc、memory_recall。 |
 | `subagents/` | 可选的单场景数据检查 Sub-agent：隔离上下文、限制工具和执行预算，并向主 Agent 返回精简证据。 |
-| `mcp_adapter/` | 可选 MCP 工具适配层：提供最小 Client 协议、工具发现/调用映射、错误归一化和内存模拟 Server。 |
+| `mcp_adapter/` | 可选 MCP Tools 接入：MCPHost 管理 Client 生命周期和权限，Adapter 负责分页发现、ToolRegistry 映射、结果校验与错误归一化；支持 mock Client 与官方 SDK stdio Client，Resources/Prompts 仅保留扩展接口。 |
 | `skill_runtime/` | analysis route 内的懒加载专业能力层：发现并运行 data-diagnosis，限制工具、校验输出契约并记录调用 trace。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |

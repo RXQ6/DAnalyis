@@ -294,9 +294,13 @@ Workflow analysis
 
 ## 13. MCP 工具适配层
 
-MCP Adapter 是可选的 Tool Registry 工具来源，不增加 Workflow route，也不改变 Agent Loop：
+MCP Adapter 是可选的 Tool Registry 工具来源，不增加 Workflow route，也不改变 Agent Loop。Host、Client、Server 边界如下：
 
 ```text
+MCPHost（生命周期、显式 allowlist）
+  → MCPClient（transport/SDK 的语义接口）
+  → MCP Server
+
 Workflow analysis
   → ConversationRunner
   → AgentLoop
@@ -306,19 +310,31 @@ Workflow analysis
   → 统一 ToolResult / Observation
 ```
 
-- `MCPClient` 第一版只定义同步的 `list_tools()` 和 `call_tool()`；调用方同时传入 timeout，
-  Adapter 再用 daemon worker 限制主调用线程的最长等待时间。
+- `MCPHost` 持有一组一对一 Server Client，负责显式工具 allowlist、注册和 best-effort close；
+  Adapter 本身也要求 allowlist，绕过 Host 时不会默认暴露 Server 全部工具。
+- `MCPClient` 的 Tools 接口独立定义分页 `list_tools(cursor)` 和 `call_tool()`；真实 SDK 只需实现该
+  transport-neutral facade，上层 Agent、Registry 和 Adapter 无需改写。Resources / Prompts 目前仅有
+  独立 Protocol 扩展位，没有接入 Harness。
+- Day18.1 新增 `MCPStdioClient`：在专用后台事件循环中持有官方 MCP Python SDK `Client` 与
+  `StdioServerParameters`，把异步 SDK 结果转换成现有同步 Client 合约。stdio 子进程的启动、协议协商、
+  JSON-RPC 和关闭均由官方 SDK 管理，Agent Loop 与 ToolRegistry 不感知具体 Client 实现。
 - 工具发现显式发生在 Registry 组装阶段。远端 `echo` 会映射为带来源命名空间的
   `mcp_mock__echo`，参数 schema 成为 `ToolDefinition.parameter_schema`，handler 闭包保存真实
   Server 工具名并调用 `call_tool()`。
-- 发现结果先完成数量、名称、描述、JSON schema 大小和现有 Registry 兼容性校验，再通过
-  `register_many()` 原子注册；失败时返回 `MCPRegistrationReport`，已有本地 Registry 不变。
+- 发现过程遍历 `nextCursor` 并限制工具总数；名称支持 MCP 的点号/连字符并在本地命名空间内检查
+  归一化碰撞。标准无参数 object schema 会补齐现有 ToolRegistry 需要的空 properties/required；
+  协议错误和本地 schema 不兼容分别返回 `mcp_protocol_error`、`mcp_schema_incompatible`。
+- 发现结果通过 `register_many()` 原子注册；失败时返回 `MCPRegistrationReport`，已有本地 Registry 不变。
 - 调用成功的数据由现有 Registry 统一包装为 ToolResult，并继续使用既有 JSON 序列化、
-  大小限制、duration 和 trace。远端 `isError`、未知工具、协议错误、远端异常和 timeout
+  大小限制、duration 和 trace。Adapter 校验 content block、`resultType` 和可选 `outputSchema`；
+  远端 `isError`、未知工具、协议错误、远端异常和 timeout
   分别映射为稳定的 `mcp_tool_error`、`mcp_tool_not_found`、`mcp_protocol_error`、
-  `mcp_server_unavailable` 和 `mcp_timeout`，不会把异常抛到主 Agent。
-- 第一版仅提供内存 `MockMCPServer` 的确定性 `echo` 工具和 `MockMCPClient`，不包含真实网络、
-  stdio 进程、认证、资源读取或 prompt 接入。
+  `mcp_server_unavailable` 和 `mcp_timeout`，不会把异常抛到主 Agent。timeout 会调用 Client 的可选
+  `cancel_pending()`，真实 SDK facade 应将其绑定到底层 transport 取消。
+- `MCPStdioClient.cancel_pending()` 会在线程安全地取消当前 SDK asyncio task；SDK 负责把 cancellation
+  传播到 stdio Server。真实集成测试由 Server 捕获取消并写 marker，且取消后同一 Client 可继续调用。
+- 默认回归继续使用内存 `MockMCPServer` / `MockMCPClient`；Day18.1 额外提供官方 SDK 的真实 stdio
+  Client/Server 集成。Streamable HTTP、认证、资源读取、prompt 和动态通知仍不在当前范围。
 - 默认 `build_default_registry()` 不注册 MCP 工具；调用方必须显式构造 Adapter 并注册。
   Sub-agent 仍从固定白名单构造受限 Registry，因此不会自动继承 MCP 权限。
 

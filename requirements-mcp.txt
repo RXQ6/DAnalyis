@@ -1,0 +1,2 @@
+# Optional Day18.1 real MCP stdio integration.
+mcp==2.2.0
