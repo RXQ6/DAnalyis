@@ -218,6 +218,9 @@ class AgentLoop:
                             if active_dataset_ids is None
                             else list(active_dataset_ids)
                         ),
+                        "current_tool_calls": [
+                            entry["tool_name"] for entry in state.execution_trace
+                        ],
                         "previous_tool_results": self._tool_results_for_context(state),
                     },
                 )

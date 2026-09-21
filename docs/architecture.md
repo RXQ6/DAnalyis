@@ -257,3 +257,67 @@ Workflow.invoke(state)
   `eval()`，也不执行函数、属性、变量或任意 Python 代码。
 - MemoryRecallNode 只调用现有 Memory 的只读 `recall()`；显式 remember 仍沿用现有
   analysis 调用参数，不由 Router 自动写入长期 Memory。
+
+## 12. 单场景 Sub-agent 委派
+
+第一版仅提供可选的 `delegate_data_check` 数据检查委派工具，不增加 Workflow route，
+也不改变主 Agent Loop 的决策流程：
+
+```text
+Workflow analysis
+  → ConversationRunner
+  → Main AgentLoop
+  → delegate_data_check
+  → DataCheckSubAgentRunner
+  → 独立 AgentLoop / AgentState / messages
+  → restricted ToolRegistry
+  → sanitized SubAgentResult
+  → 主 Agent Observation
+  → 主 Agent 继续调用工具或 Final Answer
+```
+
+- 调用方显式把 `data_check_delegate_definition()` 注册到主 Registry；默认 Registry 和
+  现有 P0/P1 入口不自动获得委派能力。
+- Sub-agent 只接收受限 task、一个已验证为 active 的 datasetId 及 DatasetRegistry 的安全
+  公开摘要；不接收主 Agent messages、历史 ToolResult、Todo、Memory 或会话历史。
+- Sub-agent 复用现有 AgentLoop、ToolRegistry、ToolResult 和 ContextCompressor，但创建新的
+  AgentState；固定工具白名单为 `inspect_data`、`basic_stats`、`detect_anomaly`。
+- Sub Registry 不包含委派工具，因此不能递归委派；也不包含 Todo、Memory 写入、图表、
+  多文件比较或 merge 能力。
+- 默认最多 3 个 Sub-agent 迭代、4 次工具调用和 15 秒墙钟等待；每次主 Agent run 最多
+  调用一次委派工具，重复委派以不可恢复错误停止。
+- 返回主 Agent 的结果只包含 subtaskId、状态、简短 summary、最多 4 条受限 evidence、
+  dataset ID、warning、stop reason、usage 和结构化 error；不返回内部 messages、完整 trace、
+  prompt、Todo、Memory 或 Context Compression 报告。
+- Sub-agent 超时后立即向主 Agent 返回 timeout；执行线程为 daemon，且预算 deadline 会阻止
+  超时后的新工具调用。已经进入底层只读工具的调用仍由该工具自身的 timeout 收敛。
+
+## 13. MCP 工具适配层
+
+MCP Adapter 是可选的 Tool Registry 工具来源，不增加 Workflow route，也不改变 Agent Loop：
+
+```text
+Workflow analysis
+  → ConversationRunner
+  → AgentLoop
+  → ToolRegistry
+      ├─ 本地 ToolDefinition → 本地 Handler
+      └─ MCP ToolDefinition → MCPToolAdapter → MCPClient.call_tool()
+  → 统一 ToolResult / Observation
+```
+
+- `MCPClient` 第一版只定义同步的 `list_tools()` 和 `call_tool()`；调用方同时传入 timeout，
+  Adapter 再用 daemon worker 限制主调用线程的最长等待时间。
+- 工具发现显式发生在 Registry 组装阶段。远端 `echo` 会映射为带来源命名空间的
+  `mcp_mock__echo`，参数 schema 成为 `ToolDefinition.parameter_schema`，handler 闭包保存真实
+  Server 工具名并调用 `call_tool()`。
+- 发现结果先完成数量、名称、描述、JSON schema 大小和现有 Registry 兼容性校验，再通过
+  `register_many()` 原子注册；失败时返回 `MCPRegistrationReport`，已有本地 Registry 不变。
+- 调用成功的数据由现有 Registry 统一包装为 ToolResult，并继续使用既有 JSON 序列化、
+  大小限制、duration 和 trace。远端 `isError`、未知工具、协议错误、远端异常和 timeout
+  分别映射为稳定的 `mcp_tool_error`、`mcp_tool_not_found`、`mcp_protocol_error`、
+  `mcp_server_unavailable` 和 `mcp_timeout`，不会把异常抛到主 Agent。
+- 第一版仅提供内存 `MockMCPServer` 的确定性 `echo` 工具和 `MockMCPClient`，不包含真实网络、
+  stdio 进程、认证、资源读取或 prompt 接入。
+- 默认 `build_default_registry()` 不注册 MCP 工具；调用方必须显式构造 Adapter 并注册。
+  Sub-agent 仍从固定白名单构造受限 Registry，因此不会自动继承 MCP 权限。

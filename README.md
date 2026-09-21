@@ -6,6 +6,11 @@
 在这些能力外层提供规则优先的 Workflow / Router 统一入口，将请求分流到
 `chat`、`analysis`、`calc` 或 `memory_recall`；其中 `analysis` 继续复用现有
 ConversationRunner 和 Agent Loop。
+复杂 analysis 任务可选注册一个只读的数据检查 Sub-agent：它使用独立 AgentState/messages、
+固定工具白名单和独立迭代/超时预算，只把结构化摘要与证据回填主 Agent。
+当前还提供可选的 MCP Adapter：它在 Registry 组装阶段发现 MCP 工具并映射成现有
+`ToolDefinition`，因此本地工具和 MCP 工具共用参数校验、`ToolResult`、结果截断和 trace；
+第一版仅包含内存模拟 MCP Server，不连接外部服务。
 
 LLM 只负责理解问题、选择受控工具、决定是否继续分析和解释结果。数据读取、统计、
 分组、趋势、异常、占比、同比等真实计算由确定性工具执行。项目不运行用户提供的代码，
@@ -38,9 +43,11 @@ underspecified question returns `status: "needs_input"`. See
 | P0 整体（含原 Bad Cases） | 15/15 |
 | P1 | 20/20 |
 | Robustness | 25/25 |
-| Python 全量 | 129/129 |
+| Python 全量 | 156/156 |
 | Node 全量 | 13/13 |
 | Workflow / Router 专项 | 16/16 |
+| Sub-agent 专项 | 12/12 |
+| MCP Adapter 专项 | 15/15 |
 | Memory / Todo | 16/16、12/12 |
 | Context Compression / Historical Summary | 9/9、8/8 |
 | 多步语义 | 3/3 |
@@ -60,6 +67,8 @@ underspecified question returns `status: "needs_input"`. See
 | `datasets/` | P1 任务/会话级 DatasetRegistry：管理多个数据集 ID、安全摘要、可信路径、活动数据集和派生 lineage。 |
 | `tools/` | 受控工具注册表与处理器：提供 Agent 可调用的确定性计算能力，禁止执行任意 Python 代码。 |
 | `workflow/` | Agent Loop 外层的规则优先请求编排：通过统一 dict state 和 `Workflow.invoke()` 分流到 chat、analysis、calc、memory_recall。 |
+| `subagents/` | 可选的单场景数据检查 Sub-agent：隔离上下文、限制工具和执行预算，并向主 Agent 返回精简证据。 |
+| `mcp_adapter/` | 可选 MCP 工具适配层：提供最小 Client 协议、工具发现/调用映射、错误归一化和内存模拟 Server。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |
 | `package.json` | Node.js 项目信息及 `npm test` 测试入口。 |

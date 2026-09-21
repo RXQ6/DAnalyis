@@ -222,9 +222,33 @@
 - 新增 16 条 Workflow / Router 专项测试，覆盖四类规则、规则优先级、LLM 仅兜底、非法 route 防护、Node 职责、输入不变性、四条路径的统一返回契约、活动数据集追问以及真实 Agent Loop 复用。
 - 完成 Workflow 16/16、Python 全量 129/129、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
 
+## 单场景 Sub-agent 最小接入
+
+- 新增可选的 `delegate_data_check` 委派工具，只处理数据结构、基础统计和异常检查这一类只读子任务；Workflow route 和默认 P0/P1 Registry 保持不变。
+- Sub-agent 复用现有 AgentLoop、ToolRegistry、ToolResult 和 ContextCompressor，但每次创建独立 AgentState/messages，不注入主历史、Todo、Memory 或 prior ToolResult。
+- Sub Registry 固定只允许 `inspect_data`、`basic_stats`、`detect_anomaly`，不包含委派工具自身、Todo、图表、Memory 写入、多文件比较或 merge，并只接受当前 active datasetId。
+- 默认限制为 3 次独立迭代、4 次工具调用和 15 秒等待；主 Agent 每次 run 最多委派一次，第二次委派硬性拒绝。
+- 返回主 Agent 的 SubAgentResult 只包含状态、短摘要、受限 evidence、使用的数据集、warning、stop reason、usage 和结构化 error，不回灌内部 messages 或完整 execution trace。
+- 新增 12 条 Sub-agent 专项测试，覆盖工具白名单、递归/越权拒绝、工具预算、迭代上限、超时、摘要上限、跨 run 状态隔离、父历史隔离、active dataset 校验、重复委派、失败归一化，以及主 Agent 委派后继续执行普通工具或在子任务失败后安全形成最终答案。
+- 完成 Sub-agent 12/12、Workflow 16/16、Python 全量 141/141、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
+
+## MCP 工具最小接入
+
+- 新增可选 `mcp_adapter/`，定义同步 `MCPClient.list_tools()` / `call_tool()`、MCP Tool/CallResult 合约、工具适配器和内存模拟 Server；未引入真实外部服务或第三方依赖。
+- MCP Adapter 在现有 Registry 组装阶段执行发现，把远端工具映射为带 Server 命名空间的 `ToolDefinition` 和 handler；默认 Registry 工具集合保持不变，Agent Loop、Workflow 和 P0/P1 调用链未增加 MCP 专用分支。
+- 工具发现先校验工具数量、名称、描述、schema 大小及现有 Registry 兼容性，再通过 `register_many()` 原子注册；发现失败时返回可恢复的 `MCPRegistrationReport`，保留全部本地工具。
+- MCP 调用成功结果继续由现有 ToolRegistry 统一包装成 ToolResult、执行结果大小限制并写入原 execution trace；`isError`、未知远端工具、协议错误、远端异常和 timeout 均转换为稳定的结构化错误。
+- 第一版 `MockMCPServer` 仅暴露确定性 `echo`，`MockMCPClient` 只负责内存转发；Sub-agent 固定工具白名单不会自动继承 MCP 工具。
+- 新增 15 条 MCP 专项测试，覆盖发现、命名空间映射、参数校验、标准 ToolResult、Agent Loop 集成、主 Agent 失败恢复、allowlist、原子注册、结果截断、调用/发现 timeout、协议错误、远端异常、Registry/远端未知工具以及 Sub-agent 权限隔离。
+- 完成 MCP 专项 15/15、Python 全量 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
+- 再次完成 MCP 专项与全量回归复测：`list_tools`、Registry 注册、Agent 按名称调用、统一 ToolResult、未知工具、协议错误、远端异常、timeout 和失败后继续执行均通过；额外验证 `mcp_multi__alpha`、`mcp_multi__beta` 与本地 `local_echo` 同时注册和调用时 handler 不串联。复测结果仍为 MCP 15/15、Workflow 16/16、Sub-agent 12/12、Memory 16/16、Todo 12/12、Python 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
+- MCP 第一版仅验证内存模拟 Server；真实 MCP 的 stdio/HTTP 传输、协议握手、认证、连接生命周期和取消语义尚未接入。
+- Adapter 可限制主线程等待时间，但 Python 线程无法强制终止已进入阻塞 I/O 的调用；未来真实 Client 必须同时实现传输层 timeout、取消和进程清理。
+- MCP inputSchema 当前必须兼容现有 ToolRegistry 支持的 JSON Schema 子集；复杂 `$ref`、`oneOf`、资源和二进制内容尚未支持。
 - Todo 属于模型遵循的软约束，模型仍可能跳过规划、忘记更新状态或同时设置多个 `in_progress`。
 - 兼容入口 `todos` 仍采用完整快照覆盖；旧调用使用该入口时，遗漏项仍会被移除。
 - Todo 默认属于单次 Agent 运行；使用 ConversationRunner 时，仅未完成 Todo 会在当前会话内跨轮续接，不做长期持久化。

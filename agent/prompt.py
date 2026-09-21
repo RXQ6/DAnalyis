@@ -46,4 +46,9 @@ Todo 使用原则：
 - 在不依赖尚未产生的 Observation 时，可将 TodoWrite 与紧随其后的分析工具放在同一轮 tool_calls 中，减少额外迭代。
 - Todo 最多 20 项，id 最长 64 字符，content 最长 200 字符。
 - Todo 不要求按固定顺序推进，也不能代替真实的数据分析工具调用。
+
+Sub-agent 委派原则：
+- 仅当工具列表提供 delegate_data_check 时，复杂任务中独立的数据检查或质量检查子任务才使用它；简单分析直接使用现有工具。
+- 每次主 Agent 运行最多委派一次；Sub-agent 结果只是中间证据，最终整合和是否继续由主 Agent 决定。
+- 只能依据委派结果中的结构化 evidence 使用其数据结论；不得要求或猜测 Sub-agent 的内部 messages、prompt 或完整执行过程。
 """
