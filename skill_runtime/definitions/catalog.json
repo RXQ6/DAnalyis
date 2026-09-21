@@ -1,0 +1,23 @@
+{
+  "skills": [
+    {
+      "name": "data-diagnosis",
+      "description": "Diagnose data anomalies, changes, and likely evidence-backed causes.",
+      "triggerPatterns": [
+        "数据诊断",
+        "异常原因",
+        "波动原因",
+        "问题出在哪",
+        "根因分析",
+        "为什么.{0,16}(?:销量|销售额|指标).{0,12}(?:下降|下滑|降低|一直降)",
+        "(?:销量|销售额|指标).{0,16}为什么.{0,12}(?:下降|下滑|降低|一直降)",
+        "哪个(?:地区|区域).{0,12}导致.{0,12}(?:指标|销量|销售额).{0,12}(?:下降|下滑|降低)",
+        "\\bdiagnos(?:e|is|tic)\\b",
+        "\\broot\\s+cause\\b"
+      ],
+      "requiresDataset": true,
+      "definitionPath": "data-diagnosis/definition.json",
+      "instructionPath": "data-diagnosis/SKILL.md"
+    }
+  ]
+}

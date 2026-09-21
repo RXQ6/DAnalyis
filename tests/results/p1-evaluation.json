@@ -6,8 +6,8 @@
     "passedCases": 20,
     "totalCases": 20,
     "passRate": 1.0,
-    "averageResponseSeconds": 0.57294815,
-    "maximumResponseSeconds": 0.971679,
+    "averageResponseSeconds": 0.8840283,
+    "maximumResponseSeconds": 1.768427,
     "averageCostCny": 0.0,
     "maximumCostCny": 0.0
   },
@@ -40,7 +40,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.225116,
+      "durationSeconds": 0.391402,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -68,7 +68,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.205562,
+      "durationSeconds": 0.334371,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -86,7 +86,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.199301,
+      "durationSeconds": 0.315351,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -104,7 +104,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.200622,
+      "durationSeconds": 0.366003,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -122,7 +122,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.199627,
+      "durationSeconds": 0.367629,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -142,7 +142,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.928842,
+      "durationSeconds": 1.433094,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -162,7 +162,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.971679,
+      "durationSeconds": 1.768427,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -180,7 +180,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.687402,
+      "durationSeconds": 1.099016,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -197,13 +197,13 @@
         "groups": [
           {
             "group": "sales-2025.csv",
-            "datasetId": "ds_e5d02b37e0f9",
+            "datasetId": "ds_0b4cbd6f25ce",
             "value": 50,
             "validCount": 2
           },
           {
             "group": "sales-2026.csv",
-            "datasetId": "ds_aeda9f0ae822",
+            "datasetId": "ds_36c4b7ac8fdd",
             "value": 100,
             "validCount": 2
           }
@@ -212,7 +212,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.894597,
+      "durationSeconds": 1.320434,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -231,14 +231,14 @@
             "group": "B",
             "values": [
               {
-                "datasetId": "ds_3e66f83eed17",
+                "datasetId": "ds_9a1ac2fc156b",
                 "filename": "category-a.csv",
                 "value": 40,
                 "validCount": 1,
                 "missing": false
               },
               {
-                "datasetId": "ds_669ccef2b208",
+                "datasetId": "ds_b39dabb647b3",
                 "filename": "category-b.csv",
                 "value": 70,
                 "validCount": 1,
@@ -250,14 +250,14 @@
             "group": "A",
             "values": [
               {
-                "datasetId": "ds_3e66f83eed17",
+                "datasetId": "ds_9a1ac2fc156b",
                 "filename": "category-a.csv",
                 "value": 10,
                 "validCount": 1,
                 "missing": false
               },
               {
-                "datasetId": "ds_669ccef2b208",
+                "datasetId": "ds_b39dabb647b3",
                 "filename": "category-b.csv",
                 "value": 30,
                 "validCount": 1,
@@ -269,7 +269,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.866089,
+      "durationSeconds": 1.355806,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -287,7 +287,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.3296,
+      "durationSeconds": 0.47091,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -305,7 +305,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.748313,
+      "durationSeconds": 1.07007,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -322,7 +322,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.623904,
+      "durationSeconds": 0.818531,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -339,7 +339,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.519083,
+      "durationSeconds": 0.848291,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -358,7 +358,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.674298,
+      "durationSeconds": 1.188067,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -375,7 +375,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.727507,
+      "durationSeconds": 1.092574,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -389,12 +389,12 @@
       "expected": "只使用新文件并得到 100",
       "actual": {
         "value": 100,
-        "oldDatasetId": "ds_38fa05015c26",
-        "currentDatasetId": "ds_79f46c2c3f35"
+        "oldDatasetId": "ds_d90de0baeea3",
+        "currentDatasetId": "ds_8d3200282465"
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.845824,
+      "durationSeconds": 1.382855,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -412,7 +412,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.550454,
+      "durationSeconds": 0.81774,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -430,7 +430,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.849313,
+      "durationSeconds": 0.997586,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     },
@@ -448,7 +448,7 @@
       },
       "passed": true,
       "failures": [],
-      "durationSeconds": 0.21183,
+      "durationSeconds": 0.242409,
       "costCny": 0.0,
       "costBasis": "deterministic scripted model; no external LLM call"
     }

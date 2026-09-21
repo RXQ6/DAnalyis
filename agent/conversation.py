@@ -103,6 +103,17 @@ class ConversationRunner:
             dataset_registry=dataset_registry,
         )
 
+    def with_loop(self, loop: AgentLoop) -> "ConversationRunner":
+        """Create a synchronous runner view that shares this conversation state."""
+        runner = ConversationRunner(
+            loop,
+            dataset_registry=self.state.dataset_registry,
+            conversation_id=self.state.conversation_id,
+            historical_compactor=self.historical_compactor,
+        )
+        runner.state = self.state
+        return runner
+
     def add_datasets(
         self, file_paths: Sequence[str | Path], *, replace: bool = True
     ) -> list[dict[str, Any]]:

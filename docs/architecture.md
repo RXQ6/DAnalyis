@@ -321,3 +321,40 @@ Workflow analysis
   stdio 进程、认证、资源读取或 prompt 接入。
 - 默认 `build_default_registry()` 不注册 MCP 工具；调用方必须显式构造 Adapter 并注册。
   Sub-agent 仍从固定白名单构造受限 Registry，因此不会自动继承 MCP 权限。
+
+## 14. Day16 data-diagnosis Skill
+
+Skill 是 analysis route 内的专业能力封装，不增加顶层 route，也不实现另一套 Agent Loop：
+
+```text
+Workflow.invoke(state)
+  → RuleRouter → analysis
+  → AnalysisNode
+  → SkillRegistry.discover()（仅 catalog 元数据）
+      ├─ 未命中 → 原 ConversationRunner / AgentLoop
+      └─ 命中 data-diagnosis
+          → 加载 definition.json + SKILL.md
+          → 从现有 ToolRegistry 构造 allowed-tools 视图
+          → SkillRuntime → 现有 ConversationRunner / AgentLoop
+          → OutputContractValidator
+          → SkillInvocation / execution_trace
+```
+
+- 目录只保存 name、description、Trigger pattern、数据集前置条件和完整定义路径；普通 analysis
+  不读取或注入 `SKILL.md`。第一版只有存在活动/上传数据集且请求明确包含数据诊断、异常原因、
+  波动原因或根因分析等表达时命中。
+- 完整 SkillDefinition 包含 name、version、description、allowed-tools、Trigger、Workflow、
+  Boundaries、Output Contract 和 `SKILL.md` instructions。目录与完整定义的 name/description
+  必须一致，文件路径必须位于受控 definitions root。
+- SkillRuntime 继续实例化现有 `AgentLoop` 类，复用原 model、Memory、ContextCompressor、
+  max_iter 和基础 system prompt；`ConversationRunner.with_loop()` 让受限 Loop 共享同一个
+  ConversationState、DatasetRegistry、历史 ToolResult 和 Todo 生命周期。
+- allowed-tools 视图只把原 Registry 中显式声明的 ToolDefinition 注册进新的 ToolRegistry；
+  未授权工具不会出现在模型工具清单中，模型强行调用时仍由现有 Registry 返回
+  `TOOL_NOT_FOUND`。第一版不允许 Sub-agent、MCP、merge 或图表工具。
+- data-diagnosis 最终答案必须是约定 JSON object。Validator 检查必填字段、类型、枚举、
+  长度、额外字段、`insufficient_evidence` 的 limitation，并验证每个 evidenceCallId 引用
+  本次运行中成功的工具调用；失败时返回 `skill_output_contract_violation`。
+- SkillInvocation 记录 Skill/版本、Trigger、allowed-tools、状态、耗时、Agent stop reason、
+  迭代数、输出校验和精简工具 trace，不复制完整 messages、Memory 或原始数据；同时以
+  `trace_type=skill_invocation` 事件追加到现有 AgentState.execution_trace。

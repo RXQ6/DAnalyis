@@ -1,6 +1,6 @@
 # 项目进度
 
-更新时间：2026-09-19
+更新时间：2026-09-21
 
 ## 里程碑状态
 
@@ -243,12 +243,29 @@
 - 完成 MCP 专项 15/15、Python 全量 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8 回归，未修改既有评测目标。
 - 再次完成 MCP 专项与全量回归复测：`list_tools`、Registry 注册、Agent 按名称调用、统一 ToolResult、未知工具、协议错误、远端异常、timeout 和失败后继续执行均通过；额外验证 `mcp_multi__alpha`、`mcp_multi__beta` 与本地 `local_echo` 同时注册和调用时 handler 不串联。复测结果仍为 MCP 15/15、Workflow 16/16、Sub-agent 12/12、Memory 16/16、Todo 12/12、Python 156/156、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
 
+## Day16 data-diagnosis Skill 最小接入
+
+- 新增 `skill_runtime/`，第一版只提供 `data-diagnosis`；Skill 是现有 analysis Harness 内的专业能力封装，不新增 route 或另一套 Agent Loop。
+- SkillRegistry 先使用 `catalog.json` 中的 name、description、Trigger 和数据集前置条件完成规则发现；未命中时不读取或注入完整 `SKILL.md`，命中后才加载 definition、Workflow、Boundaries、allowed-tools、Output Contract 和 instructions。
+- AnalysisNode 只增加默认关闭的 SkillRuntime 插槽；未配置或未命中时继续原样调用 ConversationRunner。SkillRuntime 使用现有 AgentLoop 类，并通过共享 ConversationState 的 runner view 复用 DatasetRegistry、历史上下文、Memory、Todo、Context Compression 和现有 trace。
+- allowed-tools 从当前 ToolRegistry 的既有 ToolDefinition 构造独立受限视图；未授权工具不进入模型 schema，强行调用时返回现有 `TOOL_NOT_FOUND`。第一版不授权 Sub-agent、MCP、merge 或图表工具。
+- 新增 SkillDefinition 与 SkillInvocation。Invocation 使用 `contract_valid` 作为输出契约验收字段，并直接提供按调用顺序去重的 `tools_used`；Trigger、权限、状态、耗时、停止原因、迭代数和精简 `trace` 继续用于审计，并以 `skill_invocation` 事件写入现有 AgentState.execution_trace，不复制完整内部上下文。
+- data-diagnosis 输出必须满足结构化 JSON contract；确定性 Validator 检查字段、类型、枚举、长度、未知字段、证据不足条件，并确认 evidenceCallId 来自本次成功工具调用。非法输出安全返回 `skill_output_contract_violation`。
+- data-diagnosis 触发规则补充“为什么最近销量下降”“最近销售额为什么一直降”“哪个地区导致指标下降”等自然表达；增加 chat、calc、普通聚合、概念解释和字段改名负例，避免仅因出现诊断关键词而误触发。
+- Day16 Skill 专项测试扩充为 18 条，覆盖目录发现、四个业务诊断正例、五个负例、数据集前置条件、未命中不加载 SKILL.md、完整定义、受限 Registry、缺失/越权工具、输出契约、证据引用、共享会话、Skill prompt 不进入后续历史、SkillInvocation 核心字段与 trace，以及真实 User → Router → analysis → Skill → Agent Loop 链路。
+- 完成 Skill 18/18、Python 全量 174/174、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8 回归，未修改既有评测目标或其他 Harness 逻辑。
+- 2026-09-21 再次完成 Day16 冻结前复验：Skill 18/18，确认 Invocation 仅使用 `contract_valid` 并直接提供 `tools_used`，`trace` 只作为审计明细；四个自然语言诊断正例全部命中，五个 chat/calc/普通分析/概念类负例均未误触发。全量结果为 Python 174/174、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8，Workflow、Sub-agent、MCP、Memory、Todo、ToolRegistry 与 DatasetRegistry 均包含在全量单测中通过。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
 - MCP 第一版仅验证内存模拟 Server；真实 MCP 的 stdio/HTTP 传输、协议握手、认证、连接生命周期和取消语义尚未接入。
 - Adapter 可限制主线程等待时间，但 Python 线程无法强制终止已进入阻塞 I/O 的调用；未来真实 Client 必须同时实现传输层 timeout、取消和进程清理。
 - MCP inputSchema 当前必须兼容现有 ToolRegistry 支持的 JSON Schema 子集；复杂 `$ref`、`oneOf`、资源和二进制内容尚未支持。
+- Day16 第一版只有一个本地静态 Skill；尚未处理在线安装、热更新、Skill 依赖或多 Skill 冲突选择。
+- Skill Trigger 使用确定性关键词并要求数据集；仍需通过真实请求观察误命中和漏命中，不能为提高召回而直接放宽到所有 analysis。
+- Skill 输出依赖模型遵守 JSON contract；当前非法输出会明确失败，不自动追加 LLM 修复轮次。
+- evidenceCallId 校验能确认引用了成功工具调用，但不能单独证明每句话的因果推导正确。
 - Todo 属于模型遵循的软约束，模型仍可能跳过规划、忘记更新状态或同时设置多个 `in_progress`。
 - 兼容入口 `todos` 仍采用完整快照覆盖；旧调用使用该入口时，遗漏项仍会被移除。
 - Todo 默认属于单次 Agent 运行；使用 ConversationRunner 时，仅未完成 Todo 会在当前会话内跨轮续接，不做长期持久化。

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,6 +19,7 @@ class AgentState:
     max_iter: int = 6
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     execution_trace: list[dict[str, Any]] = field(default_factory=list)
+    skill_invocations: list[dict[str, Any]] = field(default_factory=list)
     prior_tool_results: list[dict[str, Any]] = field(default_factory=list)
     todos: list[dict[str, str]] = field(default_factory=list)
     memory_context: str = ""
@@ -65,5 +67,34 @@ class AgentState:
                 "error": observation["error"],
                 "duration": observation["duration"],
                 "truncated": observation["truncated"],
+            }
+        )
+
+    def record_skill_invocation(self, invocation: dict[str, Any]) -> None:
+        """Add a compact Skill audit event without pretending it is a tool call."""
+        item = copy.deepcopy(invocation)
+        self.skill_invocations.append(item)
+        self.execution_trace.append(
+            {
+                "trace_type": "skill_invocation",
+                "iteration": self.iteration,
+                "call_id": item["invocation_id"],
+                "tool_name": f"skill:{item['skill_name']}",
+                "arguments": {
+                    "skill": item["skill_name"],
+                    "triggerRule": item["trigger"]["rule"],
+                },
+                "success": item["status"] == "completed" and item["contract_valid"],
+                "data": {"skillInvocation": item},
+                "error": (
+                    None
+                    if item["contract_valid"]
+                    else {
+                        "code": "skill_output_contract_violation",
+                        "message": "Skill output did not satisfy its contract",
+                    }
+                ),
+                "duration": item["duration_ms"],
+                "truncated": False,
             }
         )

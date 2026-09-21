@@ -17,6 +17,10 @@ class AnalysisRunner(Protocol):
     def run(self, user_question: str, **kwargs: Any) -> Any: ...
 
 
+class OptionalSkillRuntime(Protocol):
+    def try_invoke(self, state: dict[str, Any]) -> dict[str, Any] | None: ...
+
+
 class RecallMemory(Protocol):
     def recall(
         self,
@@ -31,8 +35,14 @@ class RecallMemory(Protocol):
 class AnalysisNode:
     """Delegates analysis unchanged to the existing ConversationRunner."""
 
-    def __init__(self, runner: AnalysisRunner) -> None:
+    def __init__(
+        self,
+        runner: AnalysisRunner,
+        *,
+        skill_runtime: OptionalSkillRuntime | None = None,
+    ) -> None:
         self.runner = runner
+        self.skill_runtime = skill_runtime
 
     def routing_context(self) -> dict[str, Any]:
         conversation = getattr(self.runner, "state", None)
@@ -43,6 +53,10 @@ class AnalysisNode:
         }
 
     def invoke(self, state: dict[str, Any]) -> dict[str, Any]:
+        if self.skill_runtime is not None:
+            skill_result = self.skill_runtime.try_invoke(state)
+            if skill_result is not None:
+                return skill_result
         kwargs = {
             key: state[key]
             for key in (
