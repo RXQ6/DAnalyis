@@ -1,0 +1,384 @@
+{
+  "schema_version": 1,
+  "report": "day19.3-unified-evaluation",
+  "generated_at": "2026-09-21T08:49:01.142846+00:00",
+  "overall_status": "PASS",
+  "summary": {
+    "passed_cases": 60,
+    "total_cases": 60,
+    "harness_passed": true,
+    "regression_gate_passed": true
+  },
+  "metrics": {
+    "values": {
+      "pass_rate": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "accuracy": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "p0_pass_rate": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 15,
+        "total_count": 15,
+        "reason": null
+      },
+      "p1_pass_rate": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 20,
+        "total_count": 20,
+        "reason": null
+      },
+      "bad_case_recognition": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 15,
+        "total_count": 15,
+        "reason": null
+      },
+      "robustness_rate": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 25,
+        "total_count": 25,
+        "reason": null
+      },
+      "avg_latency": {
+        "available": true,
+        "value": 0.3214413666666667,
+        "unit": "seconds",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "p95_latency": {
+        "available": true,
+        "value": 0.921,
+        "unit": "seconds",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "max_latency": {
+        "available": true,
+        "value": 1.17858,
+        "unit": "seconds",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "avg_tool_calls": {
+        "available": true,
+        "value": 4.2,
+        "unit": "calls",
+        "sample_count": 40,
+        "total_count": 60,
+        "reason": null
+      },
+      "avg_loop_iterations": {
+        "available": true,
+        "value": 1.0,
+        "unit": "iterations",
+        "sample_count": 40,
+        "total_count": 60,
+        "reason": null
+      },
+      "retry_count": {
+        "available": true,
+        "value": 0,
+        "unit": "count",
+        "sample_count": 40,
+        "total_count": 60,
+        "reason": null
+      },
+      "timeout_count": {
+        "available": true,
+        "value": 0,
+        "unit": "count",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "security_violation_count": {
+        "available": true,
+        "value": 0,
+        "unit": "count",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "contract_failure_count": {
+        "available": true,
+        "value": 0,
+        "unit": "count",
+        "sample_count": 40,
+        "total_count": 60,
+        "reason": null
+      },
+      "cost": {
+        "available": true,
+        "value": {
+          "total": 0.0,
+          "average": 0.0,
+          "maximum": 0.0,
+          "currency": "CNY"
+        },
+        "unit": "CNY",
+        "sample_count": 60,
+        "total_count": 60,
+        "reason": null
+      },
+      "token": {
+        "available": false,
+        "value": null,
+        "unit": "tokens",
+        "sample_count": 0,
+        "total_count": 60,
+        "reason": "token usage not exposed"
+      }
+    },
+    "category_pass_rates": {
+      "bad": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 15,
+        "total_count": 15,
+        "reason": null
+      },
+      "chart": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 5,
+        "total_count": 5,
+        "reason": null
+      },
+      "conversation": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 8,
+        "total_count": 8,
+        "reason": null
+      },
+      "holdout": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 15,
+        "total_count": 15,
+        "reason": null
+      },
+      "multifile": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 7,
+        "total_count": 7,
+        "reason": null
+      },
+      "p0": {
+        "available": true,
+        "value": 1.0,
+        "unit": "ratio",
+        "sample_count": 10,
+        "total_count": 10,
+        "reason": null
+      }
+    },
+    "failure_taxonomy": {}
+  },
+  "process_metrics": {
+    "route_evaluated": 0,
+    "route_correct": 0,
+    "tool_evaluated": 40,
+    "tool_correct": 40,
+    "contract_evaluated": 40,
+    "contract_valid": 40,
+    "trace_available": 40,
+    "trace_unavailable": 20,
+    "failure_types": {}
+  },
+  "baseline": {
+    "baseline_id": "day19-stable-2026-09-21",
+    "metadata": {
+      "schema_version": 1,
+      "created_at": "2026-09-21",
+      "source_report": "tests/results/day19-eval-harness.json"
+    },
+    "delta": {
+      "p0_pass_rate": {
+        "available": true,
+        "current": 1.0,
+        "baseline": 1.0,
+        "delta": 0.0,
+        "reason": null
+      },
+      "p1_pass_rate": {
+        "available": true,
+        "current": 1.0,
+        "baseline": 1.0,
+        "delta": 0.0,
+        "reason": null
+      },
+      "robustness_rate": {
+        "available": true,
+        "current": 1.0,
+        "baseline": 1.0,
+        "delta": 0.0,
+        "reason": null
+      },
+      "avg_latency": {
+        "available": true,
+        "current": 0.3214413666666667,
+        "baseline": 0.24986613333333335,
+        "delta": 0.07157523333333332,
+        "reason": null
+      },
+      "p95_latency": {
+        "available": true,
+        "current": 0.921,
+        "baseline": 0.695978,
+        "delta": 0.22502200000000006,
+        "reason": null
+      },
+      "max_latency": {
+        "available": true,
+        "current": 1.17858,
+        "baseline": 0.877718,
+        "delta": 0.30086199999999996,
+        "reason": null
+      },
+      "average_cost": {
+        "available": true,
+        "current": 0.0,
+        "baseline": 0.0,
+        "delta": 0.0,
+        "reason": null
+      },
+      "maximum_cost": {
+        "available": true,
+        "current": 0.0,
+        "baseline": 0.0,
+        "delta": 0.0,
+        "reason": null
+      }
+    }
+  },
+  "regression_gate": {
+    "passed": true,
+    "results": [
+      {
+        "name": "p0_100_percent",
+        "status": "PASS",
+        "reason": "1.000000 meets minimum 1.000000",
+        "actual": 1.0,
+        "baseline": 1.0,
+        "limit": 1.0
+      },
+      {
+        "name": "p1_not_below_baseline",
+        "status": "PASS",
+        "reason": "1.000000 meets minimum 1.000000",
+        "actual": 1.0,
+        "baseline": 1.0,
+        "limit": 1.0
+      },
+      {
+        "name": "robustness_not_below_baseline",
+        "status": "PASS",
+        "reason": "1.000000 meets minimum 1.000000",
+        "actual": 1.0,
+        "baseline": 1.0,
+        "limit": 1.0
+      },
+      {
+        "name": "security_violation_zero",
+        "status": "PASS",
+        "reason": "value is 0",
+        "actual": 0,
+        "baseline": 0,
+        "limit": 0
+      },
+      {
+        "name": "contract_failure_zero",
+        "status": "PASS",
+        "reason": "value is 0",
+        "actual": 0,
+        "baseline": 0,
+        "limit": 0
+      },
+      {
+        "name": "avg_latency",
+        "status": "PASS",
+        "reason": "0.321441 is within tolerance limit 1.249866",
+        "actual": 0.3214413666666667,
+        "baseline": 0.24986613333333335,
+        "limit": 1.2498661333333334
+      },
+      {
+        "name": "p95_latency",
+        "status": "PASS",
+        "reason": "0.921000 is within tolerance limit 1.695978",
+        "actual": 0.921,
+        "baseline": 0.695978,
+        "limit": 1.695978
+      },
+      {
+        "name": "max_latency",
+        "status": "PASS",
+        "reason": "1.178580 is within tolerance limit 1.877718",
+        "actual": 1.17858,
+        "baseline": 0.877718,
+        "limit": 1.877718
+      },
+      {
+        "name": "average_cost",
+        "status": "PASS",
+        "reason": "0.000000 is within tolerance limit 0.500000",
+        "actual": 0.0,
+        "baseline": 0.0,
+        "limit": 0.5
+      },
+      {
+        "name": "maximum_cost",
+        "status": "PASS",
+        "reason": "0.000000 is within tolerance limit 0.500000",
+        "actual": 0.0,
+        "baseline": 0.0,
+        "limit": 0.5
+      },
+      {
+        "name": "existing_thresholds",
+        "status": "PASS",
+        "reason": "all existing P0/P1/Robustness gates passed",
+        "actual": null,
+        "baseline": null,
+        "limit": null
+      }
+    ]
+  },
+  "risks": [
+    "P1 legacy cases do not expose complete traces; process metrics remain unavailable for those cases.",
+    "Workflow routes are covered by evaluator tests but are not yet a formal suite in the unified run.",
+    "Token usage is unavailable until the underlying model clients expose it.",
+    "Latency is environment-sensitive; the gate uses a versioned baseline plus explicit tolerance while retaining legacy hard limits."
+  ]
+}

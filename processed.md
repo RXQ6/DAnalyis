@@ -268,6 +268,35 @@
 - 完成 Skill 18/18、Python 全量 174/174、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8 回归，未修改既有评测目标或其他 Harness 逻辑。
 - 2026-09-21 再次完成 Day16 冻结前复验：Skill 18/18，确认 Invocation 仅使用 `contract_valid` 并直接提供 `tools_used`，`trace` 只作为审计明细；四个自然语言诊断正例全部命中，五个 chat/calc/普通分析/概念类负例均未误触发。全量结果为 Python 174/174、Node 13/13、P0 15/15、P1 20/20、robustness 25/25、Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8，Workflow、Sub-agent、MCP、Memory、Todo、ToolRegistry 与 DatasetRegistry 均包含在全量单测中通过。
 
+## Day19.1 统一 Eval Harness
+
+- 新增独立 `eval_harness/`，定义统一 `EvalCase`、`EvalResult`、`EvalSuite` 和 `EvalRunner`；评测层不进入 Agent、Workflow、ToolRegistry 或其他业务调用链。
+- P0、P1、Robustness 通过兼容适配器直接复用原案例定义、执行函数和确定性断言；原 `tests/eval_agent.py`、`tests/eval_p1.py`、`tests/robustness_eval.py` 均保留且仍可独立执行。
+- 每个统一结果记录 `case_id`、`category`、`passed`、`failure_reason`、`latency`、`answer`、`trace_summary`、suite 与兼容元数据；P0/Robustness 从现有 audit 提取工具和轮次摘要，P1 对旧执行器未暴露的 trace 明确标记不可用，不编造过程。
+- EvalRunner 隔离单案例执行异常、继续收集后续结果，并按 suite 汇总 PASS/FAIL；P0 与 Robustness 原百分比、时延、成本和 process-check 门禁原样保留，P1 继续要求全部案例通过。
+- 新增 `tests/run_day19_eval.py` 统一入口和 `tests/results/day19-eval-harness.json` 可审计报告；暂未接入 LLM Judge，也未迁移其他专项评测。
+- Day19.1 统一评测通过 60/60：P0 15/15、P1 20/20、Robustness 25/25，全部原门禁 PASS。兼容旧入口复测保持 P0 15/15、P1 20/20、Robustness 25/25；Python 全量 189/189、Node 13/13 通过。
+
+## Day19.2 过程评测层
+
+- 新增确定性的 `RouteEvaluator`、`ToolEvaluator`、`TraceEvaluator`、`ContractEvaluator`，由 EvalCase 通过 evaluator 名称和显式 expectations 选择；EvalRunner 统一调用、合并 evaluator 结果并参与案例 PASS/FAIL，不引入 LLM Judge。
+- EvalResult 增加 `route_correct`、`tool_correct`、`contract_valid`、`trace_available`、`tool_calls`、`loop_iterations`、`retry_count`、`failure_type` 与逐 evaluator 审计明细；统一报告增加过程指标汇总。
+- RouteEvaluator 支持 `analysis`、`chat`、`calc`、`memory`、`memory_recall`，缺失、非法或不匹配 route 归类 `ROUTING_ERROR`。当前 P0/P1/Robustness 不暴露 Workflow route，因此没有把分析工具名伪装成 route，RouteEvaluator 由专项用例完成验收。
+- ToolEvaluator 检查预期工具、allowlist、同参数重复调用和执行错误，分别归类 `TOOL_SELECTION_ERROR`、`SECURITY_VIOLATION`、`TOOL_EXECUTION_ERROR`；P0/Robustness 使用完整 audit trace 接入。
+- TraceEvaluator 对完整 trace 统计工具次数、循环轮次和 retry，检查重复调用及 max_iter；P1 旧执行器未暴露完整 trace 时输出 `trace_available=false`，过程计数保持 null，不影响原 P1 门禁且不编造过程。
+- ContractEvaluator 支持结构化输出、现有 ToolResult 和 SkillInvocation 的确定性必填字段/类型校验，失败统一为 `CONTRACT_ERROR`；P0/Robustness 已接入结构化输出 contract。
+- 建立稳定 failure taxonomy：`ROUTING_ERROR`、`TOOL_SELECTION_ERROR`、`TOOL_EXECUTION_ERROR`、`MEMORY_ERROR`、`CONTEXT_ERROR`、`CONTRACT_ERROR`、`ANSWER_ERROR`、`TIMEOUT`、`SECURITY_VIOLATION`，并保留 `TRACE_ERROR`、`HARNESS_ERROR` 扩展分类和安全优先级。
+- Day19.2 过程层专项 17/17，通过统一 Harness 60/60（P0 15/15、P1 20/20、Robustness 25/25），原门禁全部 PASS；Python 全量 206/206、Node 13/13，旧 P0/P1/Robustness 入口分别保持 15/15、20/20、25/25；Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+
+## Day19.3 Metrics、Regression Gate 与 Unified Report
+
+- 新增 `MetricValue`、`EvalMetrics` 和 `MetricsCollector`，统一记录 pass rate、accuracy、bad-case recognition、robustness、平均/P95/最大时延、工具调用、循环轮次、retry、timeout、安全违规、contract 失败、cost 和 token；每项携带 available、覆盖案例数、单位和不可用原因，不用 0 替代缺失值。
+- 固化版本化 baseline `eval_harness/baselines/day19-stable.json`，保存稳定版本的 P0/P1/Robustness 通过率、延迟和成本及显式容差；每次运行只读取 baseline 并输出 current/baseline/delta，不自动覆盖稳定基线。
+- 新增 RegressionGate：P0 必须 100%，P1 和 Robustness 不得低于 baseline，security violation 与 contract failure 必须为 0；平均/P95/最大 latency 以及平均/最大 cost 必须位于 baseline 容差内；同时继续要求原 P0/P1/Robustness gates 全部通过。required metric 不可用时明确 FAIL。
+- 新增 UnifiedReportBuilder，同时生成 `tests/results/day19-unified-report.json` 和 `.md`，包含总体状态、category 通过率、过程指标、latency/cost/token、baseline delta、failure taxonomy、逐 gate PASS/FAIL 原因和当前风险。
+- 当前统一报告 PASS 60/60；过程覆盖保持 Tool 40/40、Contract 40/40、trace available 40、unavailable 20，token 明确 unavailable，cost 为 60/60 实际观测值。11 项 regression gate 全部 PASS，未降低旧 threshold。
+- Day19.3 专项 11/11；Python 全量 217/217、Node 13/13；旧 P0/P1/Robustness 保持 15/15、20/20、25/25；Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。

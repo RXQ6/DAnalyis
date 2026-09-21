@@ -1,0 +1,5190 @@
+{
+  "schema_version": 1,
+  "harness": "day19.2",
+  "passed": true,
+  "passed_cases": 60,
+  "total_cases": 60,
+  "process_metrics": {
+    "route_evaluated": 0,
+    "route_correct": 0,
+    "tool_evaluated": 40,
+    "tool_correct": 40,
+    "contract_evaluated": 40,
+    "contract_valid": 40,
+    "trace_available": 40,
+    "trace_unavailable": 20,
+    "failure_types": {}
+  },
+  "suites": {
+    "p0": {
+      "passed": true,
+      "passed_cases": 15,
+      "total_cases": 15,
+      "metrics": {
+        "p0PassRate": 1.0,
+        "overallAccuracy": 1.0,
+        "badCaseRecognitionRate": 1.0,
+        "averageResponseSeconds": 0.17216666666666666,
+        "maximumResponseSeconds": 0.203824,
+        "maximumCostCny": 0.0
+      },
+      "gates": {
+        "p0PassRate>=100%": true,
+        "overallAccuracy>=85%": true,
+        "badCaseRecognitionRate>=90%": true,
+        "averageResponse<=30s": true,
+        "maximumCost<=0.5CNY": true
+      }
+    },
+    "p1": {
+      "passed": true,
+      "passed_cases": 20,
+      "total_cases": 20,
+      "metrics": {
+        "passRate": 1.0,
+        "averageResponseSeconds": 0.6081693,
+        "maximumResponseSeconds": 1.17858,
+        "averageCostCny": 0.0,
+        "maximumCostCny": 0.0
+      },
+      "gates": {
+        "allCasesPassed": true
+      }
+    },
+    "robustness": {
+      "passed": true,
+      "passed_cases": 25,
+      "total_cases": 25,
+      "metrics": {
+        "badCaseRecognitionRate": 1.0,
+        "holdoutAccuracy": 1.0,
+        "overallAccuracy": 1.0,
+        "averageResponseSeconds": 0.18162383999999998,
+        "maximumResponseSeconds": 0.232182,
+        "maximumCostCny": 0.0,
+        "processCheckPassRate": 1.0
+      },
+      "gates": {
+        "badCaseRecognitionRate>=90%": true,
+        "holdoutAccuracy>=85%": true,
+        "averageResponse<=30s": true,
+        "maximumCost<=0.5CNY": true,
+        "processChecks=100%": true
+      }
+    }
+  },
+  "results": [
+    {
+      "case_id": "P0-01",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.196121,
+      "answer": "销售额的总和为 1,580（有效记录 5 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-02",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.203824,
+      "answer": "销售额的平均值为 20（有效记录 3 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-03",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.174616,
+      "answer": "共比较 2 个地区分组；华南的销售额总和最高，为 1,200。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "group_compare",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "group_compare"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "group_compare"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-04",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.153687,
+      "answer": "已按销售额从高到低返回前 5 条记录。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "top_n",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "top_n"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "top_n"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-05",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.176402,
+      "answer": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "trend",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "trend"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "trend"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-06",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.156501,
+      "answer": "使用 1.5×IQR 规则识别出 1 个销售额异常值。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "anomaly",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "anomaly"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "anomaly"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-07",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.17004,
+      "answer": {
+        "code": "missing_field",
+        "message": "字段“利润总和”不存在。",
+        "availableFields": [
+          "日期",
+          "地区",
+          "产品",
+          "销售额"
+        ]
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-08",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.162708,
+      "answer": {
+        "code": "empty_file",
+        "message": "文件为空，无法分析。"
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 1,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 1,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-09",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.173085,
+      "answer": {
+        "code": "dirty_numeric_data",
+        "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
+        "invalidCount": 1
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P0-10",
+      "category": "p0",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.176704,
+      "answer": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BC-01",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.171689,
+      "answer": {
+        "code": "missing_field",
+        "message": "字段“利润率排序”不存在。",
+        "availableFields": [
+          "日期",
+          "地区",
+          "产品",
+          "销售额"
+        ]
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BC-02",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.158513,
+      "answer": {
+        "code": "empty_file",
+        "message": "文件为空，无法分析。"
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 1,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 1,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BC-03",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.148288,
+      "answer": {
+        "code": "dirty_numeric_data",
+        "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
+        "invalidCount": 1
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 1,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BC-04",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.162151,
+      "answer": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BC-05",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.198171,
+      "answer": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "trend",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "trend"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "trend"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "p0",
+      "metadata": {
+        "cost_cny": 0.0,
+        "legacy_exit_code": 0,
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-01",
+      "category": "chart",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.291319,
+      "answer": {
+        "success": true,
+        "chartType": "line"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "chartType",
+          "success"
+        ],
+        "capability": "趋势 ToolResult → line chart"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "tests/fixtures/sales.csv",
+        "capability": "趋势 ToolResult → line chart",
+        "mapped_test": "tests/eval_chart.py CHART-01",
+        "expected": "生成 line SVG，来源为 trend_analysis",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-02",
+      "category": "chart",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.278384,
+      "answer": {
+        "success": true,
+        "values": [
+          {
+            "x": "华南",
+            "y": 0.759493670886076
+          },
+          {
+            "x": "华东",
+            "y": 0.24050632911392406
+          }
+        ],
+        "valueTotal": 1.0
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "success",
+          "valueTotal",
+          "values"
+        ],
+        "capability": "类别占比 → bar chart"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "tests/fixtures/sales.csv",
+        "capability": "类别占比 → bar chart",
+        "mapped_test": "tests/test_chart_tool.py + tests/eval_p1.py",
+        "expected": "柱高表示占比，总计为 1 或 100",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-03",
+      "category": "chart",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.323017,
+      "answer": {
+        "success": true,
+        "chartType": "scatter"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "chartType",
+          "success"
+        ],
+        "capability": "scatter chart"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated scatter.csv",
+        "capability": "scatter chart",
+        "mapped_test": "tests/test_chart_tool.py + tests/eval_p1.py",
+        "expected": "成功生成 scatter chart",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-04",
+      "category": "chart",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.275434,
+      "answer": {
+        "success": true,
+        "chartType": "line"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "chartType",
+          "success"
+        ],
+        "capability": "显式 line chart"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "tests/fixtures/sales.csv",
+        "capability": "显式 line chart",
+        "mapped_test": "tests/eval_chart.py CHART-01/04",
+        "expected": "按用户指定生成 line chart",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-05",
+      "category": "chart",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.28913,
+      "answer": {
+        "success": false,
+        "errorCode": "unsupported_chart_source"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "errorCode",
+          "success"
+        ],
+        "capability": "不支持的单值图表来源"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "tests/fixtures/sales.csv",
+        "capability": "不支持的单值图表来源",
+        "mapped_test": "tests/eval_chart.py CHART-05",
+        "expected": "拒绝生成并返回 unsupported_chart_source",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-06",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 1.17858,
+      "answer": {
+        "preflightOk": true,
+        "safeToExecute": true,
+        "mergeOk": true,
+        "rowCount": 2
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "mergeOk",
+          "preflightOk",
+          "rowCount",
+          "safeToExecute"
+        ],
+        "capability": "CSV 一对一安全合并"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated same-left.csv + same-right.csv",
+        "capability": "CSV 一对一安全合并",
+        "mapped_test": "tests/test_multifile_tools.py + tests/eval_p1.py",
+        "expected": "preflight 安全且生成派生数据集",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-07",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 1.02265,
+      "answer": {
+        "preflightOk": true,
+        "safeToExecute": true,
+        "mergeOk": true,
+        "rowCount": 3
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "mergeOk",
+          "preflightOk",
+          "rowCount",
+          "safeToExecute"
+        ],
+        "capability": "XLSX 一对一安全合并"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated left.xlsx + right.xlsx",
+        "capability": "XLSX 一对一安全合并",
+        "mapped_test": "tests/eval_p1.py",
+        "expected": "preflight 安全且生成派生数据集",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-08",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.788203,
+      "answer": {
+        "ok": false,
+        "errorCode": "missing_join_field"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "errorCode",
+          "ok"
+        ],
+        "capability": "join 字段映射校验"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated 客户/客户ID CSV",
+        "capability": "join 字段映射校验",
+        "mapped_test": "tests/eval_p1.py",
+        "expected": "明确返回 missing_join_field，不执行合并",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-09",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.921,
+      "answer": {
+        "ok": true,
+        "groups": [
+          {
+            "group": "sales-2025.csv",
+            "datasetId": "ds_1c1f9ebcc5be",
+            "value": 50,
+            "validCount": 2
+          },
+          {
+            "group": "sales-2026.csv",
+            "datasetId": "ds_bfffdd249bed",
+            "value": 100,
+            "validCount": 2
+          }
+        ],
+        "yearOverYearRate": 1.0
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "groups",
+          "ok",
+          "yearOverYearRate"
+        ],
+        "capability": "跨文件同比计算"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated sales-2025.csv + sales-2026.csv",
+        "capability": "跨文件同比计算",
+        "mapped_test": "tests/test_multifile_tools.py + tests/eval_p1.py",
+        "expected": "确定性返回同比变化率",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-10",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.963276,
+      "answer": {
+        "ok": true,
+        "categories": [
+          {
+            "group": "B",
+            "values": [
+              {
+                "datasetId": "ds_9716544dafe0",
+                "filename": "category-a.csv",
+                "value": 40,
+                "validCount": 1,
+                "missing": false
+              },
+              {
+                "datasetId": "ds_717dfb99b078",
+                "filename": "category-b.csv",
+                "value": 70,
+                "validCount": 1,
+                "missing": false
+              }
+            ]
+          },
+          {
+            "group": "A",
+            "values": [
+              {
+                "datasetId": "ds_9716544dafe0",
+                "filename": "category-a.csv",
+                "value": 10,
+                "validCount": 1,
+                "missing": false
+              },
+              {
+                "datasetId": "ds_717dfb99b078",
+                "filename": "category-b.csv",
+                "value": 30,
+                "validCount": 1,
+                "missing": false
+              }
+            ]
+          }
+        ]
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "categories",
+          "ok"
+        ],
+        "capability": "跨文件分组对比"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated category-a.csv + category-b.csv",
+        "capability": "跨文件分组对比",
+        "mapped_test": "tests/test_multifile_tools.py + tests/eval_p1.py",
+        "expected": "按类别比较两个文件的分组结果",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-11",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.262108,
+      "answer": {
+        "accepted": false,
+        "errorCode": "empty_file"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "accepted",
+          "errorCode"
+        ],
+        "capability": "空文件注册校验"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated empty-p1.csv",
+        "capability": "空文件注册校验",
+        "mapped_test": "tests/test_dataset_registry.py + tests/eval_p1.py",
+        "expected": "拒绝空文件且不继续分析",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-12",
+      "category": "multifile",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.759681,
+      "answer": {
+        "ok": false,
+        "errorCode": "missing_join_field"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "errorCode",
+          "ok"
+        ],
+        "capability": "结构/关联字段校验"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated structure-left/right.csv",
+        "capability": "结构/关联字段校验",
+        "mapped_test": "tests/test_multifile_tools.py + tests/eval_p1.py",
+        "expected": "拒绝不兼容合并，不产生结论",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-13",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.524981,
+      "answer": {
+        "answer": "华南"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "answer"
+        ],
+        "capability": "历史 ToolResult recall"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 2 turns",
+        "capability": "历史 ToolResult recall",
+        "mapped_test": "tests/test_conversation.py + tests/eval_p1.py",
+        "expected": "回答华南",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-14",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.505668,
+      "answer": {
+        "answer": "华东"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "answer"
+        ],
+        "capability": "历史对象与结果 recall"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 2 turns",
+        "capability": "历史对象与结果 recall",
+        "mapped_test": "tests/eval_p1.py",
+        "expected": "回答华东",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-15",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.721744,
+      "answer": {
+        "filters": {
+          "地区": "华南"
+        }
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "filters"
+        ],
+        "capability": "filter 覆盖"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 2 turns",
+        "capability": "filter 覆盖",
+        "mapped_test": "tests/eval_conversation.py CONV-01 + tests/eval_p1.py",
+        "expected": "第二轮使用华南筛选",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-16",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.731518,
+      "answer": {
+        "metric": "利润"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "metric"
+        ],
+        "capability": "metric 覆盖"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 2 turns",
+        "capability": "metric 覆盖",
+        "mapped_test": "tests/eval_conversation.py CONV-04 + tests/eval_p1.py",
+        "expected": "第二轮改用利润",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-17",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.88634,
+      "answer": {
+        "value": 100,
+        "oldDatasetId": "ds_6dd210bb393d",
+        "currentDatasetId": "ds_aae71927edf2"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "currentDatasetId",
+          "oldDatasetId",
+          "value"
+        ],
+        "capability": "活动数据集隔离"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated old/new-history.csv",
+        "capability": "活动数据集隔离",
+        "mapped_test": "tests/test_conversation.py + tests/eval_p1.py",
+        "expected": "只使用新文件并得到 100",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-18",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.526351,
+      "answer": {
+        "answer": "华南",
+        "turns": 15
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "answer",
+          "turns"
+        ],
+        "capability": "长历史 ToolResult recall"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 15 turns",
+        "capability": "长历史 ToolResult recall",
+        "mapped_test": "tests/test_conversation.py + tests/eval_p1.py",
+        "expected": "仍回答华南",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-19",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.727335,
+      "answer": {
+        "metric": "利润",
+        "answer": "已识别冲突并改看利润"
+      },
+      "trace_summary": {
+        "available": false,
+        "details": {},
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "answer",
+          "metric"
+        ],
+        "capability": "当前问题覆盖旧 metric"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "generated history.csv + 2 turns",
+        "capability": "当前问题覆盖旧 metric",
+        "mapped_test": "tests/eval_conversation.py CONV-04 + tests/eval_p1.py",
+        "expected": "按当前请求改用利润",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "P1-20",
+      "category": "conversation",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.186667,
+      "answer": {
+        "stopReason": "needs_user_input",
+        "answer": "请重新提供文件和分析目标。"
+      },
+      "trace_summary": {
+        "available": true,
+        "details": {
+          "stopReason": "needs_user_input"
+        },
+        "source": "legacy_p1_actual",
+        "observed_keys": [
+          "answer",
+          "stopReason"
+        ],
+        "capability": "needs_user_input"
+      },
+      "route_correct": null,
+      "tool_correct": null,
+      "contract_valid": null,
+      "trace_available": false,
+      "tool_calls": null,
+      "loop_iterations": null,
+      "retry_count": null,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "trace",
+          "available": false,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": false,
+            "tool_calls": null,
+            "loop_iterations": null,
+            "retry_count": null
+          }
+        }
+      ],
+      "suite": "p1",
+      "metadata": {
+        "cost_cny": 0.0,
+        "cost_basis": "deterministic scripted model; no external LLM call",
+        "input_fixture": "no dataset/history",
+        "capability": "needs_user_input",
+        "mapped_test": "tests/eval_conversation.py CONV-08 + tests/eval_p1.py",
+        "expected": "stop_reason=needs_user_input",
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-01",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.192416,
+      "answer": {
+        "code": "missing_field",
+        "message": "字段“退款金额总和”不存在。",
+        "availableFields": [
+          "客户",
+          "地区",
+          "收入",
+          "利润",
+          "订单号"
+        ]
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-02",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.19123,
+      "answer": {
+        "code": "empty_file",
+        "message": "文件为空，无法分析。"
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 1,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 1,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-03",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.192019,
+      "answer": {
+        "code": "dirty_date_data",
+        "message": "字段“日期”混有无法解析的日期，请统一日期格式后再分析。",
+        "invalidCount": 1
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "trend",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "trend"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "trend"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-04",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.154841,
+      "answer": {
+        "code": "dirty_numeric_data",
+        "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
+        "invalidCount": 1
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-05",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.232182,
+      "answer": {
+        "code": "missing_field",
+        "message": "未找到问题中要求用于排序的数值字段。",
+        "availableFields": [
+          "客户",
+          "地区",
+          "收入",
+          "利润",
+          "订单号"
+        ]
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-06",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.173156,
+      "answer": "请明确分析目标（基础统计、分组对比、趋势或异常识别）以及相关字段。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 4,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 4,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-07",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.170954,
+      "answer": {
+        "code": "inconsistent_columns",
+        "message": "部分数据行的列数与表头不一致。",
+        "rows": [
+          {
+            "rowNumber": 2,
+            "width": 3
+          }
+        ]
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 2,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 2,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-08",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.198176,
+      "answer": {
+        "code": "unreadable_file",
+        "message": "XLSX ZIP 目录无效。"
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 2,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 2,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-09",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.205327,
+      "answer": {
+        "code": "encoding_error",
+        "message": "CSV 不是有效的 UTF-8 编码。"
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 2,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input",
+              "load_table"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 2,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "BAD-10",
+      "category": "bad",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.182523,
+      "answer": {
+        "code": "file_too_large",
+        "message": "文件超过 20MB 限制。",
+        "sizeBytes": 20971521,
+        "maxBytes": 20971520
+      },
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "error"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 1,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [],
+            "actual": [
+              "validate_input"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 1,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-01",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.182495,
+      "answer": "金额的总和为 6.75（有效记录 3 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-02",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.179863,
+      "answer": "收入的平均值为 20（有效记录 3 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-03",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.164001,
+      "answer": "共比较 2 个地区分组；南区的收入平均值最高，为 30。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "group_compare",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "group_compare"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "group_compare"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-04",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.175961,
+      "answer": "利润的最小值为 -5（有效记录 4 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-05",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.15424,
+      "answer": "利润的最大值为 40（有效记录 4 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-06",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.177409,
+      "answer": "客户的计数为 3（有效记录 3 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-07",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.156022,
+      "answer": "已按金额从高到低返回前 3 条记录。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "top_n",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "top_n"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "top_n"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-08",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.18593,
+      "answer": "趋势覆盖 2 个日期；2026-03-01 至 2026-03-02，访问量从 15 到 20，首尾相比上升。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "trend",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "trend"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "trend"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-09",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.188474,
+      "answer": "共比较 2 个region分组；east的revenue总和最高，为 50。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "group_compare",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "group_compare"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "group_compare"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-10",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.195467,
+      "answer": "趋势覆盖 2 个日期；2026-04-01 至 2026-04-02，revenue从 40 到 20，首尾相比下降。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "trend",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "trend"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "trend"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-11",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.157743,
+      "answer": "使用 1.5×IQR 规则识别出 0 个温度异常值。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "anomaly",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "anomaly"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "anomaly"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-12",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.219194,
+      "answer": "共比较 2 个客户分组；乙,二部的金额总和最高，为 200。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "group_compare",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "group_compare"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "group_compare"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-13",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.183672,
+      "answer": "金额的总和为 3,200.5（有效记录 2 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-14",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.172402,
+      "answer": "库存的总和为 24（有效记录 2 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    },
+    {
+      "case_id": "NEW-15",
+      "category": "holdout",
+      "passed": true,
+      "failure_reason": null,
+      "latency": 0.154899,
+      "answer": "评分的平均值为 2.5（有效记录 3 条）。",
+      "trace_summary": {
+        "available": true,
+        "rounds": 1,
+        "max_rounds": 3,
+        "tool_calls": [
+          {
+            "tool": "validate_input",
+            "status": "ok"
+          },
+          {
+            "tool": "load_table",
+            "status": "ok"
+          },
+          {
+            "tool": "profile_table",
+            "status": "ok"
+          },
+          {
+            "tool": "route_question",
+            "status": "ok"
+          },
+          {
+            "tool": "statistics",
+            "status": "ok"
+          }
+        ]
+      },
+      "route_correct": null,
+      "tool_correct": true,
+      "contract_valid": true,
+      "trace_available": true,
+      "tool_calls": 5,
+      "loop_iterations": 1,
+      "retry_count": 0,
+      "failure_type": null,
+      "process_evaluations": [
+        {
+          "evaluator": "tool",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "tool_correct": true,
+            "expected": [
+              "statistics"
+            ],
+            "actual": [
+              "validate_input",
+              "load_table",
+              "profile_table",
+              "route_question",
+              "statistics"
+            ],
+            "repeated": []
+          }
+        },
+        {
+          "evaluator": "trace",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "trace_available": true,
+            "tool_calls": 5,
+            "loop_iterations": 1,
+            "retry_count": 0,
+            "max_iter": 3,
+            "stop_reason": null
+          }
+        },
+        {
+          "evaluator": "contract",
+          "available": true,
+          "passed": true,
+          "failure_type": null,
+          "failure_reason": null,
+          "values": {
+            "contract_valid": true,
+            "kind": "structured_output"
+          }
+        }
+      ],
+      "suite": "robustness",
+      "metadata": {
+        "cost_cny": 0.0,
+        "process_checks": {
+          "toolSelection": true,
+          "parameters": true,
+          "rounds": true,
+          "noRepeats": true,
+          "conclusion": true
+        },
+        "failures": []
+      }
+    }
+  ]
+}

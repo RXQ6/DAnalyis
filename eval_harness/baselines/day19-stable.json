@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "baseline_id": "day19-stable-2026-09-21",
+  "created_at": "2026-09-21",
+  "source_report": "tests/results/day19-eval-harness.json",
+  "metrics": {
+    "p0_pass_rate": 1.0,
+    "p1_pass_rate": 1.0,
+    "robustness_rate": 1.0,
+    "avg_latency": 0.24986613333333335,
+    "p95_latency": 0.695978,
+    "max_latency": 0.877718,
+    "average_cost": 0.0,
+    "maximum_cost": 0.0
+  },
+  "tolerances": {
+    "latency": {
+      "relative": 0.5,
+      "absolute": 1.0
+    },
+    "cost": {
+      "relative": 0.0,
+      "absolute": 0.5
+    }
+  }
+}

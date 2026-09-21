@@ -31,6 +31,7 @@ npm test
 python tests/eval_agent.py
 python tests/eval_p1.py
 python tests/robustness_eval.py
+python tests/run_day19_eval.py
 python tests/eval_context_compression.py
 python tests/eval_historical_summary.py
 python tests/eval_multistep_semantics.py
@@ -49,7 +50,8 @@ underspecified question returns `status: "needs_input"`. See
 | P0 整体（含原 Bad Cases） | 15/15 |
 | P1 | 20/20 |
 | Robustness | 25/25 |
-| Python 全量 | 183/183 |
+| Day19.3 统一 Eval Harness（Metrics + Regression Gate + Unified Report） | 60/60 |
+| Python 全量 | 217/217 |
 | Node 全量 | 13/13 |
 | Workflow / Router 专项 | 16/16 |
 | Sub-agent 专项 | 12/12 |
@@ -77,6 +79,7 @@ underspecified question returns `status: "needs_input"`. See
 | `subagents/` | 可选的单场景数据检查 Sub-agent：隔离上下文、限制工具和执行预算，并向主 Agent 返回精简证据。 |
 | `mcp_adapter/` | 可选 MCP Tools 接入：MCPHost 管理 Client 生命周期和权限，Adapter 负责分页发现、ToolRegistry 映射、结果校验与错误归一化；支持 mock Client 与官方 SDK stdio Client，Resources/Prompts 仅保留扩展接口。 |
 | `skill_runtime/` | analysis route 内的懒加载专业能力层：发现并运行 data-diagnosis，限制工具、校验输出契约并记录调用 trace。 |
+| `eval_harness/` | Day19.3 统一确定性评测层：归一化 P0/P1/Robustness，评估 Route/Tool/Trace/Contract，收集指标、对比版本化 baseline、执行 regression gate 并生成 JSON/Markdown 报告。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |
 | `package.json` | Node.js 项目信息及 `npm test` 测试入口。 |
