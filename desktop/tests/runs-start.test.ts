@@ -1,0 +1,31 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { validateRunsCancelInput } from "../src/main/ipc/runs-cancel";
+import { validateRunsStartInput } from "../src/main/ipc/runs-start";
+
+test("runs:start accepts, normalizes, and validates thread id", () => {
+  assert.deepEqual(validateRunsStartInput({ message: "  hello  ", threadId: "thread_1" }), {
+    ok: true,
+    value: { message: "hello", threadId: "thread_1" },
+  });
+});
+
+test("runs:start rejects invalid renderer input", () => {
+  for (const input of [null, "message", {}, { message: "   " }, { message: 42 }, { message: "ok", unexpected: true }, { message: "ok", threadId: "bad id" }]) {
+    assert.equal(validateRunsStartInput(input).ok, false);
+  }
+});
+
+test("runs:start enforces the message length limit", () => {
+  assert.equal(validateRunsStartInput({ message: "x".repeat(4_000) }).ok, true);
+  assert.equal(validateRunsStartInput({ message: "x".repeat(4_001) }).ok, false);
+});
+
+test("runs:cancel requires one valid run id", () => {
+  assert.deepEqual(validateRunsCancelInput({ runId: "run_1" }), {
+    ok: true,
+    value: { runId: "run_1" },
+  });
+  assert.equal(validateRunsCancelInput({ runId: "bad id" }).ok, false);
+  assert.equal(validateRunsCancelInput({ runId: "run_1", extra: true }).ok, false);
+});

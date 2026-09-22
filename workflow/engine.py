@@ -35,7 +35,12 @@ class Workflow:
     def invoke(self, state: Mapping[str, Any]) -> dict[str, Any]:
         request_started = time.perf_counter()
         work_state = self._normalize_state(state)
-        collector = TraceCollector()
+        supplied_collector = work_state.get("_trace_collector")
+        collector = (
+            supplied_collector
+            if isinstance(supplied_collector, TraceCollector)
+            else TraceCollector()
+        )
         work_state["_trace_collector"] = collector
         collector.emit(
             "request_started",

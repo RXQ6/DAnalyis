@@ -7,7 +7,7 @@ import math
 import threading
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from .contracts import TraceEvent
 
@@ -34,7 +34,13 @@ _SENSITIVE_KEYS = frozenset(
 class TraceCollector:
     """Collect a bounded event stream without participating in control flow."""
 
-    def __init__(self, trace_id: str | None = None, *, max_events: int = 500) -> None:
+    def __init__(
+        self,
+        trace_id: str | None = None,
+        *,
+        max_events: int = 500,
+        event_sink: Callable[[dict[str, Any]], None] | None = None,
+    ) -> None:
         if max_events < 1:
             raise ValueError("max_events must be positive")
         self.trace_id = trace_id or f"trace_{uuid.uuid4().hex}"
@@ -43,6 +49,7 @@ class TraceCollector:
         self._sequence = 0
         self._dropped = 0
         self._lock = threading.Lock()
+        self._event_sink = event_sink
 
     def __deepcopy__(self, memo: dict[int, Any]) -> "TraceCollector":
         """Runtime state may be copied by Workflow; one request keeps one collector."""
@@ -85,7 +92,12 @@ class TraceCollector:
                     timestamp=datetime.now(timezone.utc).isoformat(),
                 )
                 self._events.append(event)
-                return event
+            if self._event_sink is not None:
+                try:
+                    self._event_sink(event.to_dict())
+                except Exception:
+                    pass
+            return event
         except Exception:
             return None
 

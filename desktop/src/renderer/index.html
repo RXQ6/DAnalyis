@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Analysis Agent</title>
+  </head>
+  <body>
+    <main>
+      <h1>Data Analysis Agent</h1>
+      <label for="run-input">Message</label>
+      <input id="run-input" type="text" autocomplete="off" />
+      <button id="run-submit" type="button">Send</button>
+      <button id="run-stop" type="button" disabled>Stop</button>
+      <output id="run-result" aria-live="polite"></output>
+      <ol id="event-list" aria-label="Agent events"></ol>
+    </main>
+    <script src="./index.js" defer></script>
+  </body>
+</html>

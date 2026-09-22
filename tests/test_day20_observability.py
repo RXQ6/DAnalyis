@@ -44,6 +44,25 @@ def workflow_for(runner: ConversationRunner, *, skill_runtime: Any = None) -> Wo
 
 
 class TraceContractTests(unittest.TestCase):
+    def test_optional_event_sink_streams_sanitized_events_and_is_fail_safe(self) -> None:
+        streamed: list[dict[str, Any]] = []
+        collector = TraceCollector("trace_stream", event_sink=streamed.append)
+        collector.emit(
+            "route_selected",
+            component="route",
+            name="chat",
+            status="ok",
+            metadata={"secret": "must-not-stream"},
+        )
+        self.assertEqual(len(streamed), 1)
+        self.assertEqual(streamed[0]["metadata"]["secret"], "<redacted>")
+
+        failing = TraceCollector(event_sink=lambda _event: (_ for _ in ()).throw(RuntimeError("sink")))
+        self.assertIsNotNone(
+            failing.emit("request_started", component="test", name="sink", status="ok")
+        )
+        self.assertEqual(len(failing.snapshot()), 1)
+
     def test_trace_event_contract_and_sanitized_bounded_metadata(self) -> None:
         collector = TraceCollector("trace_test", max_events=2)
         collector.emit(

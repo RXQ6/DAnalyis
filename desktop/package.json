@@ -1,0 +1,18 @@
+{
+  "name": "data-analysis-agent-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-intrusion Electron host for the data analysis Agent",
+  "main": "dist/src/main/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/copy-static.cjs",
+    "dev": "npm run build && electron .",
+    "start": "npm run build && electron .",
+    "test": "npm run build && node --test dist/tests/*.test.js && electron dist/tests/electron-smoke.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "electron": "^38.0.0",
+    "typescript": "^5.9.0"
+  }
+}

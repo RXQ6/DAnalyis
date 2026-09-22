@@ -423,9 +423,60 @@
   图表 5/5、多文件 5/5、历史对话 8/8。本次验收未修改 P0/P1 业务逻辑、评测预期、
   baseline、threshold 或 regression gate。
 
+## Desktop M1 Electron Shell + 第一条 IPC
+
+- 新增完全独立的 `desktop/` Electron + TypeScript 工程；没有修改 Python Runtime、根目录
+  Node P0 实现或现有业务模块。Main、preload、renderer、shared 按承载职责分层。
+- 创建最小 BrowserWindow，明确启用 `contextIsolation: true`、`nodeIntegration: false`、
+  `sandbox: true`，并拒绝新窗口和页面导航；Renderer CSP 仅允许本地资源。
+- 新增唯一 IPC `runs:start`。preload 只暴露 `startRun(input)`，Main 对 unknown payload
+  重新验证对象结构、唯一 `message` 字段、字符串类型、非空和 4000 字符上限。
+- 定义统一 `IpcResult<T>`：成功为 `ok: true + data`，失败为 `ok: false +
+  error { code, message, action? }`。M1 handler 只返回 Electron Shell 接收确认，不启动或
+  模拟 Python Runtime。
+- Renderer 仅包含输入框、发送按钮和结果区域，不 import Node、Electron Main、Python Runtime
+  或现有 Agent 业务模块。sandbox preload 采用零本地运行时依赖，避免受限 `require`。
+- Desktop M1 类型编译、IPC/校验/安全专项 5/5；隐藏 BrowserWindow smoke test 实际完成
+  Renderer context → preload → `ipcRenderer.invoke('runs:start')` → Main → `IpcResult` 链路，
+  并分别断言合法输入的成功信封和非法空消息的失败信封。
+- 原项目 Python 全量 259/259、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 60/60 与原 11 项 regression gate 全部通过；没有修改 baseline、threshold 或评测预期。
+
+## Desktop M2 Python Runtime Bridge + Agent Event Streaming
+
+- `desktop/src/bridge/` 新增 ProcessManager、RuntimeClient 与版本化 JSONL protocol；Electron Main
+  启动 Python supervisor，`runs:start` 现在返回由 Python 生成的真实 run/thread ID 和现有
+  TraceCollector 生成的 trace ID，不再返回 Shell acknowledgement。
+- Python supervisor 为每个 run 创建独立 worker，stdout 仅输出 ASCII-safe UTF-8 JSONL，普通输出和
+  诊断重定向到 stderr。非法 JSON、未知 command、非法 payload 和未知 event type 均 fail-closed，
+  不会使 Main 或 Python supervisor 崩溃。
+- TraceCollector 增加默认关闭、fail-safe 的 event sink，Workflow 允许通过私有 state 注入统一
+  collector；默认执行路径不变。route、skill、tool 和 approval 等事件仍由现有 Runtime 产生，
+  bridge 只映射协议字段并实时转发。
+- preload 仅暴露 `startRun`、`cancelRun`、`onAgentEvent`；Main 使用 `agent:event` 推送，Renderer
+  只按 per-run sequence 排序展示，不重新计算或解释 Runtime 结果。
+- `run.cancel` 由 Main 传入 Python supervisor；supervisor 终止对应 run worker，原子标记 cancelled，
+  产生严格递增的 `run_cancelled`，并丢弃所有迟到业务事件。Python supervisor 异常退出时，
+  RuntimeClient 将 pending request 失败并向仍存活的 Renderer 投影结构化 `runtime_error`。
+- Desktop M2 TypeScript/IPC/进程/顺序/取消/崩溃专项 9/9、Python bridge 协议专项 3/3、
+  隐藏 Electron 窗口 E2E 通过；E2E 明确断言 Python 事件已渲染、真实 ID 已返回，以及 Python
+  崩溃后页面仍存在并展示 `RUNTIME_PROCESS_EXIT`。
+- 原项目 Python 全量 260/260、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 60/60 与原 11 项 regression gate 全部通过；Day19 average/p95/max latency 分别为
+  0.318s/0.764s/1.117s，均在稳定基线容差内。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
+- Desktop M2 尚未接入 Session/HITL UI、Dataset、Chart 或文件选择；thread ID 当前只用于 run 相关，
+  尚未由桌面层持久化或恢复。
+- M2 的 analysis route 使用最小 BridgeModel composition adapter；真实模型客户端、凭证与数据集将在
+  后续阶段注入，但 Workflow、Agent Loop 和工具语义仍由现有 Python Runtime 执行。
+- 开发环境需要 `DATA_AGENT_PYTHON`、项目 `.venv` 或 PATH 中的 Python；独立 Python sidecar
+  和安装包属于 M6。
+- 取消通过终止独立 run worker 保证不再产生后续业务事件；真实外部 MCP 写操作未来仍需传输层取消、
+  幂等键和执行结果核对，不能仅凭进程终止推断外部副作用不存在。
+- 当前 Main 将 Agent event 广播到全部窗口；引入多窗口后需按订阅的 thread/run 隔离事件。
 - Day19 baseline 当前仍需人工审核和更新；统一评测只读取 `eval_harness/baselines/day19-stable.json`，不会在运行时自动提升或覆盖稳定基线。
 - Day19 当前仍有 20 个旧 P1 案例未暴露完整 trace、Workflow route 尚未纳入正式统一 suite、token 用量未由底层客户端提供；这些字段在报告中保持 unavailable，不以 0 代替。
 - latency 会受运行环境和并发影响，当前由版本化 baseline 容差与原有硬 threshold 共同约束；调整容差或 baseline 必须经过人工审核。
