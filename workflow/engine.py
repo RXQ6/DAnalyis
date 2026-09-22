@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import copy
+import time
 from collections.abc import Mapping
 from typing import Any
+
+from observability import TraceCollector
 
 from .nodes import AnalysisNode, WorkflowNode
 from .router import RuleRouter
@@ -30,10 +33,50 @@ class Workflow:
         self.nodes = normalized
 
     def invoke(self, state: Mapping[str, Any]) -> dict[str, Any]:
+        request_started = time.perf_counter()
         work_state = self._normalize_state(state)
+        collector = TraceCollector()
+        work_state["_trace_collector"] = collector
+        collector.emit(
+            "request_started",
+            component="workflow",
+            name="workflow",
+            status="started",
+            metadata={"has_dataset": bool(work_state.get("dataset_paths"))},
+        )
         self._add_runtime_context(work_state)
-        routing = self.router.route(work_state, allowed_routes=self.nodes.keys())
+        route_started = time.perf_counter()
+        try:
+            routing = self.router.route(work_state, allowed_routes=self.nodes.keys())
+        except Exception as error:
+            elapsed = (time.perf_counter() - route_started) * 1000
+            collector.emit(
+                "error",
+                component="route",
+                name="select",
+                status="error",
+                latency_ms=elapsed,
+                error_code=type(error).__name__,
+                metadata={"source": "workflow_router"},
+            )
+            collector.emit(
+                "request_completed",
+                component="workflow",
+                name="workflow",
+                status="error",
+                latency_ms=(time.perf_counter() - request_started) * 1000,
+                error_code=type(error).__name__,
+            )
+            raise
         route = routing["route"]
+        collector.emit(
+            "route_selected",
+            component="route",
+            name=route,
+            status="ok",
+            latency_ms=(time.perf_counter() - route_started) * 1000,
+            metadata={"source": routing.get("source"), "rule": routing.get("rule")},
+        )
         if route not in self.nodes:
             raise ValueError(f"router selected an unregistered route: {route}")
         work_state["route"] = route
@@ -43,6 +86,14 @@ class Workflow:
             node_result = self.nodes[route].invoke(work_state)
             normalized_result = self._normalize_result(node_result)
         except Exception as error:
+            collector.emit(
+                "error",
+                component="workflow",
+                name=route,
+                status="error",
+                error_code=type(error).__name__,
+                metadata={"phase": "node_execution"},
+            )
             normalized_result = {
                 "status": "error",
                 "response": None,
@@ -56,6 +107,36 @@ class Workflow:
         work_state["node_result"] = copy.deepcopy(normalized_result)
         work_state["response"] = normalized_result["response"]
         work_state["error"] = copy.deepcopy(normalized_result["error"])
+        request_status = "ok" if normalized_result["status"] == "ok" else normalized_result["status"]
+        error_code = None
+        if isinstance(normalized_result["error"], Mapping):
+            error_code = str(normalized_result["error"].get("code") or "workflow_error")
+            collector.emit(
+                "error",
+                component="workflow",
+                name=route,
+                status="error",
+                error_code=error_code,
+                metadata={"phase": "node_result"},
+            )
+        collector.emit(
+            "request_completed",
+            component="workflow",
+            name="workflow",
+            status=request_status,
+            latency_ms=(time.perf_counter() - request_started) * 1000,
+            error_code=error_code,
+            metadata={"route": route},
+        )
+        trace_events = collector.snapshot()
+        normalized_result["data"]["observability"] = {
+            "trace_id": collector.trace_id,
+            "events": trace_events,
+        }
+        agent_state = normalized_result["data"].get("agent_state")
+        if isinstance(agent_state, dict):
+            agent_state["trace_id"] = collector.trace_id
+            agent_state["trace_events"] = copy.deepcopy(trace_events)
         return {
             "status": normalized_result["status"],
             "route": route,

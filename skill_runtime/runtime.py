@@ -34,6 +34,14 @@ class SkillRuntime:
         match = self.registry.discover(state)
         if match is None:
             return None
+        collector = state.get("_trace_collector")
+        self._emit(
+            collector,
+            "skill_triggered",
+            name=match.name,
+            status="started",
+            metadata={"trigger_source": match.source, "trigger_rule": match.rule},
+        )
         started_wall = datetime.now(timezone.utc).isoformat()
         started = time.perf_counter()
         invocation_id = f"skill_{uuid.uuid4().hex[:12]}"
@@ -45,11 +53,31 @@ class SkillRuntime:
             skill_loop = self._build_loop(definition, tool_view)
             skill_runner = self.runner.with_loop(skill_loop)
             agent_state = skill_runner.run(state["query"], **self._runner_kwargs(state))
+            contract_started = time.perf_counter()
             validation = self.validator.validate(
                 agent_state.final_answer,
                 definition.output_contract,
                 agent_state.execution_trace,
             )
+            self._emit(
+                collector,
+                "contract_checked",
+                name=definition.name,
+                status="ok" if validation.ok else "error",
+                latency_ms=(time.perf_counter() - contract_started) * 1000,
+                error_code=None if validation.ok else "skill_output_contract_violation",
+                metadata={"violation_count": len(validation.errors)},
+            )
+            if not validation.ok:
+                self._emit(
+                    collector,
+                    "error",
+                    name=definition.name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - contract_started) * 1000,
+                    error_code="skill_output_contract_violation",
+                    metadata={"source": "output_contract"},
+                )
             status = self._invocation_status(agent_state.stop_reason, validation.ok)
             invocation = self._invocation(
                 invocation_id,
@@ -96,6 +124,15 @@ class SkillRuntime:
                 },
             }
         except Exception as error:
+            self._emit(
+                collector,
+                "error",
+                name=match.name,
+                status="error",
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error_code=type(error).__name__,
+                metadata={"source": "skill_runtime"},
+            )
             return self._startup_failure(
                 invocation_id,
                 match,
@@ -117,7 +154,7 @@ class SkillRuntime:
 
     @staticmethod
     def _runner_kwargs(state: dict[str, Any]) -> dict[str, Any]:
-        return {
+        kwargs = {
             key: state[key]
             for key in (
                 "dataset_paths",
@@ -127,9 +164,36 @@ class SkillRuntime:
                 "memory_top_k",
                 "remember",
                 "artifact_dir",
+                "_trace_collector",
             )
             if key in state
         }
+        if "_trace_collector" in kwargs:
+            kwargs["trace_collector"] = kwargs.pop("_trace_collector")
+        return kwargs
+
+    @staticmethod
+    def _emit(
+        collector: Any,
+        event_type: str,
+        *,
+        name: str,
+        status: str,
+        latency_ms: float | None = None,
+        error_code: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        emit = getattr(collector, "emit", None)
+        if callable(emit):
+            emit(
+                event_type,
+                component="skill",
+                name=name,
+                status=status,
+                latency_ms=latency_ms,
+                error_code=error_code,
+                metadata=metadata,
+            )
 
     @staticmethod
     def _invocation_status(stop_reason: str | None, contract_valid: bool) -> str:

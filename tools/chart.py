@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from guardrails import ToolGuardrailPolicy
+
 from charts import ChartSpecError, build_chart_spec, render_svg
 
 from .registry import ToolDefinition, ToolExecutionError
@@ -215,6 +217,7 @@ def chart_definition() -> ToolDefinition:
         parameter_schema=CHART_SCHEMA,
         handler=generate_chart,
         timeout_seconds=10.0,
+        guardrail_policy=ToolGuardrailPolicy(action_type="chart"),
     )
 
 

@@ -75,5 +75,5 @@ def _budgeted_definition(
         handler=handler,
         timeout_seconds=definition.timeout_seconds,
         max_result_bytes=definition.max_result_bytes,
+        guardrail_policy=definition.guardrail_policy,
     )
-

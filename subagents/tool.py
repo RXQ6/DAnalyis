@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from guardrails import ToolGuardrailPolicy
 from tools.registry import ToolDefinition, ToolExecutionError
 
 from .contracts import SubAgentLimits
@@ -60,6 +61,7 @@ def data_check_delegate_definition(
             dataset_id=dataset_id,
             dataset_registry=dataset_registry,
             metric=arguments.get("metric"),
+            trace_collector=context.get("_trace_collector"),
         )
 
     return ToolDefinition(
@@ -86,4 +88,9 @@ def data_check_delegate_definition(
         handler=handler,
         timeout_seconds=active_limits.timeout_seconds,
         max_result_bytes=active_limits.max_result_bytes,
+        guardrail_policy=ToolGuardrailPolicy(
+            action_type="subagent_read",
+            risk_level="low",
+            tool_kind="subagent",
+        ),
     )

@@ -48,8 +48,17 @@ class DataCheckSubAgentRunner:
         dataset_id: str,
         dataset_registry: Any,
         metric: str | None = None,
+        trace_collector: Any | None = None,
     ) -> SubAgentResult:
         normalized_task = self._validate_task(task)
+        started = time.perf_counter()
+        self._emit(
+            trace_collector,
+            "subagent_started",
+            subtask_id,
+            status="started",
+            metadata={"dataset_id": dataset_id},
+        )
         deadline = time.monotonic() + self.limits.timeout_seconds
         budget = ToolBudget(self.limits.max_tool_calls, deadline)
         registry = build_restricted_registry(
@@ -74,6 +83,7 @@ class DataCheckSubAgentRunner:
                     dataset_registry=dataset_registry,
                     active_dataset_ids=[dataset_id],
                     turn_id=subtask_id,
+                    trace_collector=trace_collector,
                 )
             except Exception as error:  # normalized before crossing the boundary
                 outcome.error = error
@@ -82,7 +92,7 @@ class DataCheckSubAgentRunner:
         worker.start()
         worker.join(self.limits.timeout_seconds)
         if worker.is_alive():
-            return self._empty_result(
+            result = self._empty_result(
                 subtask_id,
                 dataset_id,
                 status="timeout",
@@ -91,8 +101,10 @@ class DataCheckSubAgentRunner:
                 error={"code": "subagent_timeout", "message": "Sub-agent execution timed out"},
                 tool_calls=budget.calls,
             )
+            self._emit_completed(trace_collector, subtask_id, result, started)
+            return result
         if outcome.error is not None:
-            return self._empty_result(
+            result = self._empty_result(
                 subtask_id,
                 dataset_id,
                 status="failed",
@@ -105,8 +117,70 @@ class DataCheckSubAgentRunner:
                 },
                 tool_calls=budget.calls,
             )
+            self._emit_completed(trace_collector, subtask_id, result, started)
+            return result
         assert outcome.state is not None
-        return self._sanitize(subtask_id, dataset_id, outcome.state, budget.calls)
+        result = self._sanitize(subtask_id, dataset_id, outcome.state, budget.calls)
+        self._emit_completed(trace_collector, subtask_id, result, started)
+        return result
+
+    @staticmethod
+    def _emit(
+        collector: Any,
+        event_type: str,
+        name: str,
+        *,
+        status: str,
+        latency_ms: float | None = None,
+        error_code: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        emit = getattr(collector, "emit", None)
+        if callable(emit):
+            emit(
+                event_type,
+                component="subagent",
+                name=name,
+                status=status,
+                latency_ms=latency_ms,
+                error_code=error_code,
+                metadata=metadata,
+            )
+
+    @classmethod
+    def _emit_completed(
+        cls,
+        collector: Any,
+        subtask_id: str,
+        result: SubAgentResult,
+        started: float,
+    ) -> None:
+        error = result.get("error")
+        error_code = error.get("code") if isinstance(error, dict) else None
+        cls._emit(
+            collector,
+            "subagent_completed",
+            subtask_id,
+            status=str(result["status"]),
+            latency_ms=(time.perf_counter() - started) * 1000,
+            error_code=error_code,
+            metadata={
+                "stop_reason": result["stopReason"],
+                "iterations": result["usage"]["iterations"],
+                "tool_calls": result["usage"]["toolCalls"],
+                "evidence_count": len(result["evidence"]),
+            },
+        )
+        if error_code:
+            cls._emit(
+                collector,
+                "error",
+                subtask_id,
+                status="error",
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error_code=str(error_code),
+                metadata={"source": "subagent"},
+            )
 
     def _sanitize(
         self,
@@ -222,4 +296,3 @@ class DataCheckSubAgentRunner:
             "usage": {"iterations": 0, "toolCalls": tool_calls},
             "error": error,
         }
-

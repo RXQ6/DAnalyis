@@ -374,3 +374,70 @@ Workflow.invoke(state)
 - SkillInvocation 记录 Skill/版本、Trigger、allowed-tools、状态、耗时、Agent stop reason、
   迭代数、输出校验和精简工具 trace，不复制完整 messages、Memory 或原始数据；同时以
   `trace_type=skill_invocation` 事件追加到现有 AgentState.execution_trace。
+
+## 15. Day20.1 统一 Observability / Trace
+
+Day20.1 在现有执行路径旁路收集事件，不改变 Router、Agent Loop、Skill、Tool Handler、
+MCP 或 Sub-agent 的业务决策：
+
+```text
+Workflow / AgentLoop 创建 trace_id
+  → TraceCollector.emit(TraceEvent)
+  → route / skill / tool / MCP / subagent / contract / error 事件
+  → AgentState.trace_events 或 Workflow data.observability
+```
+
+- `TraceEvent` 使用统一的 `trace_id`、`event_type`、`component`、`name`、`status`、
+  `latency_ms`、`error_code` 和 `metadata`，并附带 schema version、event ID、UTC 时间和
+  单调 sequence。
+- TraceCollector 线程安全、事件数有界且 fail-safe；观测失败不会改变请求执行结果。
+- metadata 默认不记录问题原文、messages、完整 ToolResult、CSV 行、MCP 响应或 Sub-agent
+  evidence，只保留工具名、参数名、计数、状态和稳定错误码等审计信息。
+- 原 `AgentState.execution_trace` 和 ToolResult 合约保持不变。Day19 可选择新的
+  `ObservabilityEvaluator` 校验 TraceEvent，同时旧 TraceEvaluator 和原有门禁继续使用。
+
+## 16. Day20.2 确定性 Guardrails
+
+Guardrail 位于 `ToolRegistry.execute()` 的参数校验之后、Handler 调用之前，因此本地工具、
+MCP 工具和 Sub-agent 委派共用同一个执行闸口：
+
+```text
+ToolRegistry.get + validate arguments
+  → DeterministicGuardrail.evaluate(ToolGuardrailPolicy)
+      ├─ allow → 原 Handler
+      ├─ block → guardrail_blocked，Handler 不执行
+      └─ needs_approval → approval_required + pending，Handler 不执行
+```
+
+- `GuardrailDecision` 固定返回 `allow`、`block` 或 `needs_approval`，并记录 rule ID、
+  action type、risk level 和 tool kind；规则不调用 LLM。
+- 读取数据、基础分析、图表、MCP 读取和只读 Sub-agent 默认 allow；原始数据修改、任意
+  Python/shell 和未知高风险 action 默认 block；Host 显式标记的 MCP 外部写操作返回
+  `needs_approval`。
+- pending 状态只包含 approval ID、不可逆 action hash、工具名、action type、risk level 和
+  rule ID，不复制原始参数；批准后的恢复由 Day20.3 独立状态机负责。
+- 每次决策写入同一个 TraceCollector 的 `guardrail_decision` 事件。Day19 可选
+  `GuardrailEvaluator` 会验证非 allow 决策之后没有成功工具、MCP 或 Sub-agent 执行事件。
+
+## 17. Day20.3 HITL + Approval Resume
+
+HITL 复用 Day20.2 的 `needs_approval` 和原 ToolRegistry Handler，不创建第二套执行路径：
+
+```text
+needs_approval
+  → ApprovalManager.create() → pending（公开摘要）
+  → resolve(approval_id, action_hash, approve/reject/expire)
+      ├─ approved → 一次性消费 → 原 ToolRegistry Handler → ToolResult
+      ├─ rejected → 清除私有 payload，不执行
+      └─ expired → 清除私有 payload，不执行
+```
+
+- `ApprovalRequest` 是不含参数的公开 pending 合同；`ApprovalManager` 只在进程内私有保存
+  原 tool、arguments、context、policy 与 TraceCollector。终态后清除私有参数引用。
+- approve 必须同时匹配 approval ID 与 action hash。hash 由工具名和规范化参数生成；调用方
+  无法在 resume 时提交替换参数。hash 不匹配使旧审批 rejected，approved 在 Handler 前标记
+  consumed，因此并发或顺序重放均不能再次执行。
+- `AgentLoop.resume_approval()` 是最小程序接口：调用 Registry 恢复动作，并把原 pending
+  observation 原位替换为真实 ToolResult；不继续触发新的 LLM 回合，也不改写 Loop 主流程。
+- `approval_requested`、`approval_decided`、`approval_resumed` 进入原 TraceCollector；
+  `HITLEvaluator` 校验状态、approval/action 身份连续性，以及 reject/expire 后无底层执行。

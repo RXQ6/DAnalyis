@@ -297,9 +297,70 @@
 - 当前统一报告 PASS 60/60；过程覆盖保持 Tool 40/40、Contract 40/40、trace available 40、unavailable 20，token 明确 unavailable，cost 为 60/60 实际观测值。11 项 regression gate 全部 PASS，未降低旧 threshold。
 - Day19.3 专项 11/11；Python 全量 217/217、Node 13/13；旧 P0/P1/Robustness 保持 15/15、20/20、25/25；Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
 
+## Day20.1 统一 Observability / Trace
+
+- 新增统一 `TraceEvent` 与线程安全 `TraceCollector`；每个 Workflow 请求或独立 AgentLoop
+  请求生成一个 `trace_id`，事件包含 event type、component、name、status、latency、
+  error code、脱敏 metadata、sequence 和 UTC timestamp。
+- 在不改变业务控制流的前提下接入 `request_started`、`route_selected`、`skill_triggered`、
+  `tool_called`、`tool_completed`、`mcp_called`、`subagent_started`、`subagent_completed`、
+  `contract_checked`、`error` 和 `request_completed`。原 ToolResult 与 execution_trace
+  合约保持不变。
+- Trace metadata 不保存问题原文、messages、完整 ToolResult、CSV 内容、MCP 响应或
+  Sub-agent evidence；Collector 对敏感键脱敏，并限制字符串、集合、对象深度与事件总数。
+- Day19 evaluator registry 新增可选 `ObservabilityEvaluator`，不改变原 P0/P1/Robustness
+  cases、expectations、baseline 或 gate。
+- Day20.1 专项 6/6、Python 全量 223/223、Node 13/13、P0 15/15、P1 20/20、
+  Robustness 25/25、Day19 60/60 及 11 项 regression gate 全部通过；Context Compression
+  9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+- 并行回归时 Day19 曾因资源竞争出现一次 max latency gate 抖动；未修改 baseline 或容差，
+  最终无并发负载顺序复跑为 max 0.830s，小于 1.878s 上限并通过。
+
+## Day20.2 确定性 Guardrails
+
+- 新增统一 `GuardrailDecision`、`ToolGuardrailPolicy` 和 `DeterministicGuardrail`，固定返回
+  `allow`、`block` 或 `needs_approval`，核心判断不使用 LLM。
+- Guardrail 接在 ToolRegistry 参数校验之后、Handler 之前；本地工具、MCP 工具和
+  Sub-agent 委派共用同一闸口。非 allow 决策不会调用底层 Handler、远端 MCP Client 或
+  Sub-agent Runner。
+- 读取数据、基础分析、图表、MCP 读取和只读 Sub-agent 继续 allow；修改原始数据、任意
+  Python/shell 和未知高风险 action block；显式标记的 MCP 外部写操作返回包含 approval ID
+  与 action hash 的结构化 pending 状态。
+- 所有决策写入现有 TraceCollector 的 `guardrail_decision` 事件；Day19 evaluator registry
+  新增可选 `GuardrailEvaluator`，原 cases、baseline、threshold 和 regression gate 未修改。
+- Day20.2 专项 7/7、Python 全量 230/230、Node 13/13、P0 15/15、P1 20/20、
+  Robustness 25/25、Day19 60/60 与原 11 项 regression gate 全部通过；Context Compression
+  9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8；
+  最终 Day19 max latency 1.424s，低于 1.878s 上限。
+
+## Day20.3 HITL + Approval Resume
+
+- 新增 `ApprovalRequest`、`ApprovalDecision`、`ApprovalResolution` 与线程安全的
+  `ApprovalManager`。公开 pending 仅包含 approval ID、action hash、工具/动作类型、
+  风险与有效期，不包含原始参数；待执行参数只保存在进程内私有记录中。
+- `needs_approval` 后进入 pending；approve、reject、expire 均校验 approval ID 与 action
+  hash。hash 不匹配会使原审批终态 rejected；approved 记录在执行前即一次性消费，重放返回
+  `approval_already_consumed`；reject、expire 和不匹配均不会执行 Handler。
+- ToolRegistry 提供 `resolve_approval()`，approve 后只从私有记录恢复原 tool、原 arguments、
+  原 context，不接受调用方替换参数；继续复用既有 Handler、ToolResult、MCP 与 Trace 路径。
+  AgentLoop 仅增加 `resume_approval()` 程序接口，并原位更新 pending observation，不新增第二个
+  逻辑工具调用。
+- 现有 TraceCollector 新增 `approval_requested`、`approval_decided`、`approval_resumed`；三类
+  事件携带一致的 approval ID/action hash，且不保存原始参数。Day19 evaluator registry 新增
+  可选 `HITLEvaluator`，检查状态、身份连续性以及 reject/expire 后没有底层执行。
+- Day20.3 专项 8/8、Day20.2 联合专项 15/15、Python 全量 238/238、Node 13/13、P0
+  15/15、P1 20/20、Robustness 25/25、Day19 60/60 与原 11 项 regression gate 全部通过；
+  Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件
+  5/5、历史对话 8/8。最终 Day19 max latency 0.826s，低于 1.878s 上限。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
+- Day19 baseline 当前仍需人工审核和更新；统一评测只读取 `eval_harness/baselines/day19-stable.json`，不会在运行时自动提升或覆盖稳定基线。
+- Day19 当前仍有 20 个旧 P1 案例未暴露完整 trace、Workflow route 尚未纳入正式统一 suite、token 用量未由底层客户端提供；这些字段在报告中保持 unavailable，不以 0 代替。
+- latency 会受运行环境和并发影响，当前由版本化 baseline 容差与原有硬 threshold 共同约束；调整容差或 baseline 必须经过人工审核。
+- ApprovalStore 当前是单进程内存实现；进程重启会丢失 pending，尚不支持多实例共享、持久化、
+  审批身份认证或主动后台清理过期记录。过期状态在 resolve 时惰性判定。
 - MCP 第一版仅验证内存模拟 Server；真实 MCP 的 stdio/HTTP 传输、协议握手、认证、连接生命周期和取消语义尚未接入。
 - Adapter 可限制主线程等待时间，但 Python 线程无法强制终止已进入阻塞 I/O 的调用；未来真实 Client 必须同时实现传输层 timeout、取消和进程清理。
 - MCP inputSchema 当前必须兼容现有 ToolRegistry 支持的 JSON Schema 子集；复杂 `$ref`、`oneOf`、资源和二进制内容尚未支持。

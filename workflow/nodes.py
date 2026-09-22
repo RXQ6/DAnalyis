@@ -67,14 +67,19 @@ class AnalysisNode:
                 "memory_top_k",
                 "remember",
                 "artifact_dir",
+                "_trace_collector",
             )
             if key in state
         }
+        if "_trace_collector" in kwargs:
+            kwargs["trace_collector"] = kwargs.pop("_trace_collector")
         agent_state = self.runner.run(state["query"], **kwargs)
         stop_reason = getattr(agent_state, "stop_reason", None)
         answer = getattr(agent_state, "final_answer", None)
         if stop_reason == "needs_user_input":
             status = "needs_input"
+        elif stop_reason == "needs_approval":
+            status = "needs_approval"
         elif stop_reason == "final_answer":
             status = "ok"
         elif stop_reason == "max_iter":

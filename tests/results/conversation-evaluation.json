@@ -52,7 +52,7 @@
         {
           "name": "group_compare",
           "arguments": {
-            "datasetId": "ds_28aa8db3901c",
+            "datasetId": "ds_e2f687091b28",
             "groupBy": "地区",
             "metric": "销售额",
             "operation": "sum"
@@ -62,9 +62,9 @@
       "answer": "华南销售额最高。",
       "stopReason": "final_answer",
       "conversationState": {
-        "currentDatasetId": "ds_28aa8db3901c",
+        "currentDatasetId": "ds_e2f687091b28",
         "lastDatasetIds": [
-          "ds_28aa8db3901c"
+          "ds_e2f687091b28"
         ],
         "lastMetric": "销售额",
         "lastGroup": "地区",
@@ -79,7 +79,7 @@
         {
           "name": "group_compare",
           "arguments": {
-            "datasetId": "ds_28aa8db3901c",
+            "datasetId": "ds_e2f687091b28",
             "groupBy": "地区",
             "metric": "销售额",
             "operation": "sum"
@@ -89,9 +89,9 @@
       "answer": "仍按地区查看销售额。",
       "stopReason": "final_answer",
       "conversationState": {
-        "currentDatasetId": "ds_28aa8db3901c",
+        "currentDatasetId": "ds_e2f687091b28",
         "lastDatasetIds": [
-          "ds_28aa8db3901c"
+          "ds_e2f687091b28"
         ],
         "lastMetric": "销售额",
         "lastGroup": "地区",
@@ -106,7 +106,7 @@
         {
           "name": "trend_analysis",
           "arguments": {
-            "datasetId": "ds_28aa8db3901c",
+            "datasetId": "ds_e2f687091b28",
             "dateField": "日期",
             "metric": "销售额",
             "operation": "sum",
@@ -119,9 +119,9 @@
       "answer": "华东销售额从 10 上升到 20。",
       "stopReason": "final_answer",
       "conversationState": {
-        "currentDatasetId": "ds_28aa8db3901c",
+        "currentDatasetId": "ds_e2f687091b28",
         "lastDatasetIds": [
-          "ds_28aa8db3901c"
+          "ds_e2f687091b28"
         ],
         "lastMetric": "销售额",
         "lastGroup": "地区",
@@ -148,9 +148,9 @@
       "answer": "已生成华东销售额趋势图。",
       "stopReason": "final_answer",
       "conversationState": {
-        "currentDatasetId": "ds_28aa8db3901c",
+        "currentDatasetId": "ds_e2f687091b28",
         "lastDatasetIds": [
-          "ds_28aa8db3901c"
+          "ds_e2f687091b28"
         ],
         "lastMetric": "销售额",
         "lastGroup": "地区",

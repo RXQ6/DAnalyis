@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from datasets import DatasetRegistry
+from observability import TraceCollector
 
 from .loop import AgentLoop
 from .state import AgentState
@@ -148,6 +149,7 @@ class ConversationRunner:
         memory_top_k: int = 3,
         remember: Mapping[str, Any] | Sequence[Mapping[str, Any]] | None = None,
         artifact_dir: str | None = None,
+        trace_collector: TraceCollector | None = None,
     ) -> AgentState:
         if dataset_paths:
             self.add_datasets(dataset_paths, replace=replace_datasets)
@@ -183,6 +185,7 @@ class ConversationRunner:
             memory_top_k=memory_top_k,
             remember=remember,
             artifact_dir=artifact_dir,
+            trace_collector=trace_collector,
         )
         if summary_report is not None:
             state.context_reports.append(copy.deepcopy(summary_report))

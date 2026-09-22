@@ -7,9 +7,11 @@ import json
 import math
 import re
 import threading
+import time
 from dataclasses import dataclass
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Mapping, TypeVar
 
+from guardrails import ToolGuardrailPolicy
 from tools.registry import ToolDefinition, ToolExecutionError, ToolRegistry
 
 from .contracts import (
@@ -57,6 +59,7 @@ class MCPToolAdapter:
         max_tools: int = 32,
         max_description_chars: int = 2_000,
         max_schema_bytes: int = 32 * 1024,
+        tool_policies: Mapping[str, str] | None = None,
     ) -> None:
         if not isinstance(server_id, str) or not _NAME_PATTERN.fullmatch(server_id):
             raise ValueError("MCP server_id must contain only letters, numbers, '_' or '-'")
@@ -86,6 +89,15 @@ class MCPToolAdapter:
         self.max_tools = max_tools
         self.max_description_chars = max_description_chars
         self.max_schema_bytes = max_schema_bytes
+        self.tool_policies = dict(tool_policies or {})
+        unknown_policy_tools = sorted(set(self.tool_policies) - set(self.allowed_tools))
+        if unknown_policy_tools:
+            raise ValueError(
+                "MCP tool policies must reference allowed tools: "
+                + ", ".join(unknown_policy_tools)
+            )
+        if any(not isinstance(value, str) or not value.strip() for value in self.tool_policies.values()):
+            raise ValueError("MCP tool policy actions must be non-empty strings")
 
     def register_into(self, registry: ToolRegistry) -> MCPRegistrationReport:
         """Fail open: a discovery failure leaves the existing registry untouched."""
@@ -172,6 +184,7 @@ class MCPToolAdapter:
                     handler=self._handler(spec["name"], spec.get("outputSchema")),
                     timeout_seconds=self.call_timeout_seconds,
                     max_result_bytes=self.max_result_bytes,
+                    guardrail_policy=self._guardrail_policy(spec["name"]),
                 )
             )
         try:
@@ -181,6 +194,14 @@ class MCPToolAdapter:
                 "MCP tool definition is incompatible"
             ) from error
         return definitions
+
+    def _guardrail_policy(self, remote_name: str) -> ToolGuardrailPolicy:
+        action_type = self.tool_policies.get(remote_name, "mcp_read")
+        return ToolGuardrailPolicy(
+            action_type=action_type,
+            risk_level="high" if action_type == "mcp_write" else "low",
+            tool_kind="mcp",
+        )
 
     def _validate_tool_spec(self, raw: Any) -> MCPToolSpec:
         if not isinstance(raw, dict):
@@ -239,7 +260,8 @@ class MCPToolAdapter:
         expected_output = copy.deepcopy(output_schema)
 
         def handler(arguments: dict[str, Any], context: dict[str, Any]) -> Any:
-            del context
+            collector = context.get("_trace_collector")
+            started = time.perf_counter()
             try:
                 response = self._run_with_timeout(
                     lambda: self.client.call_tool(
@@ -249,37 +271,86 @@ class MCPToolAdapter:
                     ),
                     self.call_timeout_seconds,
                 )
-                return self._normalize_call_result(
+                result = self._normalize_call_result(
                     remote_name, response, output_schema=expected_output
                 )
-            except ToolExecutionError:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="ok",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                )
+                return result
+            except ToolExecutionError as error:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code=error.code,
+                )
                 raise
             except TimeoutError as error:
                 self._cancel_pending()
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code="mcp_timeout",
+                )
                 raise ToolExecutionError(
                     "mcp_timeout",
                     "MCP tool call timed out",
                     {"server": self.server_id, "tool": remote_name},
                 ) from error
             except MCPUnknownToolError as error:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code="mcp_tool_not_found",
+                )
                 raise ToolExecutionError(
                     "mcp_tool_not_found",
                     "MCP server does not expose the requested tool",
                     {"server": self.server_id, "tool": remote_name},
                 ) from error
             except MCPProtocolError as error:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code="mcp_protocol_error",
+                )
                 raise ToolExecutionError(
                     "mcp_protocol_error",
                     "MCP tool returned an invalid response",
                     {"server": self.server_id, "tool": remote_name},
                 ) from error
             except MCPRemoteError as error:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code="mcp_server_unavailable",
+                )
                 raise ToolExecutionError(
                     "mcp_server_unavailable",
                     "MCP server call failed",
                     {"server": self.server_id, "tool": remote_name},
                 ) from error
             except Exception as error:
+                self._emit_call(
+                    collector,
+                    remote_name,
+                    status="error",
+                    latency_ms=(time.perf_counter() - started) * 1000,
+                    error_code="mcp_server_unavailable",
+                )
                 raise ToolExecutionError(
                     "mcp_server_unavailable",
                     "MCP server call failed unexpectedly",
@@ -291,6 +362,27 @@ class MCPToolAdapter:
                 ) from error
 
         return handler
+
+    def _emit_call(
+        self,
+        collector: Any,
+        remote_name: str,
+        *,
+        status: str,
+        latency_ms: float,
+        error_code: str | None = None,
+    ) -> None:
+        emit = getattr(collector, "emit", None)
+        if callable(emit):
+            emit(
+                "mcp_called",
+                component="mcp",
+                name=remote_name,
+                status=status,
+                latency_ms=latency_ms,
+                error_code=error_code,
+                metadata={"server_id": self.server_id},
+            )
 
     def _normalize_call_result(
         self,

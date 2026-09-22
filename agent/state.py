@@ -19,6 +19,10 @@ class AgentState:
     max_iter: int = 6
     tool_calls: list[dict[str, Any]] = field(default_factory=list)
     execution_trace: list[dict[str, Any]] = field(default_factory=list)
+    trace_id: str | None = None
+    trace_events: list[dict[str, Any]] = field(default_factory=list)
+    pending_approval: dict[str, Any] | None = None
+    approval_history: list[dict[str, Any]] = field(default_factory=list)
     skill_invocations: list[dict[str, Any]] = field(default_factory=list)
     prior_tool_results: list[dict[str, Any]] = field(default_factory=list)
     todos: list[dict[str, str]] = field(default_factory=list)

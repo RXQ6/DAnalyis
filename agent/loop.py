@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import copy
 import json
+import time
 from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 
 from context_compression import ContextCompressor
+from observability import TraceCollector
+from hitl import ApprovalResolution
 
 from .prompt import SYSTEM_PROMPT
 from .state import AgentState
@@ -70,6 +73,45 @@ class AgentLoop:
         self.memory = memory
         self.context_compressor = context_compressor or ContextCompressor()
 
+    def resume_approval(
+        self,
+        state: AgentState,
+        *,
+        approval_id: str,
+        action_hash: str,
+        decision: str,
+    ) -> ApprovalResolution:
+        """Resolve HITL and, only after approval, execute the stored exact action."""
+        pending = copy.deepcopy(state.pending_approval)
+        resolution = self.registry.resolve_approval(
+            approval_id=approval_id,
+            action_hash=action_hash,
+            decision=decision,
+        )
+        if resolution.decision is not None:
+            decision_data = resolution.decision.to_dict()
+            state.approval_history.append(copy.deepcopy(decision_data))
+            state.pending_approval = None
+            status = resolution.decision.status
+            if status == "approved" and resolution.tool_result is not None:
+                call_id = pending.get("call_id") if isinstance(pending, dict) else None
+                tool_name = pending.get("tool_name") if isinstance(pending, dict) else None
+                self._replace_pending_observation(
+                    state,
+                    call_id=call_id,
+                    tool_name=tool_name,
+                    tool_result=resolution.tool_result,
+                )
+                state.stop_reason = (
+                    "approval_executed"
+                    if resolution.tool_result["ok"]
+                    else "approval_execution_error"
+                )
+            else:
+                state.stop_reason = f"approval_{status}"
+        state.trace_events = [dict(event) for event in resolution.trace_events]
+        return resolution
+
     def run(
         self,
         user_question: str,
@@ -89,6 +131,7 @@ class AgentLoop:
         active_dataset_ids: Sequence[str] | None = None,
         conversation_id: str | None = None,
         turn_id: str | None = None,
+        trace_collector: TraceCollector | None = None,
     ) -> AgentState:
         if dataset_registry is not None and any(
             value is not None for value in (dataset, dataset_context, schema)
@@ -98,6 +141,17 @@ class AgentLoop:
             )
         if remember is not None and (self.memory is None or not memory_scope):
             raise ValueError("explicit remember requires memory and memory_scope")
+        collector = trace_collector or TraceCollector()
+        owns_request_trace = trace_collector is None
+        request_started = time.perf_counter()
+        if owns_request_trace:
+            collector.emit(
+                "request_started",
+                component="agent",
+                name="agent_loop",
+                status="started",
+                metadata={"has_dataset": bool(dataset or dataset_registry)},
+            )
         recall = None
         memory_errors: list[dict[str, str]] = []
         if self.memory is not None and memory_scope:
@@ -116,6 +170,13 @@ class AgentLoop:
                 memory_errors.append(
                     {"phase": "recall", "error_type": type(error).__name__}
                 )
+                collector.emit(
+                    "error",
+                    component="memory",
+                    name="recall",
+                    status="error",
+                    error_code=type(error).__name__,
+                )
         safe_dataset_context = (
             dataset_registry.public_context(active_dataset_ids)
             if dataset_registry is not None
@@ -124,6 +185,7 @@ class AgentLoop:
         state = AgentState(
             conversation_id=conversation_id,
             turn_id=turn_id,
+            trace_id=collector.trace_id,
             dataset=dataset,
             dataset_context=safe_dataset_context,
             schema=schema,
@@ -162,10 +224,35 @@ class AgentLoop:
                 state.context_errors.append(
                     {"phase": "compression", "error_type": type(error).__name__}
                 )
-            raw_decision = self.model.complete(
-                messages=model_messages,
-                tools=tool_schemas,
-            )
+                collector.emit(
+                    "error",
+                    component="context",
+                    name="compression",
+                    status="error",
+                    error_code=type(error).__name__,
+                    metadata={"iteration": iteration},
+                )
+            model_started = time.perf_counter()
+            try:
+                raw_decision = self.model.complete(
+                    messages=model_messages,
+                    tools=tool_schemas,
+                )
+            except Exception as error:
+                collector.emit(
+                    "error",
+                    component="llm",
+                    name="complete",
+                    status="error",
+                    latency_ms=(time.perf_counter() - model_started) * 1000,
+                    error_code=type(error).__name__,
+                    metadata={"iteration": iteration},
+                )
+                state.stop_reason = "model_error"
+                self._finish_trace(
+                    state, collector, owns_request_trace, request_started, "error"
+                )
+                raise
             decision = self._normalize_decision(raw_decision, iteration, turn_id=turn_id)
 
             if decision["type"] == "needs_user_input":
@@ -173,6 +260,9 @@ class AgentLoop:
                 state.add_message("assistant", answer)
                 state.final_answer = answer
                 state.stop_reason = "needs_user_input"
+                self._finish_trace(
+                    state, collector, owns_request_trace, request_started, "needs_input"
+                )
                 return state
 
             if decision["type"] == "final_answer":
@@ -190,6 +280,16 @@ class AgentLoop:
                         state.memory_errors.append(
                             {"phase": "remember", "error_type": type(error).__name__}
                         )
+                        collector.emit(
+                            "error",
+                            component="memory",
+                            name="remember",
+                            status="error",
+                            error_code=type(error).__name__,
+                        )
+                self._finish_trace(
+                    state, collector, owns_request_trace, request_started, "ok"
+                )
                 return state
 
             calls = decision["tool_calls"]
@@ -222,6 +322,7 @@ class AgentLoop:
                             entry["tool_name"] for entry in state.execution_trace
                         ],
                         "previous_tool_results": self._tool_results_for_context(state),
+                        "_trace_collector": collector,
                     },
                 )
                 observation = {
@@ -232,12 +333,71 @@ class AgentLoop:
                 self._record_observation(state, call, observation)
                 if not tool_result["ok"]:
                     error = tool_result["error"] or {}
+                    if error.get("code") == "approval_required":
+                        data = tool_result.get("data")
+                        state.pending_approval = (
+                            copy.deepcopy(data.get("pending"))
+                            if isinstance(data, dict)
+                            and isinstance(data.get("pending"), dict)
+                            else None
+                        )
+                        state.stop_reason = "needs_approval"
+                        self._finish_trace(
+                            state,
+                            collector,
+                            owns_request_trace,
+                            request_started,
+                            "needs_approval",
+                        )
+                        return state
+                    if error.get("code") == "guardrail_blocked":
+                        state.stop_reason = "guardrail_blocked"
+                        self._finish_trace(
+                            state, collector, owns_request_trace, request_started, "blocked"
+                        )
+                        return state
                     if not error.get("recoverable", True):
                         state.stop_reason = "unrecoverable_tool_error"
+                        self._finish_trace(
+                            state, collector, owns_request_trace, request_started, "error"
+                        )
                         return state
 
         state.stop_reason = "max_iter"
+        self._finish_trace(
+            state, collector, owns_request_trace, request_started, "incomplete"
+        )
         return state
+
+    @staticmethod
+    def _finish_trace(
+        state: AgentState,
+        collector: TraceCollector,
+        owns_request_trace: bool,
+        started: float,
+        status: str,
+    ) -> None:
+        if owns_request_trace:
+            collector.emit(
+                "request_completed",
+                component="agent",
+                name="agent_loop",
+                status=status,
+                latency_ms=(time.perf_counter() - started) * 1000,
+                error_code=(
+                    "approval_required"
+                    if status == "needs_approval"
+                    else state.stop_reason
+                    if status in {"error", "incomplete", "blocked"}
+                    else None
+                ),
+                metadata={
+                    "iterations": state.iteration,
+                    "stop_reason": state.stop_reason,
+                    "tool_call_count": len(state.tool_calls),
+                },
+            )
+        state.trace_events = collector.snapshot()
 
     @staticmethod
     def _tool_results_for_context(state: AgentState) -> list[dict[str, Any]]:
@@ -311,6 +471,35 @@ class AgentLoop:
                 "content": json.dumps(observation, ensure_ascii=False),
             }
         )
+
+    @staticmethod
+    def _replace_pending_observation(
+        state: AgentState,
+        *,
+        call_id: Any,
+        tool_name: Any,
+        tool_result: dict[str, Any],
+    ) -> None:
+        """Replace the pending observation; do not add a second logical tool call."""
+        observation = {
+            "tool": tool_name,
+            "iteration": state.iteration,
+            **tool_result,
+        }
+        for entry in reversed(state.execution_trace):
+            if entry.get("call_id") == call_id:
+                entry.update(
+                    success=tool_result["ok"],
+                    data=copy.deepcopy(tool_result["data"]),
+                    error=copy.deepcopy(tool_result["error"]),
+                    duration=tool_result["duration"],
+                    truncated=tool_result["truncated"],
+                )
+                break
+        for message in reversed(state.messages):
+            if message.get("role") == "tool" and message.get("tool_call_id") == call_id:
+                message["content"] = json.dumps(observation, ensure_ascii=False)
+                break
 
     @staticmethod
     def _assistant_call(call: dict[str, Any]) -> dict[str, Any]:
