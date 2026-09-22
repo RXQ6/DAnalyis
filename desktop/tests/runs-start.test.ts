@@ -1,19 +1,30 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { validateRunsCancelInput } from "../src/main/ipc/runs-cancel";
+import { validateFilesSelectInput } from "../src/main/ipc/files-select";
 import { validateRunsStartInput } from "../src/main/ipc/runs-start";
 
 test("runs:start accepts, normalizes, and validates thread id", () => {
-  assert.deepEqual(validateRunsStartInput({ message: "  hello  ", threadId: "thread_1" }), {
+  assert.deepEqual(validateRunsStartInput({ message: "  hello  ", threadId: "thread_1", datasetId: "ds_sales" }), {
     ok: true,
-    value: { message: "hello", threadId: "thread_1" },
+    value: { message: "hello", threadId: "thread_1", datasetId: "ds_sales" },
   });
 });
 
 test("runs:start rejects invalid renderer input", () => {
-  for (const input of [null, "message", {}, { message: "   " }, { message: 42 }, { message: "ok", unexpected: true }, { message: "ok", threadId: "bad id" }]) {
+  for (const input of [null, "message", {}, { message: "   " }, { message: 42 }, { message: "ok", unexpected: true }, { message: "ok", threadId: "bad id" }, { message: "ok", datasetId: "bad" }]) {
     assert.equal(validateRunsStartInput(input).ok, false);
   }
+});
+
+test("files:select accepts only an optional thread id and never a renderer path", () => {
+  assert.deepEqual(validateFilesSelectInput(undefined), { ok: true, value: {} });
+  assert.deepEqual(validateFilesSelectInput({ threadId: "thread_1" }), {
+    ok: true,
+    value: { threadId: "thread_1" },
+  });
+  assert.equal(validateFilesSelectInput({ filePath: "C:\\secret.csv" }).ok, false);
+  assert.equal(validateFilesSelectInput({ threadId: "bad id" }).ok, false);
 });
 
 test("runs:start enforces the message length limit", () => {

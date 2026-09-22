@@ -1,6 +1,7 @@
 export const IPC_CHANNELS = {
   runsStart: "runs:start",
   runsCancel: "runs:cancel",
+  filesSelect: "files:select",
   agentEvent: "agent:event",
 } as const;
 
@@ -17,6 +18,7 @@ export type IpcResult<T> =
 export interface RunsStartInput {
   message: string;
   threadId?: string;
+  datasetId?: string;
 }
 
 export interface RunStartResult {
@@ -37,6 +39,30 @@ export interface RunCancelResult {
   runId: string;
 }
 
+export interface FilesSelectInput {
+  threadId?: string;
+}
+
+export interface DatasetSummary {
+  datasetId: string;
+  filename: string;
+  format: "csv" | "xlsx";
+  sizeBytes: number;
+  rowCount: number;
+  columnCount: number;
+  columns: Array<Record<string, unknown>>;
+  dateRanges: Array<Record<string, unknown>>;
+  derived: boolean;
+  lineage: Record<string, unknown> | null;
+}
+
+export interface DatasetSelectionResult {
+  status: "selected" | "cancelled";
+  requestId?: string;
+  threadId?: string;
+  dataset?: DatasetSummary;
+}
+
 export interface AgentEvent {
   protocol_version: 1;
   request_id: string | null;
@@ -52,7 +78,8 @@ export interface AgentEvent {
 export interface DesktopApi {
   startRun(input: RunsStartInput): Promise<IpcResult<RunStartResult>>;
   cancelRun(input: RunsCancelInput): Promise<IpcResult<RunCancelResult>>;
+  selectDataset(input?: FilesSelectInput): Promise<IpcResult<DatasetSelectionResult>>;
   onAgentEvent(listener: (event: AgentEvent) => void): () => void;
 }
 
-export const PUBLIC_API_METHODS = ["startRun", "cancelRun", "onAgentEvent"] as const;
+export const PUBLIC_API_METHODS = ["startRun", "cancelRun", "selectDataset", "onAgentEvent"] as const;

@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 
-from runtime_bridge import ProtocolError, validate_command
+from runtime_bridge import ProtocolError, chart_payloads, validate_command
 
 
 class RuntimeBridgeProtocolTests(unittest.TestCase):
@@ -79,6 +79,59 @@ class RuntimeBridgeProtocolTests(unittest.TestCase):
         ):
             with self.assertRaises(ProtocolError):
                 validate_command(command)
+
+    def test_dataset_register_command_and_dataset_id_validation(self):
+        command = {
+            "protocol_version": 1,
+            "request_id": "req_dataset",
+            "run_id": None,
+            "thread_id": "thread_1",
+            "trace_id": None,
+            "sequence": 0,
+            "type": "dataset.register",
+            "payload": {"file_path": str(Path(__file__).parents[2] / "tests" / "fixtures" / "sales.csv")},
+            "error": None,
+        }
+        self.assertIs(validate_command(command), command)
+        invalid = dict(command)
+        invalid["type"] = "run.start"
+        invalid["payload"] = {"message": "hello", "dataset_id": "not-a-dataset"}
+        with self.assertRaises(ProtocolError):
+            validate_command(invalid)
+
+    def test_chart_projection_omits_artifact_path_and_full_svg(self):
+        spec = {
+            "version": "1.0",
+            "chartType": "bar",
+            "title": "Sales",
+            "data": {"values": [{"x": "East", "y": 10}]},
+        }
+        result = {
+            "data": {
+                "agent_state": {
+                    "execution_trace": [
+                        {
+                            "tool_name": "generate_chart",
+                            "data": {
+                                "spec": spec,
+                                "artifact": {
+                                    "path": "C:/private/chart.svg",
+                                    "mediaType": "image/svg+xml",
+                                    "width": 800,
+                                    "height": 480,
+                                    "sha256": "abc",
+                                    "svg": "<svg/>",
+                                },
+                            },
+                        }
+                    ]
+                }
+            }
+        }
+        payload = chart_payloads(result)[0]
+        self.assertEqual(payload["spec"], spec)
+        self.assertNotIn("path", payload["artifact"])
+        self.assertNotIn("svg", payload["artifact"])
 
 
 if __name__ == "__main__":

@@ -16,8 +16,8 @@ export function validateRunsStartInput(input: unknown): ValidationResult {
   }
 
   const keys = Object.keys(input);
-  if (keys.some((key) => key !== "message" && key !== "threadId")) {
-    return { ok: false, message: "Input may only contain message and threadId." };
+  if (keys.some((key) => key !== "message" && key !== "threadId" && key !== "datasetId")) {
+    return { ok: false, message: "Input may only contain message, threadId and datasetId." };
   }
 
   if (typeof input.message !== "string") {
@@ -43,5 +43,16 @@ export function validateRunsStartInput(input: unknown): ValidationResult {
     return { ok: false, message: "threadId is invalid." };
   }
 
-  return { ok: true, value: { message, ...(threadId ? { threadId } : {}) } };
+  const datasetId = input.datasetId;
+  if (
+    datasetId !== undefined &&
+    (typeof datasetId !== "string" || !/^ds_[A-Za-z0-9_-]{1,64}$/.test(datasetId))
+  ) {
+    return { ok: false, message: "datasetId is invalid." };
+  }
+
+  return {
+    ok: true,
+    value: { message, ...(threadId ? { threadId } : {}), ...(datasetId ? { datasetId } : {}) },
+  };
 }

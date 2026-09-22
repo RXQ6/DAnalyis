@@ -41,6 +41,36 @@ test("Python Runtime streams ordered events with real ids", { skip: !pythonExecu
   }
 });
 
+test("dataset registration returns only public summary and binds dataset id to its thread", { skip: !pythonExecutable }, async () => {
+  const manager = new RuntimeProcessManager({ repoRoot, pythonExecutable });
+  const runtime = new RuntimeClient(manager);
+  try {
+    const registered = await runtime.registerDataset(resolve(repoRoot, "tests/fixtures/sales.csv"));
+    assert.match(registered.threadId, /^thread_/);
+    assert.match(String(registered.dataset.datasetId), /^ds_/);
+    assert.equal(registered.dataset.filename, "sales.csv");
+    assert.equal(registered.dataset.rowCount, 5);
+    assert.equal("path" in registered.dataset, false);
+
+    const events: AgentEvent[] = [];
+    runtime.onEvent((event) => events.push(event));
+    const run = await runtime.startRun(
+      "按地区生成销售额柱状图",
+      registered.threadId,
+      String(registered.dataset.datasetId),
+    );
+    const chart = await waitFor(events, "chart_ready");
+    const completed = await waitFor(events, "run_completed");
+    assert.equal(run.threadId, registered.threadId);
+    assert.equal((chart.payload.spec as Record<string, unknown>).chartType, "bar");
+    assert.equal("path" in (chart.payload.artifact as Record<string, unknown>), false);
+    assert.equal(String(completed.payload.response).includes("sales.csv"), false);
+    assert.equal(String(completed.payload.response).includes(".svg"), false);
+  } finally {
+    manager.stop();
+  }
+});
+
 test("run.cancel reaches Python and no business event follows run_cancelled", { skip: !pythonExecutable }, async () => {
   const manager = new RuntimeProcessManager({
     repoRoot,

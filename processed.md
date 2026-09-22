@@ -1,6 +1,6 @@
 # 项目进度
 
-更新时间：2026-09-21
+更新时间：2026-09-22
 
 ## 里程碑状态
 
@@ -465,13 +465,42 @@
   Day19 60/60 与原 11 项 regression gate 全部通过；Day19 average/p95/max latency 分别为
   0.318s/0.764s/1.117s，均在稳定基线容差内。
 
+## Desktop M3 Chat + File + Chart + Run State
+
+- Renderer 增加最小 Chat UI：发送用户消息、展示 Runtime 最终回答、显示运行状态、结构化错误、
+  partial 结果、取消按钮和折叠的 Runtime event 列表；不在前端生成分析结论。
+- Run State 明确支持 `idle`、`running`、`completed`、`failed`、`cancelled`、
+  `waiting_approval` 和 `partial`。`OrderedRunProjector` 按每个 run 的 sequence 缓冲、去重并顺序
+  应用事件；所有业务状态均来自 Runtime Event。
+- preload 新增 `selectDataset()`，Renderer 只能提交可选 thread ID。Electron Main 使用原生文件
+  对话框取得 CSV/XLSX 路径并直接交给 RuntimeClient，文件路径不会返回 Renderer。
+- JSONL protocol 新增 `dataset.register` 和 `chart_ready`。Python supervisor 使用现有
+  DatasetRegistry 完成格式、20MB 上限、读取、摘要与 dataset ID 生成，并将 dataset ID 绑定到
+  thread；run worker 仅按该受控映射恢复活动数据集。
+- M3 BridgeModel 仍是桌面 composition adapter，只负责基于公开 DatasetSummary 选择现有受控工具；
+  所有读取、分组、统计、趋势和图表数据继续由 ToolRegistry 中的确定性工具完成。
+- run worker 为既有 Chart 工具传入受控 artifact 目录；`generate_chart` 的既有 Chart Spec 经
+  `chart_ready` 投影到 Renderer。JSONL 只包含 spec 和不含路径的 artifact 元数据，不传完整 SVG、
+  ToolResult 或本地路径；Renderer 仅执行 bar/line/scatter 的展示布局，不重新计算业务数据。
+- Renderer TypeScript 模块通过构建期本地 bundle 运行，未开启 Node integration，也未放宽 CSP、
+  contextIsolation 或 sandbox 安全配置。
+- Desktop M3 TypeScript/IPC/协议/Run State/文件隔离/真实 Dataset+Chart 专项 14/14，Python bridge
+  专项 5/5，隐藏 Electron E2E 通过；E2E 覆盖 Chat 最终回答、completed 状态、Chart Spec 渲染、
+  Runtime crash 结构化错误和页面存活。
+- 2026-09-22 完成真实 Electron 窗口人工最终验收：原生 CSV/XLSX 文件选择、DatasetSummary 展示、
+  Send、Run State 变化、Runtime events 实时投影与 Stop cancel 均确认可用；运行环境为 Electron
+  Main + preload + Renderer，不是浏览器静态页。Desktop M3 正式验收完成。
+- 原项目 Python 全量 260/260、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 60/60 与原 11 项 regression gate 全部通过；Day19 average/p95/max latency 分别为
+  0.260s/0.664s/0.852s，均在稳定基线容差内。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
-- Desktop M2 尚未接入 Session/HITL UI、Dataset、Chart 或文件选择；thread ID 当前只用于 run 相关，
-  尚未由桌面层持久化或恢复。
-- M2 的 analysis route 使用最小 BridgeModel composition adapter；真实模型客户端、凭证与数据集将在
-  后续阶段注入，但 Workflow、Agent Loop 和工具语义仍由现有 Python Runtime 执行。
+- Desktop M3 尚未接入 Session/HITL UI；thread ID 当前用于 Dataset 与 run 关联，尚未由桌面层写入
+  或恢复现有 SessionStore。
+- M3 的 analysis route 仍使用最小 BridgeModel composition adapter；真实模型客户端与凭证将在
+  后续阶段注入，但 Workflow、Agent Loop、DatasetRegistry、Chart 和工具语义仍由现有 Python Runtime 执行。
 - 开发环境需要 `DATA_AGENT_PYTHON`、项目 `.venv` 或 PATH 中的 Python；独立 Python sidecar
   和安装包属于 M6。
 - 取消通过终止独立 run worker 保证不再产生后续业务事件；真实外部 MCP 写操作未来仍需传输层取消、

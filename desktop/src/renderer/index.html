@@ -9,13 +9,25 @@
   <body>
     <main>
       <h1>Data Analysis Agent</h1>
-      <label for="run-input">Message</label>
-      <input id="run-input" type="text" autocomplete="off" />
-      <button id="run-submit" type="button">Send</button>
-      <button id="run-stop" type="button" disabled>Stop</button>
-      <output id="run-result" aria-live="polite"></output>
-      <ol id="event-list" aria-label="Agent events"></ol>
+      <section aria-label="Data file">
+        <button id="file-select" type="button">Choose CSV/XLSX</button>
+        <output id="dataset-summary">No file selected</output>
+      </section>
+      <section id="messages" aria-label="Chat messages" aria-live="polite"></section>
+      <section aria-label="Compose message">
+        <label for="run-input">Message</label>
+        <input id="run-input" type="text" autocomplete="off" />
+        <button id="run-submit" type="button">Send</button>
+        <button id="run-stop" type="button" disabled>Stop</button>
+      </section>
+      <p>Run state: <output id="run-status" data-state="idle">idle</output></p>
+      <output id="run-error" aria-live="assertive"></output>
+      <section id="charts" aria-label="Charts"></section>
+      <details>
+        <summary>Runtime events</summary>
+        <ol id="event-list" aria-label="Agent events"></ol>
+      </details>
     </main>
-    <script src="./index.js" defer></script>
+    <script src="./bundle.js" defer></script>
   </body>
 </html>

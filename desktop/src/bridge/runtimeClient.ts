@@ -32,6 +32,12 @@ export interface CancelledRun {
   status: "cancelled" | "already_finished";
 }
 
+export interface RegisteredDataset {
+  requestId: string;
+  threadId: string;
+  dataset: Record<string, unknown>;
+}
+
 interface PendingRequest {
   resolve: (response: RuntimeResponse) => void;
   reject: (error: Error) => void;
@@ -56,8 +62,10 @@ export class RuntimeClient {
     );
   }
 
-  async startRun(message: string, threadId?: string): Promise<StartedRun> {
-    const response = await this.request(command("run.start", { message }, { threadId }));
+  async startRun(message: string, threadId?: string, datasetId?: string): Promise<StartedRun> {
+    const response = await this.request(
+      command("run.start", { message, ...(datasetId ? { dataset_id: datasetId } : {}) }, { threadId }),
+    );
     if (!response.run_id || !response.thread_id || !response.trace_id) {
       throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime did not return run identifiers");
     }
@@ -67,6 +75,20 @@ export class RuntimeClient {
       threadId: response.thread_id,
       traceId: response.trace_id,
       status: "running",
+    };
+  }
+
+  async registerDataset(filePath: string, threadId?: string): Promise<RegisteredDataset> {
+    const response = await this.request(
+      command("dataset.register", { file_path: filePath }, { threadId }),
+    );
+    if (!response.thread_id || typeof response.payload.dataset !== "object" || response.payload.dataset === null) {
+      throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime did not return a dataset summary");
+    }
+    return {
+      requestId: response.request_id,
+      threadId: response.thread_id,
+      dataset: response.payload.dataset as Record<string, unknown>,
     };
   }
 

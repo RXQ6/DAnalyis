@@ -1,4 +1,4 @@
-"""JSONL supervisor and per-run worker for Desktop M2."""
+"""JSONL supervisor and per-run worker for the Desktop runtime bridge."""
 from __future__ import annotations
 
 import contextlib
@@ -20,7 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from agent import AgentLoop, ConversationRunner  # noqa: E402
-from datasets import DatasetRegistry  # noqa: E402
+from datasets import DatasetRegistry, DatasetRegistryError  # noqa: E402
 from observability import TraceCollector  # noqa: E402
 from skill_runtime import SkillRegistry, SkillRuntime  # noqa: E402
 from tools import build_default_registry  # noqa: E402
@@ -29,7 +29,7 @@ from workflow import AnalysisNode, CalcNode, ChatNode, MemoryRecallNode, RuleRou
 PROTOCOL_VERSION = 1
 MAX_LINE_BYTES = 1024 * 1024
 ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
-COMMAND_TYPES = frozenset({"run.start", "run.cancel"})
+COMMAND_TYPES = frozenset({"run.start", "run.cancel", "dataset.register"})
 TERMINAL_TYPES = frozenset({"run_completed", "run_failed", "run_cancelled", "approval_required"})
 
 
@@ -61,6 +61,21 @@ def validate_command(value: Any) -> dict[str, Any]:
         message = payload.get("message")
         if not isinstance(message, str) or not message.strip() or len(message.strip()) > 4000:
             raise ProtocolError("invalid_run_input", "message must contain 1 to 4000 characters")
+        thread_id = value.get("thread_id")
+        if thread_id is not None and (
+            not isinstance(thread_id, str) or not ID_PATTERN.fullmatch(thread_id)
+        ):
+            raise ProtocolError("invalid_thread_id", "thread_id is invalid")
+        dataset_id = payload.get("dataset_id")
+        if dataset_id is not None and (
+            not isinstance(dataset_id, str)
+            or not re.fullmatch(r"ds_[A-Za-z0-9_-]{1,64}", dataset_id)
+        ):
+            raise ProtocolError("invalid_dataset_id", "dataset_id is invalid")
+    elif message_type == "dataset.register":
+        file_path = payload.get("file_path")
+        if not isinstance(file_path, str) or not file_path.strip():
+            raise ProtocolError("invalid_dataset_path", "file_path is required")
         thread_id = value.get("thread_id")
         if thread_id is not None and (
             not isinstance(thread_id, str) or not ID_PATTERN.fullmatch(thread_id)
@@ -110,29 +125,102 @@ def envelope(
 
 
 class BridgeModel:
-    """M2 composition adapter used only when the existing Workflow selects analysis."""
+    """Minimal composition adapter used only when Workflow selects analysis."""
 
     def complete(self, *, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
-        del messages, tools
+        available = {item.get("function", {}).get("name") for item in tools}
+        user = next((item for item in reversed(messages) if item.get("role") == "user"), {})
+        question = str(user.get("content", ""))
+        dataset_context = user.get("dataset_context")
+        datasets = dataset_context.get("datasets", []) if isinstance(dataset_context, dict) else []
+        dataset = datasets[-1] if datasets else None
+        tool_message = next((item for item in reversed(messages) if item.get("role") == "tool"), None)
+        wants_chart = any(term in question.lower() for term in ("图", "chart", "visual"))
+
+        if isinstance(tool_message, dict):
+            try:
+                observation = json.loads(str(tool_message.get("content", "{}")))
+            except json.JSONDecodeError:
+                return {"type": "final_answer", "content": "工具结果无法解析，分析未完成。"}
+            if not observation.get("ok"):
+                error = observation.get("error") or {}
+                return {
+                    "type": "final_answer",
+                    "content": f"分析工具失败：{error.get('message', error.get('code', 'unknown error'))}",
+                }
+            tool_name = str(tool_message.get("name", ""))
+            if wants_chart and tool_name != "generate_chart" and "generate_chart" in available:
+                chart_type = "line" if tool_name == "trend_analysis" else "scatter" if tool_name == "scatter_data" else "bar"
+                return {
+                    "type": "tool_call",
+                    "id": f"bridge_chart_{len(messages)}",
+                    "name": "generate_chart",
+                    "arguments": {
+                        "sourceCallId": str(tool_message.get("tool_call_id")),
+                        "chartType": chart_type,
+                    },
+                }
+            if tool_name == "generate_chart":
+                return {"type": "final_answer", "content": "分析完成，图表已生成。"}
+            data = observation.get("data")
+            summary = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+            return {"type": "final_answer", "content": "分析完成：" + summary}
+
+        if not isinstance(dataset, dict):
+            return {"type": "final_answer", "content": "Desktop Runtime 已完成本次请求。"}
+        dataset_id = dataset.get("datasetId")
+        columns = dataset.get("columns", [])
+        if not isinstance(dataset_id, str) or not isinstance(columns, list):
+            return {"type": "needs_user_input", "content": "数据集摘要不完整，请重新选择文件。"}
+        named = [item for item in columns if isinstance(item, dict) and isinstance(item.get("name"), str)]
+        number_columns = [item["name"] for item in named if item.get("type") == "number"]
+        date_columns = [item["name"] for item in named if item.get("type") == "date"]
+        text_columns = [item["name"] for item in named if item.get("type") == "text"]
+        metric = next((name for name in number_columns if name in question), number_columns[0] if number_columns else None)
+        group = next((name for name in text_columns if name in question), text_columns[0] if text_columns else None)
+        date_field = next((name for name in date_columns if name in question), date_columns[0] if date_columns else None)
+        operation = "average" if any(term in question for term in ("平均", "均值")) else "maximum" if "最大" in question else "minimum" if "最小" in question else "count" if any(term in question for term in ("计数", "数量")) else "sum"
+        call: dict[str, Any] | None = None
+        if metric and date_field and any(term in question for term in ("趋势", "变化", "按日期", "折线")):
+            call = {"name": "trend_analysis", "arguments": {"datasetId": dataset_id, "dateField": date_field, "metric": metric, "operation": operation}}
+        elif metric and group and any(term in question for term in ("按", "分组", "对比", "柱状")):
+            call = {"name": "group_compare", "arguments": {"datasetId": dataset_id, "groupBy": group, "metric": metric, "operation": operation}}
+        elif metric:
+            call = {"name": "basic_stats", "arguments": {"datasetId": dataset_id, "metric": metric, "operation": operation}}
+        elif "inspect_data" in available:
+            call = {"name": "inspect_data", "arguments": {"datasetId": dataset_id}}
+        if call is None or call["name"] not in available:
+            return {"type": "needs_user_input", "content": "请明确要分析的字段和统计方式。"}
         return {
-            "type": "final_answer",
-            "content": "Desktop Runtime Bridge 已连接；数据集接入将在后续阶段提供。",
+            "type": "tool_call",
+            "id": f"bridge_analysis_{len(messages)}",
+            **call,
         }
 
 
-def build_workflow(thread_id: str) -> Workflow:
-    runtime_dir = Path(
+def runtime_root() -> Path:
+    return Path(
         os.environ.get(
             "DATA_AGENT_RUNTIME_DIR",
             str(Path(tempfile.gettempdir()) / "data-analysis-agent-desktop"),
         )
     )
-    datasets = DatasetRegistry(runtime_dir / thread_id)
+
+
+def build_workflow(thread_id: str, dataset: dict[str, str] | None = None) -> Workflow:
+    datasets = DatasetRegistry(runtime_root() / thread_id / "datasets")
+    if dataset is not None:
+        summary = datasets.register(
+            dataset["path"],
+            dataset_id=dataset["dataset_id"],
+        )
     runner = ConversationRunner(
         AgentLoop(BridgeModel(), build_default_registry()),
         dataset_registry=datasets,
         conversation_id=thread_id,
     )
+    if dataset is not None:
+        runner.set_active_datasets([summary["datasetId"]])
     skills = SkillRuntime(runner, SkillRegistry())
     return Workflow(
         router=RuleRouter(),
@@ -193,6 +281,27 @@ class RunEmitter:
         self.emit(mapped or "trace_event", payload)
 
 
+def chart_payloads(result: dict[str, Any]) -> list[dict[str, Any]]:
+    """Project only validated Chart Spec and non-path artifact metadata."""
+    agent_state = result.get("data", {}).get("agent_state", {})
+    entries = agent_state.get("execution_trace", []) if isinstance(agent_state, dict) else []
+    payloads: list[dict[str, Any]] = []
+    for entry in entries:
+        data = entry.get("data") if isinstance(entry, dict) else None
+        chart = data if isinstance(data, dict) and entry.get("tool_name") == "generate_chart" else None
+        spec = chart.get("spec") if isinstance(chart, dict) else None
+        artifact = chart.get("artifact") if isinstance(chart, dict) else None
+        if not isinstance(spec, dict):
+            continue
+        public_artifact = {
+            key: artifact[key]
+            for key in ("mediaType", "width", "height", "sha256")
+            if isinstance(artifact, dict) and key in artifact
+        }
+        payloads.append({"spec": spec, "artifact": public_artifact})
+    return payloads
+
+
 def worker(command: dict[str, Any]) -> int:
     writer = JsonlWriter(sys.stdout)
     request_id = command["request_id"]
@@ -207,12 +316,31 @@ def worker(command: dict[str, Any]) -> int:
         time.sleep(delay_ms / 1000)
     try:
         with contextlib.redirect_stdout(sys.stderr):
-            result = build_workflow(thread_id).invoke(
-                {"query": command["payload"]["message"], "_trace_collector": collector}
+            result = build_workflow(thread_id, command.get("_dataset")).invoke(
+                {
+                    "query": command["payload"]["message"],
+                    "artifact_dir": str(runtime_root() / thread_id / "artifacts" / run_id),
+                    "_trace_collector": collector,
+                }
             )
+        agent_state = result.get("data", {}).get("agent_state", {})
+        for payload in chart_payloads(result):
+            emitter.emit("chart_ready", payload)
         if result["status"] == "error":
             error = result.get("error") or {"code": "runtime_error", "message": "run failed"}
-            emitter.emit("run_failed", {"status": "failed"}, dict(error))
+            partial_available = bool(
+                isinstance(agent_state, dict)
+                and (agent_state.get("execution_trace") or agent_state.get("final_answer"))
+            )
+            emitter.emit(
+                "run_failed",
+                {
+                    "status": "failed",
+                    "response": result.get("response"),
+                    "partial": partial_available,
+                },
+                dict(error),
+            )
             return 1
         if result["status"] == "needs_approval":
             return 0
@@ -222,6 +350,7 @@ def worker(command: dict[str, Any]) -> int:
                 "status": result["status"],
                 "route": result.get("route"),
                 "response": result.get("response"),
+                "partial": result["status"] in {"incomplete", "needs_input"},
             },
         )
         return 0
@@ -252,6 +381,7 @@ class Supervisor:
         self.writer = JsonlWriter(sys.stdout)
         self.runs: dict[str, RunProcess] = {}
         self.runs_lock = threading.Lock()
+        self.dataset_registries: dict[str, DatasetRegistry] = {}
 
     def serve(self) -> int:
         for raw in sys.stdin:
@@ -262,8 +392,10 @@ class Supervisor:
                 command = validate_command(json.loads(raw))
                 if command["type"] == "run.start":
                     self._start(command)
-                else:
+                elif command["type"] == "run.cancel":
                     self._cancel(command)
+                else:
+                    self._register_dataset(command)
             except json.JSONDecodeError:
                 self._protocol_failure(None, "invalid_json", "stdin contained invalid JSON")
             except ProtocolError as error:
@@ -286,6 +418,26 @@ class Supervisor:
         thread_id = command.get("thread_id") or f"thread_{uuid.uuid4().hex}"
         worker_command = dict(command)
         worker_command.update({"run_id": run_id, "thread_id": thread_id})
+        dataset_id = command["payload"].get("dataset_id")
+        if dataset_id is not None:
+            registry = self.dataset_registries.get(thread_id)
+            if registry is None or not registry.contains(dataset_id):
+                self.writer.write(
+                    envelope(
+                        "response",
+                        request_id=command["request_id"],
+                        run_id=None,
+                        thread_id=thread_id,
+                        trace_id=None,
+                        sequence=0,
+                        error={"code": "dataset_not_found", "message": "dataset is not registered for this thread"},
+                    )
+                )
+                return
+            worker_command["_dataset"] = {
+                "dataset_id": dataset_id,
+                "path": registry.resolve(dataset_id),
+            }
         process = subprocess.Popen(
             [sys.executable, str(Path(__file__).resolve()), "--worker"],
             cwd=str(REPO_ROOT),
@@ -305,6 +457,39 @@ class Supervisor:
         process.stdin.close()
         threading.Thread(target=self._forward_stdout, args=(run_id, state), daemon=True).start()
         threading.Thread(target=self._forward_stderr, args=(run_id, state), daemon=True).start()
+
+    def _register_dataset(self, command: dict[str, Any]) -> None:
+        thread_id = command.get("thread_id") or f"thread_{uuid.uuid4().hex}"
+        registry = self.dataset_registries.get(thread_id)
+        if registry is None:
+            registry = DatasetRegistry(runtime_root() / thread_id / "datasets")
+            self.dataset_registries[thread_id] = registry
+        try:
+            summary = registry.register(command["payload"]["file_path"])
+        except DatasetRegistryError as error:
+            self.writer.write(
+                envelope(
+                    "response",
+                    request_id=command["request_id"],
+                    run_id=None,
+                    thread_id=thread_id,
+                    trace_id=None,
+                    sequence=0,
+                    error={"code": error.code, "message": str(error)},
+                )
+            )
+            return
+        self.writer.write(
+            envelope(
+                "response",
+                request_id=command["request_id"],
+                run_id=None,
+                thread_id=thread_id,
+                trace_id=None,
+                sequence=0,
+                payload={"status": "selected", "dataset": summary},
+            )
+        )
 
     def _forward_stdout(self, run_id: str, state: RunProcess) -> None:
         assert state.process.stdout is not None

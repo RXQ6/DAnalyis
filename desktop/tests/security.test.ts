@@ -10,13 +10,15 @@ test("BrowserWindow uses the required isolation settings", () => {
   assert.equal(preferences.sandbox, true);
 });
 
-test("M2 exposes only the declared channels and preload methods", () => {
+test("M3 exposes only the declared channels and preload methods", () => {
   assert.deepEqual(IPC_CHANNELS, {
     runsStart: "runs:start",
     runsCancel: "runs:cancel",
+    filesSelect: "files:select",
     agentEvent: "agent:event",
   });
   assert.match(IPC_CHANNELS.runsStart, /^[a-z]+:[a-z]+$/);
   assert.match(IPC_CHANNELS.runsCancel, /^[a-z]+:[a-z]+$/);
-  assert.deepEqual(PUBLIC_API_METHODS, ["startRun", "cancelRun", "onAgentEvent"]);
+  assert.match(IPC_CHANNELS.filesSelect, /^[a-z]+:[a-z]+$/);
+  assert.deepEqual(PUBLIC_API_METHODS, ["startRun", "cancelRun", "selectDataset", "onAgentEvent"]);
 });
