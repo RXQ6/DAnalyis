@@ -23,7 +23,7 @@ export interface StartedRun {
   runId: string;
   threadId: string;
   traceId: string;
-  status: "running";
+  status: "running" | "resuming";
 }
 
 export interface CancelledRun {
@@ -38,12 +38,26 @@ export interface RegisteredDataset {
   dataset: Record<string, unknown>;
 }
 
+export interface RuntimeSessionSummary {
+  threadId: string;
+  updatedAt: string;
+  status: string;
+  summary: string;
+}
+
+export interface RuntimeSessionSnapshot {
+  threadId: string;
+  messages: Array<Record<string, unknown>>;
+  events: Array<Record<string, unknown>>;
+  traceIds: string[];
+}
+
 interface PendingRequest {
   resolve: (response: RuntimeResponse) => void;
   reject: (error: Error) => void;
 }
 
-const TERMINAL = new Set(["run_completed", "run_failed", "run_cancelled", "approval_required"]);
+const TERMINAL = new Set(["run_completed", "run_failed", "run_cancelled", "approval_required", "approval_resolved"]);
 
 export class RuntimeClient {
   private readonly emitter = new EventEmitter();
@@ -98,6 +112,64 @@ export class RuntimeClient {
       requestId: response.request_id,
       runId,
       status: response.payload.status === "already_finished" ? "already_finished" : "cancelled",
+    };
+  }
+
+  async listSessions(): Promise<RuntimeSessionSummary[]> {
+    const response = await this.request(command("session.list", { limit: 20 }));
+    const sessions = response.payload.sessions;
+    if (!Array.isArray(sessions)) {
+      throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime did not return sessions");
+    }
+    return sessions.map((item) => {
+      if (!isRecord(item) || typeof item.thread_id !== "string" || typeof item.updated_at !== "string") {
+        throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime returned an invalid session");
+      }
+      return {
+        threadId: item.thread_id,
+        updatedAt: item.updated_at,
+        status: typeof item.status === "string" ? item.status : "active",
+        summary: typeof item.summary === "string" ? item.summary : "",
+      };
+    });
+  }
+
+  async getSession(threadId: string, resume = false): Promise<RuntimeSessionSnapshot> {
+    const response = await this.request(command(resume ? "session.resume" : "session.get", {}, { threadId }));
+    const conversation = response.payload.conversation;
+    if (!response.thread_id || !Array.isArray(response.payload.messages) || !Array.isArray(response.payload.events) || !isRecord(conversation)) {
+      throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime returned an invalid session snapshot");
+    }
+    return {
+      threadId: response.thread_id,
+      messages: response.payload.messages.filter(isRecord),
+      events: response.payload.events.filter(isRecord),
+      traceIds: Array.isArray(conversation.trace_ids)
+        ? conversation.trace_ids.filter((value): value is string => typeof value === "string")
+        : [],
+    };
+  }
+
+  async resolveApproval(
+    threadId: string,
+    approvalId: string,
+    actionHash: string,
+    decision: "approve" | "reject",
+  ): Promise<StartedRun> {
+    const response = await this.request(command(
+      "approval.resolve",
+      { approval_id: approvalId, action_hash: actionHash, decision },
+      { threadId },
+    ));
+    if (!response.run_id || !response.thread_id || !response.trace_id) {
+      throw new RuntimeRequestError("INVALID_RUNTIME_RESPONSE", "Runtime did not return approval run identifiers");
+    }
+    return {
+      requestId: response.request_id,
+      runId: response.run_id,
+      threadId: response.thread_id,
+      traceId: response.trace_id,
+      status: response.payload.status === "resuming" ? "resuming" : "running",
     };
   }
 
@@ -241,4 +313,8 @@ export class RuntimeClient {
     }
     this.activeRuns.clear();
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

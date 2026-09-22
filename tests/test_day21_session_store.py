@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -41,6 +42,17 @@ class SQLiteSessionStoreTests(unittest.TestCase):
             store.create_session("thread_unique")
             with self.assertRaises(SessionAlreadyExistsError):
                 store.create_session("thread_unique")
+
+    def test_list_sessions_uses_store_updated_order(self) -> None:
+        with SQLiteSessionStore() as store:
+            store.create_session("thread_old")
+            store.create_session("thread_new")
+            time.sleep(0.01)
+            store.append_message("thread_old", {"role": "user", "content": "updated"})
+            records = store.list_sessions(limit=2)
+            self.assertEqual([item.thread_id for item in records], ["thread_old", "thread_new"])
+            with self.assertRaises(ValueError):
+                store.list_sessions(limit=0)
 
     def test_messages_round_trip_in_true_append_order(self) -> None:
         with SQLiteSessionStore() as store:

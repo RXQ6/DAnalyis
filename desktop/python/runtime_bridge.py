@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import json
 import os
 import re
@@ -21,7 +22,17 @@ if str(REPO_ROOT) not in sys.path:
 
 from agent import AgentLoop, ConversationRunner  # noqa: E402
 from datasets import DatasetRegistry, DatasetRegistryError  # noqa: E402
+from cryptography.fernet import Fernet  # noqa: E402
+from hitl import PersistentApprovalManager  # noqa: E402
+from mcp_adapter import MCPToolAdapter, MockMCPClient, MockMCPServer  # noqa: E402
 from observability import TraceCollector  # noqa: E402
+from session import (  # noqa: E402
+    SQLiteApprovalRepository,
+    SQLiteSessionStore,
+    SessionAlreadyExistsError,
+    SessionNotFoundError,
+)
+from session.recovery import SessionStateProjector  # noqa: E402
 from skill_runtime import SkillRegistry, SkillRuntime  # noqa: E402
 from tools import build_default_registry  # noqa: E402
 from workflow import AnalysisNode, CalcNode, ChatNode, MemoryRecallNode, RuleRouter, Workflow  # noqa: E402
@@ -29,8 +40,13 @@ from workflow import AnalysisNode, CalcNode, ChatNode, MemoryRecallNode, RuleRou
 PROTOCOL_VERSION = 1
 MAX_LINE_BYTES = 1024 * 1024
 ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}")
-COMMAND_TYPES = frozenset({"run.start", "run.cancel", "dataset.register"})
-TERMINAL_TYPES = frozenset({"run_completed", "run_failed", "run_cancelled", "approval_required"})
+COMMAND_TYPES = frozenset({
+    "run.start", "run.cancel", "dataset.register",
+    "session.list", "session.get", "session.resume", "approval.resolve",
+})
+TERMINAL_TYPES = frozenset({
+    "run_completed", "run_failed", "run_cancelled", "approval_required", "approval_resolved",
+})
 
 
 class ProtocolError(ValueError):
@@ -81,10 +97,31 @@ def validate_command(value: Any) -> dict[str, Any]:
             not isinstance(thread_id, str) or not ID_PATTERN.fullmatch(thread_id)
         ):
             raise ProtocolError("invalid_thread_id", "thread_id is invalid")
-    else:
+    elif message_type == "run.cancel":
         run_id = value.get("run_id")
         if not isinstance(run_id, str) or not ID_PATTERN.fullmatch(run_id):
             raise ProtocolError("invalid_run_id", "run_id is invalid")
+    elif message_type == "session.list":
+        limit = payload.get("limit", 20)
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1 or limit > 100:
+            raise ProtocolError("invalid_session_limit", "limit must be between 1 and 100")
+    elif message_type in {"session.get", "session.resume"}:
+        thread_id = value.get("thread_id")
+        if not isinstance(thread_id, str) or not ID_PATTERN.fullmatch(thread_id):
+            raise ProtocolError("invalid_thread_id", "thread_id is invalid")
+    else:
+        thread_id = value.get("thread_id")
+        if not isinstance(thread_id, str) or not ID_PATTERN.fullmatch(thread_id):
+            raise ProtocolError("invalid_thread_id", "thread_id is invalid")
+        approval_id = payload.get("approval_id")
+        action_hash = payload.get("action_hash")
+        decision = payload.get("decision")
+        if not isinstance(approval_id, str) or not ID_PATTERN.fullmatch(approval_id):
+            raise ProtocolError("invalid_approval_id", "approval_id is invalid")
+        if not isinstance(action_hash, str) or not action_hash or len(action_hash) > 256:
+            raise ProtocolError("invalid_action_hash", "action_hash is invalid")
+        if decision not in {"approve", "reject"}:
+            raise ProtocolError("invalid_approval_decision", "decision must be approve or reject")
     return value
 
 
@@ -129,12 +166,19 @@ class BridgeModel:
 
     def complete(self, *, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
         available = {item.get("function", {}).get("name") for item in tools}
-        user = next((item for item in reversed(messages) if item.get("role") == "user"), {})
+        user_index = next(
+            (index for index in range(len(messages) - 1, -1, -1) if messages[index].get("role") == "user"),
+            -1,
+        )
+        user = messages[user_index] if user_index >= 0 else {}
         question = str(user.get("content", ""))
         dataset_context = user.get("dataset_context")
         datasets = dataset_context.get("datasets", []) if isinstance(dataset_context, dict) else []
         dataset = datasets[-1] if datasets else None
-        tool_message = next((item for item in reversed(messages) if item.get("role") == "tool"), None)
+        tool_message = next(
+            (item for item in reversed(messages[user_index + 1 :]) if item.get("role") == "tool"),
+            None,
+        )
         wants_chart = any(term in question.lower() for term in ("图", "chart", "visual"))
 
         if isinstance(tool_message, dict):
@@ -166,6 +210,13 @@ class BridgeModel:
             summary = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
             return {"type": "final_answer", "content": "分析完成：" + summary}
 
+        if any(term in question.lower() for term in ("外部写", "mcp write", "external write")) and "mcp_mock__echo" in available:
+            return {
+                "type": "tool_call",
+                "id": f"bridge_write_{len(messages)}",
+                "name": "mcp_mock__echo",
+                "arguments": {"text": question},
+            }
         if not isinstance(dataset, dict):
             return {"type": "final_answer", "content": "Desktop Runtime 已完成本次请求。"}
         dataset_id = dataset.get("datasetId")
@@ -207,22 +258,86 @@ def runtime_root() -> Path:
     )
 
 
-def build_workflow(thread_id: str, dataset: dict[str, str] | None = None) -> Workflow:
+def session_database() -> Path:
+    return runtime_root() / "sessions.sqlite3"
+
+
+def approval_key() -> bytes:
+    configured = os.environ.get("DATA_AGENT_APPROVAL_KEY")
+    if configured:
+        return configured.encode("ascii")
+    root = runtime_root()
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / "approval.key"
+    try:
+        return path.read_bytes().strip()
+    except FileNotFoundError:
+        key = Fernet.generate_key()
+        try:
+            with path.open("xb") as stream:
+                stream.write(key)
+        except FileExistsError:
+            return path.read_bytes().strip()
+        return key
+
+
+def ensure_session(store: SQLiteSessionStore, thread_id: str) -> None:
+    if store.get_session(thread_id) is not None:
+        return
+    try:
+        store.create_session(thread_id)
+    except SessionAlreadyExistsError:
+        pass
+
+
+def build_hitl_registry(store: SQLiteSessionStore, thread_id: str):
+    manager = PersistentApprovalManager(
+        SQLiteApprovalRepository(store, approval_key()),
+        thread_id=thread_id,
+        ttl_seconds=float(os.environ.get("DESKTOP_APPROVAL_TTL_SECONDS", "300")),
+    )
+    registry = build_default_registry()
+    registry.approval_manager = manager
+    server = MockMCPServer()
+    report = MCPToolAdapter(
+        MockMCPClient(server),
+        server_id="mock",
+        allowed_tools={"echo"},
+        tool_policies={"echo": "mcp_write"},
+    ).register_into(registry)
+    if not report.ok:
+        raise RuntimeError("Desktop HITL tool registration failed")
+    return registry, server
+
+
+def build_workflow(
+    thread_id: str,
+    store: SQLiteSessionStore,
+    dataset: dict[str, str] | None = None,
+) -> tuple[Workflow, ConversationRunner]:
     datasets = DatasetRegistry(runtime_root() / thread_id / "datasets")
     if dataset is not None:
         summary = datasets.register(
             dataset["path"],
             dataset_id=dataset["dataset_id"],
         )
+    registry, _server = build_hitl_registry(store, thread_id)
     runner = ConversationRunner(
-        AgentLoop(BridgeModel(), build_default_registry()),
+        AgentLoop(BridgeModel(), registry),
         dataset_registry=datasets,
         conversation_id=thread_id,
     )
+    snapshot = SessionStateProjector.project(
+        thread_id=thread_id,
+        messages=store.get_messages(thread_id),
+        events=store.get_events(thread_id),
+        dataset_registry=datasets,
+    )
+    runner.state = snapshot.conversation_state
     if dataset is not None:
         runner.set_active_datasets([summary["datasetId"]])
     skills = SkillRuntime(runner, SkillRegistry())
-    return Workflow(
+    workflow = Workflow(
         router=RuleRouter(),
         nodes={
             "chat": ChatNode(),
@@ -231,6 +346,7 @@ def build_workflow(thread_id: str, dataset: dict[str, str] | None = None) -> Wor
             "memory_recall": MemoryRecallNode(None),
         },
     )
+    return workflow, runner
 
 
 class RunEmitter:
@@ -264,7 +380,6 @@ class RunEmitter:
             "skill_triggered": "skill_triggered",
             "tool_called": "tool_called",
             "tool_completed": "tool_completed",
-            "approval_requested": "approval_required",
         }.get(event_type)
         if event_type in {"request_started", "request_completed"}:
             return
@@ -302,6 +417,70 @@ def chart_payloads(result: dict[str, Any]) -> list[dict[str, Any]]:
     return payloads
 
 
+def _redact_message(message: dict[str, Any]) -> dict[str, Any]:
+    public = copy.deepcopy(message)
+    if public.get("role") == "assistant":
+        for call in public.get("tool_calls", []):
+            function = call.get("function", {}) if isinstance(call, dict) else {}
+            if str(function.get("name", "")).startswith("mcp_"):
+                function["arguments"] = "<sealed-pending-action>"
+    return public
+
+
+def persist_run(
+    store: SQLiteSessionStore,
+    runner: ConversationRunner,
+    result: dict[str, Any],
+    *,
+    thread_id: str,
+    run_id: str,
+    query: str,
+    trace_id: str,
+) -> None:
+    route = result.get("route")
+    if route == "analysis" and runner.state.turns:
+        persisted_messages = runner.state.turns[-1].messages
+    else:
+        persisted_messages = [
+            {"role": "user", "content": query},
+            {"role": "assistant", "content": result.get("response") or ""},
+        ]
+    for message in persisted_messages:
+        if isinstance(message, dict) and message.get("role") in {"user", "assistant", "tool"}:
+            store.append_message(
+                thread_id,
+                {**_redact_message(message), "turn_id": run_id},
+                turn_id=run_id,
+                trace_id=trace_id,
+            )
+    observability = result.get("data", {}).get("observability", {})
+    for event in observability.get("events", []) if isinstance(observability, dict) else []:
+        if not isinstance(event, dict) or event.get("event_type") == "approval_requested":
+            continue
+        store.append_event(
+            thread_id,
+            event,
+            turn_id=run_id,
+            trace_id=event.get("trace_id") if isinstance(event.get("trace_id"), str) else trace_id,
+        )
+
+
+def approval_payload(result: dict[str, Any]) -> dict[str, Any] | None:
+    agent_state = result.get("data", {}).get("agent_state", {})
+    pending = agent_state.get("pending_approval") if isinstance(agent_state, dict) else None
+    if not isinstance(pending, dict):
+        return None
+    public = {
+        key: pending.get(key)
+        for key in (
+            "approval_id", "action_hash", "tool_name", "action_type", "risk_level",
+            "rule_id", "status", "created_at", "expires_at",
+        )
+    }
+    public["risk_summary"] = f"{pending.get('risk_level')} risk · {pending.get('action_type')}"
+    return public
+
+
 def worker(command: dict[str, Any]) -> int:
     writer = JsonlWriter(sys.stdout)
     request_id = command["request_id"]
@@ -314,15 +493,27 @@ def worker(command: dict[str, Any]) -> int:
     delay_ms = max(0, int(os.environ.get("DESKTOP_BRIDGE_WORKER_DELAY_MS", "0")))
     if delay_ms:
         time.sleep(delay_ms / 1000)
+    store = SQLiteSessionStore(session_database())
+    ensure_session(store, thread_id)
     try:
         with contextlib.redirect_stdout(sys.stderr):
-            result = build_workflow(thread_id, command.get("_dataset")).invoke(
+            workflow, runner = build_workflow(thread_id, store, command.get("_dataset"))
+            result = workflow.invoke(
                 {
                     "query": command["payload"]["message"],
                     "artifact_dir": str(runtime_root() / thread_id / "artifacts" / run_id),
                     "_trace_collector": collector,
                 }
             )
+        persist_run(
+            store,
+            runner,
+            result,
+            thread_id=thread_id,
+            run_id=run_id,
+            query=command["payload"]["message"],
+            trace_id=collector.trace_id,
+        )
         agent_state = result.get("data", {}).get("agent_state", {})
         for payload in chart_payloads(result):
             emitter.emit("chart_ready", payload)
@@ -343,6 +534,15 @@ def worker(command: dict[str, Any]) -> int:
             )
             return 1
         if result["status"] == "needs_approval":
+            pending = approval_payload(result)
+            if pending is None:
+                emitter.emit(
+                    "run_failed",
+                    {"status": "failed"},
+                    {"code": "missing_approval", "message": "Runtime omitted approval details"},
+                )
+                return 1
+            emitter.emit("approval_required", pending)
             return 0
         emitter.emit(
             "run_completed",
@@ -362,6 +562,57 @@ def worker(command: dict[str, Any]) -> int:
         )
         print(f"runtime worker failed: {type(error).__name__}: {error}", file=sys.stderr)
         return 1
+    finally:
+        store.close()
+
+
+def approval_worker(command: dict[str, Any]) -> int:
+    writer = JsonlWriter(sys.stdout)
+    request_id = command["request_id"]
+    run_id = command["run_id"]
+    thread_id = command["thread_id"]
+    trace_id = f"trace_{uuid.uuid4().hex}"
+    emitter = RunEmitter(writer, request_id, run_id, thread_id, trace_id)
+    emitter.emit("run_started", {"status": "resuming"})
+    store = SQLiteSessionStore(session_database())
+    try:
+        if store.get_session(thread_id) is None:
+            raise SessionNotFoundError(f"session not found: {thread_id}")
+        registry, server = build_hitl_registry(store, thread_id)
+        with contextlib.redirect_stdout(sys.stderr):
+            result = registry.resolve_approval(
+                approval_id=command["payload"]["approval_id"],
+                action_hash=command["payload"]["action_hash"],
+                decision=command["payload"]["decision"],
+            )
+        for event in result.trace_events:
+            emitter.trace(event)
+        decision = result.decision.to_dict() if result.decision is not None else None
+        error = result.error
+        status = decision.get("status") if isinstance(decision, dict) else None
+        if error:
+            code = str(error.get("code", "approval_failed"))
+            if code == "approval_expired":
+                status = "expired"
+            elif status is None:
+                status = "rejected"
+        terminal = {
+            "status": status or "rejected",
+            "decision": decision,
+            "executed": bool(server.calls),
+        }
+        emitter.emit("approval_resolved", terminal, error)
+        return 0 if result.ok else 1
+    except Exception as error:
+        emitter.emit(
+            "approval_resolved",
+            {"status": "rejected", "executed": False},
+            {"code": getattr(error, "code", type(error).__name__), "message": str(error)},
+        )
+        print(f"approval worker failed: {type(error).__name__}: {error}", file=sys.stderr)
+        return 1
+    finally:
+        store.close()
 
 
 class RunProcess:
@@ -394,8 +645,14 @@ class Supervisor:
                     self._start(command)
                 elif command["type"] == "run.cancel":
                     self._cancel(command)
-                else:
+                elif command["type"] == "dataset.register":
                     self._register_dataset(command)
+                elif command["type"] == "session.list":
+                    self._list_sessions(command)
+                elif command["type"] in {"session.get", "session.resume"}:
+                    self._get_session(command)
+                else:
+                    self._resolve_approval(command)
             except json.JSONDecodeError:
                 self._protocol_failure(None, "invalid_json", "stdin contained invalid JSON")
             except ProtocolError as error:
@@ -438,8 +695,12 @@ class Supervisor:
                 "dataset_id": dataset_id,
                 "path": registry.resolve(dataset_id),
             }
+        self._spawn_worker(worker_command, "--worker")
+
+    def _spawn_worker(self, worker_command: dict[str, Any], mode: str) -> None:
+        run_id = worker_command["run_id"]
         process = subprocess.Popen(
-            [sys.executable, str(Path(__file__).resolve()), "--worker"],
+            [sys.executable, str(Path(__file__).resolve()), mode],
             cwd=str(REPO_ROOT),
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -458,6 +719,11 @@ class Supervisor:
         threading.Thread(target=self._forward_stdout, args=(run_id, state), daemon=True).start()
         threading.Thread(target=self._forward_stderr, args=(run_id, state), daemon=True).start()
 
+    def _resolve_approval(self, command: dict[str, Any]) -> None:
+        worker_command = dict(command)
+        worker_command["run_id"] = f"run_{uuid.uuid4().hex}"
+        self._spawn_worker(worker_command, "--approval-worker")
+
     def _register_dataset(self, command: dict[str, Any]) -> None:
         thread_id = command.get("thread_id") or f"thread_{uuid.uuid4().hex}"
         registry = self.dataset_registries.get(thread_id)
@@ -465,6 +731,8 @@ class Supervisor:
             registry = DatasetRegistry(runtime_root() / thread_id / "datasets")
             self.dataset_registries[thread_id] = registry
         try:
+            with SQLiteSessionStore(session_database()) as store:
+                ensure_session(store, thread_id)
             summary = registry.register(command["payload"]["file_path"])
         except DatasetRegistryError as error:
             self.writer.write(
@@ -490,6 +758,65 @@ class Supervisor:
                 payload={"status": "selected", "dataset": summary},
             )
         )
+
+    def _list_sessions(self, command: dict[str, Any]) -> None:
+        with SQLiteSessionStore(session_database()) as store:
+            items = []
+            for record in store.list_sessions(limit=command["payload"].get("limit", 20)):
+                messages = store.get_messages(record.thread_id)
+                summary = ""
+                for message in reversed(messages):
+                    if message.get("role") not in {"user", "assistant"}:
+                        continue
+                    content = message.get("content")
+                    if isinstance(content, str) and content.strip():
+                        summary = content.strip()[:160]
+                        break
+                items.append({**record.to_dict(), "summary": summary})
+        self.writer.write(envelope(
+            "response", request_id=command["request_id"], run_id=None,
+            thread_id=None, trace_id=None, sequence=0,
+            payload={"sessions": items},
+        ))
+
+    def _get_session(self, command: dict[str, Any]) -> None:
+        thread_id = command["thread_id"]
+        try:
+            with SQLiteSessionStore(session_database()) as store:
+                record = store.get_session(thread_id)
+                if record is None:
+                    raise SessionNotFoundError(f"session not found: {thread_id}")
+                messages = store.get_messages(thread_id)
+                events = store.get_events(thread_id)
+                datasets = self.dataset_registries.get(thread_id) or DatasetRegistry(
+                    runtime_root() / thread_id / "datasets"
+                )
+                snapshot = SessionStateProjector.project(
+                    thread_id=thread_id,
+                    messages=messages,
+                    events=events,
+                    dataset_registry=datasets,
+                )
+                payload = {
+                    "session": record.to_dict(),
+                    "messages": messages,
+                    "events": events,
+                    "conversation": {
+                        "thread_id": snapshot.conversation_state.conversation_id,
+                        "turn_count": len(snapshot.conversation_state.turns),
+                        "trace_ids": snapshot.trace_ids,
+                    },
+                }
+            self.writer.write(envelope(
+                "response", request_id=command["request_id"], run_id=None,
+                thread_id=thread_id, trace_id=None, sequence=0, payload=payload,
+            ))
+        except SessionNotFoundError as error:
+            self.writer.write(envelope(
+                "response", request_id=command["request_id"], run_id=None,
+                thread_id=thread_id, trace_id=None, sequence=0,
+                error={"code": error.code, "message": str(error)},
+            ))
 
     def _forward_stdout(self, run_id: str, state: RunProcess) -> None:
         assert state.process.stdout is not None
@@ -520,7 +847,11 @@ class Supervisor:
                             thread_id=state.command["thread_id"],
                             trace_id=state.trace_id,
                             sequence=0,
-                            payload={"status": "running"},
+                            payload={
+                                "status": "resuming"
+                                if message.get("payload", {}).get("status") == "resuming"
+                                else "running"
+                            },
                         )
                     )
                 if message.get("type") in TERMINAL_TYPES:
@@ -660,6 +991,14 @@ def main() -> int:
             print("worker received invalid JSON", file=sys.stderr)
             return 2
         return worker(command)
+    if len(sys.argv) > 1 and sys.argv[1] == "--approval-worker":
+        raw = sys.stdin.readline()
+        try:
+            command = json.loads(raw)
+        except json.JSONDecodeError:
+            print("approval worker received invalid JSON", file=sys.stderr)
+            return 2
+        return approval_worker(command)
     supervisor = Supervisor()
     signal.signal(signal.SIGTERM, lambda *_args: (supervisor.shutdown(), sys.exit(0)))
     return supervisor.serve()

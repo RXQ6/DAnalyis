@@ -1,10 +1,11 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import { RuntimeClient, RuntimeRequestError } from "../../bridge/runtimeClient";
-import type { DatasetSelectionResult, DatasetSummary, IpcError, IpcResult, RunCancelResult, RunStartResult } from "../../shared/ipc";
+import type { DatasetSelectionResult, DatasetSummary, IpcError, IpcResult, RunCancelResult, RunStartResult, SessionListResult, SessionSnapshot } from "../../shared/ipc";
 import { IPC_CHANNELS } from "../../shared/ipc";
 import { validateFilesSelectInput } from "./files-select";
 import { validateRunsCancelInput } from "./runs-cancel";
 import { validateRunsStartInput } from "./runs-start";
+import { validateApprovalInput, validateSessionInput } from "./session-approval";
 
 function failure(error: unknown): IpcResult<never> {
   const known = error instanceof RuntimeRequestError;
@@ -17,6 +18,39 @@ function failure(error: unknown): IpcResult<never> {
 }
 
 export function registerIpcHandlers(runtime: RuntimeClient): void {
+  ipcMain.handle(IPC_CHANNELS.sessionsList, async (): Promise<IpcResult<SessionListResult>> => {
+    try {
+      return { ok: true, data: { sessions: await runtime.listSessions() } };
+    } catch (error) {
+      return failure(error);
+    }
+  });
+
+  const sessionHandler = (resume: boolean) => async (_event: Electron.IpcMainInvokeEvent, input: unknown): Promise<IpcResult<SessionSnapshot>> => {
+    try {
+      const validation = validateSessionInput(input);
+      if (!validation.ok) return { ok: false, error: { code: "INVALID_SESSION_INPUT", message: validation.message } };
+      return { ok: true, data: await runtime.getSession(validation.value.threadId, resume) };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+  ipcMain.handle(IPC_CHANNELS.sessionsGet, sessionHandler(false));
+  ipcMain.handle(IPC_CHANNELS.sessionsResume, sessionHandler(true));
+
+  const approvalHandler = (decision: "approve" | "reject") => async (_event: Electron.IpcMainInvokeEvent, input: unknown): Promise<IpcResult<RunStartResult>> => {
+    try {
+      const validation = validateApprovalInput(input);
+      if (!validation.ok) return { ok: false, error: { code: "INVALID_APPROVAL_INPUT", message: validation.message } };
+      const { threadId, approvalId, actionHash } = validation.value;
+      return { ok: true, data: await runtime.resolveApproval(threadId, approvalId, actionHash, decision) };
+    } catch (error) {
+      return failure(error);
+    }
+  };
+  ipcMain.handle(IPC_CHANNELS.approvalsApprove, approvalHandler("approve"));
+  ipcMain.handle(IPC_CHANNELS.approvalsReject, approvalHandler("reject"));
+
   ipcMain.handle(IPC_CHANNELS.runsStart, async (_event, input: unknown): Promise<IpcResult<RunStartResult>> => {
     try {
       const validation = validateRunsStartInput(input);

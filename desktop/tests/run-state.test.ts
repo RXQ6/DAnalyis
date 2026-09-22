@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { AgentEvent } from "../src/shared/ipc";
-import { OrderedRunProjector } from "../src/renderer/run-state";
+import { OrderedRunProjector, eventBelongsToSession } from "../src/renderer/run-state";
 
 function event(sequence: number, type: string, payload: Record<string, unknown> = {}, error: AgentEvent["error"] = null): AgentEvent {
   return {
@@ -43,6 +43,7 @@ test("run projection maps terminal, approval and partial states from Runtime eve
   const failed = partial.push(event(2, "run_failed", { partial: true }, { code: "boom", message: "failed" }));
   assert.equal(failed.status, "partial");
   assert.equal(failed.error?.code, "boom");
+  assert.deepEqual(failed.partialMissing, ["Some requested tool results are unavailable."]);
 
   const cancelled = new OrderedRunProjector("run_1");
   cancelled.push(event(1, "run_started"));
@@ -63,4 +64,30 @@ test("chart_ready projects existing Chart Spec without data recomputation", () =
     title: "Sales",
     data: { values: [{ x: "East", y: 10 }] },
   });
+});
+
+test("approval projection uses Runtime fields and maps resume/reject/expiry states", () => {
+  const pending = new OrderedRunProjector("run_1");
+  pending.push(event(1, "run_started"));
+  const waiting = pending.push(event(2, "approval_required", {
+    approval_id: "approval_1", action_hash: "secret-hash", action_type: "mcp_write",
+    risk_level: "high", expires_at: "2030-01-01T00:00:00+00:00",
+  }));
+  assert.equal(waiting.status, "waiting_approval");
+  assert.equal(waiting.approval?.approvalId, "approval_1");
+
+  const rejected = new OrderedRunProjector("run_1");
+  rejected.push(event(1, "run_started", { status: "resuming" }));
+  assert.equal(rejected.snapshot().status, "resuming");
+  assert.equal(rejected.push(event(2, "approval_resolved", { status: "rejected" })).status, "rejected");
+
+  const expired = new OrderedRunProjector("run_1");
+  expired.push(event(1, "run_started", { status: "resuming" }));
+  assert.equal(expired.push(event(2, "approval_resolved", { status: "expired" })).status, "expired");
+});
+
+test("Session A events cannot project into Session B", () => {
+  const fromA = event(1, "run_started");
+  assert.equal(eventBelongsToSession(fromA, "thread_1"), true);
+  assert.equal(eventBelongsToSession(fromA, "thread_2"), false);
 });

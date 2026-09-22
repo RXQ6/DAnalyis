@@ -10,7 +10,7 @@ class SQLiteApprovalRepository:
         self.store, self.cipher = store, Fernet(key)
 
     def create(self, thread_id: str, request: dict[str, Any], payload: dict[str, Any]) -> None:
-        event = {"event_type":"approval_requested","component":"hitl","name":request["tool_name"],"status":"pending","trace_id":request.get("trace_id"),"metadata":{k:request.get(k) for k in ("approval_id","action_hash","action_type","rule_id","call_id")}}
+        event = {"event_type":"approval_requested","component":"hitl","name":request["tool_name"],"status":"pending","trace_id":request.get("trace_id"),"metadata":{**{k:request.get(k) for k in ("approval_id","action_hash","action_type","risk_level","rule_id","call_id","expires_at")},"risk_summary":f"{request.get('risk_level')} risk · {request.get('action_type')}"}}
         raw = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
         token = self.cipher.encrypt(raw)
         with self.store._lock:

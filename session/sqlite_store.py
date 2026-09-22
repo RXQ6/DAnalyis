@@ -161,6 +161,18 @@ class SQLiteSessionStore:
             ).fetchone()
         return None if row is None else self._session_record(row)
 
+    def list_sessions(self, *, limit: int = 20) -> list[SessionRecord]:
+        """Return the most recently updated sessions without adding a second index."""
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1 or limit > 100:
+            raise ValueError("limit must be an integer between 1 and 100")
+        with self._lock:
+            self._ensure_open()
+            rows = self._connection.execute(
+                "SELECT * FROM sessions ORDER BY updated_at DESC, thread_id ASC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [self._session_record(row) for row in rows]
+
     def append_message(
         self,
         thread_id: str,

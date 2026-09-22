@@ -494,11 +494,83 @@
   Day19 60/60 与原 11 项 regression gate 全部通过；Day19 average/p95/max latency 分别为
   0.260s/0.664s/0.852s，均在稳定基线容差内。
 
+## Desktop M4 Session + Recovery + HITL UI
+
+- 新增 `sessions:list`、`sessions:get`、`sessions:resume` 的 Renderer → preload → Main →
+  Runtime Bridge 调用链。最近 Session 的 thread ID、更新时间、消息摘要以及恢复后的 messages/events
+  全部从现有 `SQLiteSessionStore` 读取，并由 `SessionStateProjector` 在 Python 侧 hydrate
+  `ConversationState`；Electron 没有新增 Session 副本或业务数据库。
+- Session 恢复沿用原 `thread_id`，每次后续 run 和 approval resume 生成新的 `trace_id`。恢复接口只读取
+  与投影历史状态，不执行历史 Tool call；BridgeModel 只消费当前 user 之后的新 Tool observation，避免把
+  已完成旧动作当作当前动作重复处理。
+- 新增 `approvals:approve` / `approvals:reject` IPC 与最小审批卡片。卡片仅展示 action type、Runtime
+  生成的 risk summary、approval ID 和 expires_at；action hash 只作为 opaque 回传值保存在 Renderer
+  状态中，原始工具参数不展示且持久化消息使用 sealed 占位符。
+- 审批执行继续复用 `PersistentApprovalManager`、`SQLiteApprovalRepository`、Guardrail 和
+  ToolRegistry。thread ID、approval ID、action hash、TTL 与 consumed/replay 校验都在 Python 完成；
+  Approve 只执行加密保存的单个原动作，Reject、expired、hash mismatch 和 replay 均不执行底层工具。
+- Run State 新增 `resuming`、`rejected`、`expired`，保留 `waiting_approval`；`approval_required` 与
+  `approval_resolved` 均为 Runtime Event。Renderer 继续按 run sequence 应用事件，并按当前 thread
+  过滤，防止 Session A/B 事件交叉投影。
+- Desktop M4 TypeScript/IPC/Runtime/Session/HITL 专项 19/19，通过真实隐藏 Electron BrowserWindow
+  E2E，覆盖 Session 列表、选择旧 Session 恢复 messages、审批卡片脱敏、Reject 不执行和 Approve
+  恢复原动作。测试主机的 Chromium 子进程 sandbox 受系统策略限制，自动化执行时使用
+  `ELECTRON_DISABLE_SANDBOX=1`；生产 BrowserWindow 配置仍由专项断言保持 `sandbox=true`、
+  `contextIsolation=true`、`nodeIntegration=false`。
+- 回归结果：Python 全量 261/261、原 Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 Eval Harness 60/60、原 11 项 regression gate 全部 PASS；security violation 与 contract
+  failure 均为 0。Day19 average/p95/max latency 为 0.337s/1.032s/1.233s，均在稳定基线容差内。
+- 未修改 P0/P1 业务逻辑、评测预期、baseline 或 threshold；Desktop M1/M2/M3 架构边界保持不变。
+
+### Desktop M4 边界场景复验
+
+- 增加 Runtime 宿主重启专项：关闭首个 supervisor/client 后使用同一 runtime directory 创建新宿主，
+  Session 列表、消息、events 和 pending approval 均可恢复；批准后保持原 thread ID、生成新 trace ID，
+  并只执行一次原动作。
+- approval 的重复点击由 Renderer pending 状态禁用按钮，跨进程 replay 继续由 Python consumed 状态
+  拒绝；expired、reject、action hash mismatch 均验证为零底层执行。
+- 增加 Session A/B 双层隔离验证：Run State 单元测试拒绝其他 thread event；Electron E2E 在切换
+  Session 后注入旧 thread 的迟到 Runtime error，当前 messages/events/error 均未被污染。
+- Session 切换复用应用级单一 `onAgentEvent` listener，不创建 session-scoped listener；Renderer reload
+  销毁旧 preload context 后，pending approval 可从 SessionStore 重新 hydrate。
+- 发现并最小修复 hydrate 失败缺少 Retry 的 UI 缺口：结构化 IPC error 现在保留失败 thread ID，用户可
+  重试同一恢复请求；成功后清空错误和 Retry 状态。不存在的 thread ID 安全返回
+  `session_not_found`。
+- 重复 hydrate 已完成 Session 前后 `approval_resumed` 事件数量保持不变，确认读取恢复不会重放动作。
+- 边界复验后 Desktop 专项 20/20、Electron E2E PASS、Python 全量 261/261、Day19 60/60 与
+  11 项 regression gate 全部 PASS；最终 average/p95/max latency 为
+  0.284s/0.761s/0.947s，security violation 与 contract failure 均为 0。
+
+## Desktop M5 Trace Panel + Error/Retry + Product States
+
+- 新增 `trace-panel.ts` 纯投影层，将 Runtime/Session events 分类为 route、skill、tool、MCP、
+  sub-agent、guardrail、approval、error 和 runtime；run 按 Runtime sequence 排序，Session hydrate
+  按 SessionStore 规范返回顺序编号。Renderer 不生成 Runtime Event，也不推导 Python 业务结论。
+- Trace Panel 使用外层及逐事件 `<details>` 折叠结构，只展示 sequence、分类、受控名称、status 和
+  error code。专项测试确认 arguments、metadata、文件路径、action hash、错误正文与测试 secret
+  不会进入 Trace 投影。
+- 新增 `product-state.ts`，统一 loading、empty、running、partial、stale、waiting_approval、
+  completed、failed、cancelled 九种产品状态；每种状态固定提供 happening、can continue 和
+  next action 文案。
+- Error Card 统一显示 code、message、action。Session list/hydrate、文件选择、run start、Runtime
+  event 和 Chart render 的可恢复错误可绑定最小 Retry；所有异步入口均有终态，避免永久 loading。
+- Run Retry 复用当前 thread ID，并通过原 `runs:start` 生成新 run/trace；partial 保留已有回答和
+  Chart，明确显示缺失项。stale 第一版只显示并提供 Session refresh/原 Dataset 重新选择入口。
+- Retry 安全边界保持在 Python：waiting approval 不显示通用 Retry，Approve/Reject 错误不自动重放；
+  即使普通 run Retry 再次遇到高风险写操作，也只会生成新的 pending approval，不能自动执行。
+  已 consumed approval 的 replay 仍由 PersistentApprovalManager 拒绝。
+- Electron E2E 覆盖 Trace 顺序、敏感信息不显示、partial 保留有效结果、failed→Retry、stale 刷新、
+  cancelled 展示、waiting approval 无 Retry 绕过、同 thread 新 trace、Session/run 事件隔离和
+  Renderer reload。Desktop TypeScript/IPC/Runtime 专项 23/23 PASS，Electron E2E PASS。
+- 回归结果：Python 全量 261/261、原 Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 Eval Harness 60/60、11 项 regression gate 全部 PASS；security violation 与 contract
+  failure 均为 0，average/p95/max latency 为 0.265s/0.692s/0.917s。
+- 本阶段未修改 Python Runtime 业务语义、P0/P1 业务逻辑、评测预期、baseline 或 threshold。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
-- Desktop M3 尚未接入 Session/HITL UI；thread ID 当前用于 Dataset 与 run 关联，尚未由桌面层写入
-  或恢复现有 SessionStore。
+- Desktop M4 已接入 Session/HITL UI；当前仍未实现 heartbeat、sequence gap 自动补洞或多实例并发协调。
 - M3 的 analysis route 仍使用最小 BridgeModel composition adapter；真实模型客户端与凭证将在
   后续阶段注入，但 Workflow、Agent Loop、DatasetRegistry、Chart 和工具语义仍由现有 Python Runtime 执行。
 - 开发环境需要 `DATA_AGENT_PYTHON`、项目 `.venv` 或 PATH 中的 Python；独立 Python sidecar

@@ -3,7 +3,9 @@ import { randomUUID } from "node:crypto";
 export const PROTOCOL_VERSION = 1;
 export const MAX_JSONL_LINE_BYTES = 1024 * 1024;
 
-export type RuntimeCommandType = "run.start" | "run.cancel" | "dataset.register";
+export type RuntimeCommandType =
+  | "run.start" | "run.cancel" | "dataset.register"
+  | "session.list" | "session.get" | "session.resume" | "approval.resolve";
 export type AgentEventType =
   | "run_started"
   | "route_selected"
@@ -12,6 +14,7 @@ export type AgentEventType =
   | "tool_completed"
   | "chart_ready"
   | "approval_required"
+  | "approval_resolved"
   | "run_completed"
   | "run_failed"
   | "run_cancelled"
@@ -57,6 +60,7 @@ const EVENT_TYPES = new Set<AgentEventType>([
   "tool_completed",
   "chart_ready",
   "approval_required",
+  "approval_resolved",
   "run_completed",
   "run_failed",
   "run_cancelled",

@@ -9,6 +9,11 @@
   <body>
     <main>
       <h1>Data Analysis Agent</h1>
+      <aside aria-label="Sessions">
+        <h2>Recent sessions</h2>
+        <button id="sessions-refresh" type="button">Refresh</button>
+        <ol id="session-list"></ol>
+      </aside>
       <section aria-label="Data file">
         <button id="file-select" type="button">Choose CSV/XLSX</button>
         <output id="dataset-summary">No file selected</output>
@@ -20,12 +25,38 @@
         <button id="run-submit" type="button">Send</button>
         <button id="run-stop" type="button" disabled>Stop</button>
       </section>
-      <p>Run state: <output id="run-status" data-state="idle">idle</output></p>
-      <output id="run-error" aria-live="assertive"></output>
+      <section id="product-state" aria-label="Product state" data-state="loading" aria-live="polite">
+        <h2>State: <output id="run-status">loading</output></h2>
+        <p id="state-happening">Loading Runtime state.</p>
+        <p id="state-continuation">Please wait for the current request to finish.</p>
+        <p id="state-next-action">No action is required yet.</p>
+        <button id="state-refresh" type="button" hidden>Refresh</button>
+      </section>
+      <section id="error-card" aria-label="Error" aria-live="assertive" hidden>
+        <h2>Error</h2>
+        <dl>
+          <dt>Code</dt><dd id="error-code"></dd>
+          <dt>Message</dt><dd id="error-message"></dd>
+          <dt>Action</dt><dd id="error-action"></dd>
+        </dl>
+        <button id="error-retry" type="button" hidden>Retry</button>
+      </section>
+      <section id="approval-card" aria-label="Approval required" hidden>
+        <h2>Approval required</h2>
+        <dl>
+          <dt>Action</dt><dd id="approval-action"></dd>
+          <dt>Risk</dt><dd id="approval-risk"></dd>
+          <dt>Approval ID</dt><dd id="approval-id"></dd>
+          <dt>Expires</dt><dd id="approval-expires"></dd>
+        </dl>
+        <button id="approval-approve" type="button">Approve</button>
+        <button id="approval-reject" type="button">Reject</button>
+      </section>
       <section id="charts" aria-label="Charts"></section>
-      <details>
-        <summary>Runtime events</summary>
-        <ol id="event-list" aria-label="Agent events"></ol>
+      <details id="trace-panel">
+        <summary>Trace / Runtime Events</summary>
+        <p id="trace-empty">No Runtime events for the selected run.</p>
+        <ol id="event-list" aria-label="Trace events"></ol>
       </details>
     </main>
     <script src="./bundle.js" defer></script>

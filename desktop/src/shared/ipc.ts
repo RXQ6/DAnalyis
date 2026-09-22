@@ -2,6 +2,11 @@ export const IPC_CHANNELS = {
   runsStart: "runs:start",
   runsCancel: "runs:cancel",
   filesSelect: "files:select",
+  sessionsList: "sessions:list",
+  sessionsGet: "sessions:get",
+  sessionsResume: "sessions:resume",
+  approvalsApprove: "approvals:approve",
+  approvalsReject: "approvals:reject",
   agentEvent: "agent:event",
 } as const;
 
@@ -22,7 +27,7 @@ export interface RunsStartInput {
 }
 
 export interface RunStartResult {
-  status: "running";
+  status: "running" | "resuming";
   requestId: string;
   runId: string;
   threadId: string;
@@ -63,6 +68,34 @@ export interface DatasetSelectionResult {
   dataset?: DatasetSummary;
 }
 
+export interface SessionSummary {
+  threadId: string;
+  updatedAt: string;
+  status: string;
+  summary: string;
+}
+
+export interface SessionListResult {
+  sessions: SessionSummary[];
+}
+
+export interface SessionInput {
+  threadId: string;
+}
+
+export interface SessionSnapshot {
+  threadId: string;
+  messages: Array<Record<string, unknown>>;
+  events: Array<Record<string, unknown>>;
+  traceIds: string[];
+}
+
+export interface ApprovalInput {
+  threadId: string;
+  approvalId: string;
+  actionHash: string;
+}
+
 export interface AgentEvent {
   protocol_version: 1;
   request_id: string | null;
@@ -79,7 +112,15 @@ export interface DesktopApi {
   startRun(input: RunsStartInput): Promise<IpcResult<RunStartResult>>;
   cancelRun(input: RunsCancelInput): Promise<IpcResult<RunCancelResult>>;
   selectDataset(input?: FilesSelectInput): Promise<IpcResult<DatasetSelectionResult>>;
+  listSessions(): Promise<IpcResult<SessionListResult>>;
+  getSession(input: SessionInput): Promise<IpcResult<SessionSnapshot>>;
+  resumeSession(input: SessionInput): Promise<IpcResult<SessionSnapshot>>;
+  approve(input: ApprovalInput): Promise<IpcResult<RunStartResult>>;
+  reject(input: ApprovalInput): Promise<IpcResult<RunStartResult>>;
   onAgentEvent(listener: (event: AgentEvent) => void): () => void;
 }
 
-export const PUBLIC_API_METHODS = ["startRun", "cancelRun", "selectDataset", "onAgentEvent"] as const;
+export const PUBLIC_API_METHODS = [
+  "startRun", "cancelRun", "selectDataset", "listSessions", "getSession",
+  "resumeSession", "approve", "reject", "onAgentEvent",
+] as const;
