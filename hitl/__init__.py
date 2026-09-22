@@ -7,6 +7,7 @@ from .contracts import (
     ApprovalStatus,
 )
 from .manager import ApprovalManager
+from .persistent import PersistentApprovalManager
 
 __all__ = [
     "ApprovalDecision",
@@ -14,4 +15,5 @@ __all__ = [
     "ApprovalRequest",
     "ApprovalResolution",
     "ApprovalStatus",
+    "PersistentApprovalManager",
 ]

@@ -4,6 +4,7 @@ from .contract import ContractEvaluator
 from .guardrail import GuardrailEvaluator
 from .hitl import HITLEvaluator
 from .observability import ObservabilityEvaluator
+from .session import SessionEvaluator
 from .route import RouteEvaluator
 from .tool import ToolEvaluator
 from .trace import TraceEvaluator
@@ -18,6 +19,7 @@ def default_evaluators() -> dict[str, object]:
         "observability": ObservabilityEvaluator(),
         "guardrail": GuardrailEvaluator(),
         "hitl": HITLEvaluator(),
+        "session": SessionEvaluator(),
     }
 
 
@@ -26,6 +28,7 @@ __all__ = [
     "GuardrailEvaluator",
     "HITLEvaluator",
     "ObservabilityEvaluator",
+    "SessionEvaluator",
     "RouteEvaluator",
     "ToolEvaluator",
     "TraceEvaluator",

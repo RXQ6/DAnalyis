@@ -353,14 +353,89 @@
   Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件
   5/5、历史对话 8/8。最终 Day19 max latency 0.826s，低于 1.878s 上限。
 
+## Day21.1 SQLite SessionStore
+
+- 新增独立 `session/` 包，提供 `SessionRecord` 与 `SQLiteSessionStore`；默认使用 `:memory:`，
+  传入文件路径时规范化为绝对路径并支持关闭后由另一个 Python 进程继续读取。
+- 完成 `create_session`、`get_session`、`append_message`、`get_messages`、`append_event`、
+  `get_events` 六个通用原语；没有增加业务型 `resume()`，也没有把 Session 注入 Memory、
+  TraceCollector、Context Compression、Workflow 或 Agent Loop。
+- SQLite 仅包含 `sessions`、`session_messages`、`session_events` 三张业务表。message/event
+  使用独立的 thread 内 sequence，在 `BEGIN IMMEDIATE` 事务内分配；读取固定按 sequence 升序，
+  并支持 `after_sequence` 与 `limit`。
+- 所有存储层时间由服务端生成 UTC ISO 8601；payload 必须是 JSON mapping，写入时保存快照。
+  event type 保持通用，专项测试已覆盖 Guardrail、approval、tool、MCP 和 validated result 类型。
+- Day21.1 专项 10/10、Python 全量 248/248、Node 13/13、P0 15/15、P1 20/20、
+  Robustness 25/25、Day19 60/60 与原 11 项 regression gate 全部通过；Context Compression
+  9/9、Historical Summary 8/8、多步语义 3/3、图表 5/5、多文件 5/5、历史对话 8/8。
+  最终 Day19 max latency 1.382s，低于 1.878s 上限。
+
+## Day21.2 会话恢复与 HITL 跨进程恢复
+
+- 新增纯 `SessionStateProjector`，由调用方传入 `get_messages()`、`get_events()` 的结果与
+  DatasetRegistry，恢复 thread 对应 ConversationState，并分类 Guardrail、approval、tool、
+  MCP、validated result 与 trace ID；没有增加业务型万能 resume。
+- Session events 表增加私有 approval 列；公开 event JSON 不含动作参数，原 arguments 使用
+  Fernet 密文保存。新增 `requirements-session.txt`，跨进程必须由调用方提供同一密钥。
+- 新增 `PersistentApprovalManager` 与 SQLite approval repository。approve/reject/expire/hash
+  mismatch 使用 `BEGIN IMMEDIATE` 串行决策，终态清除密文；approved 在执行前消费，重放失败。
+- 重启后重新绑定当前 ToolRegistry 中同名且 Guardrail policy 一致的 ToolDefinition；审批执行
+  创建新 trace ID，同时继续沿用同一 thread ID，并把 tool/MCP/approval resume 摘要写回 Session。
+- Day19 evaluator registry 新增可选 SessionEvaluator，不修改原 suite、baseline 或 gate。
+- Day21.2 专项 7/7、相关联合专项 25/25、Python 全量 255/255、Node 13/13、P0 15/15、
+  P1 20/20、Robustness 25/25、Day19 60/60 与原 11 项 regression gate 全部通过；最终
+  Day19 max latency 1.152s，低于 1.878s 上限。
+
+## Day21.3 端到端整合 Demo
+
+- 新增应用层 `demo/Day21Demo`，不增加执行核心。Happy Path 在一个 thread 内依次经过
+  Workflow/Router、data-diagnosis Skill、Agent Loop、本地 ToolRegistry、Memory recall、
+  Context Compression、只读 Sub-agent、Observability 与 Session 持久化。
+- HITL Demo 通过真实 MCP adapter 创建外部写 pending，关闭旧 Store 后用同一 SQLite 文件、
+  thread ID 和外部密钥重建 ApprovalManager/Registry；approve 使用新 trace 执行原动作。
+- Demo 同时暴露 reject、expire、action hash mismatch 和 replay；这些路径均未调用远端工具。
+  pending assistant tool-call 参数在写入 Session message 前替换为 sealed marker，公开 events、trace
+  与 SQLite 明文扫描均不包含敏感参数。
+- Day19 SessionEvaluator 对完整 Session event 链执行确定性过程检查；未改动旧 suite、baseline、
+  threshold 或 regression gate。
+- Day21.3 专项 4/4、Python 全量 259/259、Node 13/13、P0 15/15、P1 20/20、
+  Robustness 25/25、Day19 60/60 与原 11 项 regression gate 全部通过；Day19 max latency
+  0.900s，低于 1.878s 上限。
+
+## Day21.3 专项验收（2026-09-22）
+
+- Day21 Session / recovery / E2E 联合专项 21/21，覆盖 Happy Path、HITL 跨进程恢复、
+  reject、expire、action hash mismatch、审批重放与 Day19 SessionEvaluator；Demo 返回值新增
+  `first_answer` / `final_answer` 显式断言，确认最终答案确实由完整链路产出。
+- Happy Path 验收使用同一 `thread_accept_happy`，产生两个独立 trace；事件依次覆盖
+  Workflow/Router、Skill、Agent Loop、本地 Tool、Sub-agent、contract check、Final Answer 与
+  Session 持久化。HITL 验收使用同一 `thread_accept_hitl`，pending trace 与恢复 trace 不同，
+  模拟重启 approve 后远端 mock MCP 只执行一次。
+- pending、approved、rejected、expired、hash mismatch 和 replay 均经过持久化状态验证；只有
+  匹配 `approval_id + action_hash` 且未消费的 approved 动作可恢复执行。公开 Session event、
+  Trace 及 SQLite 明文扫描不包含测试敏感值。
+- Workflow、Skill、MCP、Sub-agent、Memory、Todo、Context Compression、Observability、
+  Guardrails、HITL 分组回归 126/126；Python 全量 259/259，Node 13/13。
+- P0 15/15、P1 20/20、Robustness 25/25；Day19 Eval Harness 60/60，原 11 项 regression
+  gate 全部通过，security violation 与 contract failure 均为 0。最终 Day19 average / p95 /
+  max latency 分别为 0.372s / 0.935s / 1.237s，均在版本化容差内。
+- 补充语义评测：Context Compression 9/9、Historical Summary 8/8、多步语义 3/3、
+  图表 5/5、多文件 5/5、历史对话 8/8。本次验收未修改 P0/P1 业务逻辑、评测预期、
+  baseline、threshold 或 regression gate。
+
 ## 剩余风险与待处理
 
 - 当前没有阻塞验收的问题。
 - Day19 baseline 当前仍需人工审核和更新；统一评测只读取 `eval_harness/baselines/day19-stable.json`，不会在运行时自动提升或覆盖稳定基线。
 - Day19 当前仍有 20 个旧 P1 案例未暴露完整 trace、Workflow route 尚未纳入正式统一 suite、token 用量未由底层客户端提供；这些字段在报告中保持 unavailable，不以 0 代替。
 - latency 会受运行环境和并发影响，当前由版本化 baseline 容差与原有硬 threshold 共同约束；调整容差或 baseline 必须经过人工审核。
-- ApprovalStore 当前是单进程内存实现；进程重启会丢失 pending，尚不支持多实例共享、持久化、
-  审批身份认证或主动后台清理过期记录。过期状态在 resolve 时惰性判定。
+- 生产部署需使用 PersistentApprovalManager 与 SQLite repository；原内存 ApprovalStore 仍仅适合
+  单进程测试。当前尚不支持多实例协调、审批身份认证或主动后台清理过期记录；过期状态在
+  resolve 时惰性判定。
+- ConversationState 与 HITL pending 已可从 Session 投影/恢复；DatasetRegistry 的文件路径映射、
+  Todo 和 Memory 生命周期仍由应用层显式管理，不会被 Session 自动恢复。
+- Session payload 当前按调用方提供内容原样 JSON 持久化，没有自动脱敏、加密、容量上限或保留期；
+  在正式接入 messages/Trace 前必须增加持久化策略。
 - MCP 第一版仅验证内存模拟 Server；真实 MCP 的 stdio/HTTP 传输、协议握手、认证、连接生命周期和取消语义尚未接入。
 - Adapter 可限制主线程等待时间，但 Python 线程无法强制终止已进入阻塞 I/O 的调用；未来真实 Client 必须同时实现传输层 timeout、取消和进程清理。
 - MCP inputSchema 当前必须兼容现有 ToolRegistry 支持的 JSON Schema 子集；复杂 `$ref`、`oneOf`、资源和二进制内容尚未支持。
@@ -381,7 +456,7 @@
 - 多文件第一版最多注册 20 个数据集；每个文件仍受现有 20MB 限制。
 - merge 第一版仅支持两个数据集的一对一 `inner` / `left join`；一对多、多对一、多对多会明确提示风险并阻止执行。
 - DatasetRegistry 是任务/会话级状态，不提供跨会话数据集持久化；派生文件的生命周期由调用方提供的工作目录管理。
-- ConversationState 当前是进程内对象，不支持进程重启后的会话恢复，也不处理多进程共享或分布式并发。
+- ConversationState 可由 Session messages/events 在新进程重建，但不处理多进程共享写入或分布式并发。
 - Historical Summary 是可选依赖；未配置摘要客户端时仍采用最近 12 轮固定窗口。
 - 摘要缓存当前为进程内、ConversationRunner 生命周期内状态，不支持进程重启后的复用。
 - 摘要语义安全依赖结构化 schema、成功 ToolResult 引用和不确定性关键词校验；隐含歧义仍需要真实模型专项评测持续观察。

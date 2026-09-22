@@ -311,6 +311,8 @@ class AgentLoop:
                         "iteration": state.iteration,
                         "todos": state.todos,
                         "call_id": call["id"],
+                        "thread_id": state.conversation_id,
+                        "turn_id": state.turn_id,
                         "artifact_dir": artifact_dir,
                         "dataset_registry": dataset_registry,
                         "active_dataset_ids": (

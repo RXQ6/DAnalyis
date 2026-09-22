@@ -23,6 +23,12 @@ Sub-agent 继续执行，原始数据修改与任意 Python/shell 被阻断，�
 结构化 pending approval；所有决策进入同一个 TraceCollector。
 Day20.3 为 pending action 增加进程内 HITL 状态机：审批只公开 action hash 与动作摘要，
 approve 时一次性取回并执行原动作，reject、expire、hash 不匹配和重放均不会触达底层 Handler。
+Day21.1 增加独立 SQLite SessionStore：使用 `thread_id` 持久化会话元数据、canonical
+messages 和通用 structured events；支持内存测试与文件数据库跨进程读取，但尚未接入复杂恢复编排。
+Day21.2 增加显式状态投影和加密的 SQLite approval repository：调用方组合 Session 读原语
+恢复 ConversationState 与结构化事件，pending approval 可在重启后绑定当前 Registry 继续处理。
+Day21.3 提供应用层 `Day21Demo`，把 Workflow、Skill、Sub-agent、Memory、Context、MCP、
+Observability、Guardrail、HITL、Session 与 Eval Harness 串成可执行 Happy Path 和审批恢复场景。
 
 LLM 只负责理解问题、选择受控工具、决定是否继续分析和解释结果。数据读取、统计、
 分组、趋势、异常、占比、同比等真实计算由确定性工具执行。项目不运行用户提供的代码，
@@ -59,11 +65,14 @@ underspecified question returns `status: "needs_input"`. See
 | P1 | 20/20 |
 | Robustness | 25/25 |
 | Day19.3 统一 Eval Harness（Metrics + Regression Gate + Unified Report） | 60/60 |
-| Python 全量 | 238/238 |
+| Python 全量 | 259/259 |
 | Node 全量 | 13/13 |
 | Day20.1 Observability 专项 | 6/6 |
 | Day20.2 Guardrails 专项 | 7/7 |
 | Day20.3 HITL + Approval Resume 专项 | 8/8 |
+| Day21.1 SQLite SessionStore 专项 | 10/10 |
+| Day21.2 Session Recovery + Persistent HITL 专项 | 7/7 |
+| Day21.3 端到端 Demo 专项 | 4/4 |
 | Workflow / Router 专项 | 16/16 |
 | Sub-agent 专项 | 12/12 |
 | MCP Adapter 专项 | 24/24 |
@@ -94,6 +103,7 @@ underspecified question returns `status: "needs_input"`. See
 | `observability/` | Day20.1 统一 TraceEvent 与线程安全 TraceCollector：为请求、路由、Skill、工具、MCP、Sub-agent、契约和错误提供脱敏结构化事件。 |
 | `guardrails/` | Day20.2 确定性执行前安全策略：统一 allow、block、needs_approval 决策，并生成不含原始参数的 pending approval 摘要。 |
 | `hitl/` | Day20.3 进程内人工审批状态机：私有保存待执行动作，校验 approval ID/action hash，提供单次 approve/reject/expire 与安全恢复接口。 |
+| `session/` | Day21.1 独立 SQLite SessionStore：以 thread ID 管理 session，并按写入顺序持久化 messages 与通用 structured events。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |
 | `package.json` | Node.js 项目信息及 `npm test` 测试入口。 |

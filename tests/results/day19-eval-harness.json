@@ -24,8 +24,8 @@
         "p0PassRate": 1.0,
         "overallAccuracy": 1.0,
         "badCaseRecognitionRate": 1.0,
-        "averageResponseSeconds": 0.1483891333333333,
-        "maximumResponseSeconds": 0.202114,
+        "averageResponseSeconds": 0.25396233333333335,
+        "maximumResponseSeconds": 0.401052,
         "maximumCostCny": 0.0
       },
       "gates": {
@@ -42,8 +42,8 @@
       "total_cases": 20,
       "metrics": {
         "passRate": 1.0,
-        "averageResponseSeconds": 0.45938169999999995,
-        "maximumResponseSeconds": 0.825613,
+        "averageResponseSeconds": 0.6745834,
+        "maximumResponseSeconds": 1.237235,
         "averageCostCny": 0.0,
         "maximumCostCny": 0.0
       },
@@ -59,8 +59,8 @@
         "badCaseRecognitionRate": 1.0,
         "holdoutAccuracy": 1.0,
         "overallAccuracy": 1.0,
-        "averageResponseSeconds": 0.1549478,
-        "maximumResponseSeconds": 0.208404,
+        "averageResponseSeconds": 0.20130828,
+        "maximumResponseSeconds": 0.432901,
         "maximumCostCny": 0.0,
         "processCheckPassRate": 1.0
       },
@@ -79,7 +79,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.201563,
+      "latency": 0.274818,
       "answer": "销售额的总和为 1,580（有效记录 5 条）。",
       "trace_summary": {
         "available": true,
@@ -177,7 +177,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.15623,
+      "latency": 0.263693,
       "answer": "销售额的平均值为 20（有效记录 3 条）。",
       "trace_summary": {
         "available": true,
@@ -275,7 +275,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.202114,
+      "latency": 0.316927,
       "answer": "共比较 2 个地区分组；华南的销售额总和最高，为 1,200。",
       "trace_summary": {
         "available": true,
@@ -373,7 +373,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.15098,
+      "latency": 0.221408,
       "answer": "已按销售额从高到低返回前 5 条记录。",
       "trace_summary": {
         "available": true,
@@ -471,7 +471,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.156069,
+      "latency": 0.401052,
       "answer": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
       "trace_summary": {
         "available": true,
@@ -569,7 +569,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.134568,
+      "latency": 0.266172,
       "answer": "使用 1.5×IQR 规则识别出 1 个销售额异常值。",
       "trace_summary": {
         "available": true,
@@ -667,7 +667,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.139645,
+      "latency": 0.227338,
       "answer": {
         "code": "missing_field",
         "message": "字段“利润总和”不存在。",
@@ -767,7 +767,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.13093,
+      "latency": 0.214363,
       "answer": {
         "code": "empty_file",
         "message": "文件为空，无法分析。"
@@ -846,7 +846,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.13118,
+      "latency": 0.242794,
       "answer": {
         "code": "dirty_numeric_data",
         "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
@@ -946,7 +946,7 @@
       "category": "p0",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.14377,
+      "latency": 0.22667,
       "answer": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
       "trace_summary": {
         "available": true,
@@ -1037,7 +1037,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.133333,
+      "latency": 0.232485,
       "answer": {
         "code": "missing_field",
         "message": "字段“利润率排序”不存在。",
@@ -1137,7 +1137,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.125708,
+      "latency": 0.183465,
       "answer": {
         "code": "empty_file",
         "message": "文件为空，无法分析。"
@@ -1216,7 +1216,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.129305,
+      "latency": 0.195725,
       "answer": {
         "code": "dirty_numeric_data",
         "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
@@ -1316,7 +1316,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.135644,
+      "latency": 0.284962,
       "answer": "请指定要分析的字段。可用字段：日期、地区、产品、销售额。",
       "trace_summary": {
         "available": true,
@@ -1407,7 +1407,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.154798,
+      "latency": 0.257563,
       "answer": "趋势覆盖 3 个日期；2026-01-01 至 2026-01-03，销售额从 300 到 130，首尾相比下降。",
       "trace_summary": {
         "available": true,
@@ -1505,7 +1505,7 @@
       "category": "chart",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.192728,
+      "latency": 0.389555,
       "answer": {
         "success": true,
         "chartType": "line"
@@ -1559,7 +1559,7 @@
       "category": "chart",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.188586,
+      "latency": 0.429092,
       "answer": {
         "success": true,
         "values": [
@@ -1624,7 +1624,7 @@
       "category": "chart",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.196482,
+      "latency": 0.398347,
       "answer": {
         "success": true,
         "chartType": "scatter"
@@ -1678,7 +1678,7 @@
       "category": "chart",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.215543,
+      "latency": 0.396097,
       "answer": {
         "success": true,
         "chartType": "line"
@@ -1732,7 +1732,7 @@
       "category": "chart",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.251208,
+      "latency": 0.307834,
       "answer": {
         "success": false,
         "errorCode": "unsupported_chart_source"
@@ -1786,7 +1786,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.803117,
+      "latency": 1.237235,
       "answer": {
         "preflightOk": true,
         "safeToExecute": true,
@@ -1844,7 +1844,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.825613,
+      "latency": 1.222776,
       "answer": {
         "preflightOk": true,
         "safeToExecute": true,
@@ -1902,7 +1902,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.558733,
+      "latency": 0.766824,
       "answer": {
         "ok": false,
         "errorCode": "missing_join_field"
@@ -1956,19 +1956,19 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.684273,
+      "latency": 0.935225,
       "answer": {
         "ok": true,
         "groups": [
           {
             "group": "sales-2025.csv",
-            "datasetId": "ds_c587f8d34274",
+            "datasetId": "ds_3d812075072c",
             "value": 50,
             "validCount": 2
           },
           {
             "group": "sales-2026.csv",
-            "datasetId": "ds_2eafd89d0fe6",
+            "datasetId": "ds_7cb602676255",
             "value": 100,
             "validCount": 2
           }
@@ -2025,7 +2025,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.693626,
+      "latency": 1.009531,
       "answer": {
         "ok": true,
         "categories": [
@@ -2033,14 +2033,14 @@
             "group": "B",
             "values": [
               {
-                "datasetId": "ds_940fcae1e5f5",
+                "datasetId": "ds_85c41f93a33c",
                 "filename": "category-a.csv",
                 "value": 40,
                 "validCount": 1,
                 "missing": false
               },
               {
-                "datasetId": "ds_5c139d2926e7",
+                "datasetId": "ds_d2eed3c8eb5b",
                 "filename": "category-b.csv",
                 "value": 70,
                 "validCount": 1,
@@ -2052,14 +2052,14 @@
             "group": "A",
             "values": [
               {
-                "datasetId": "ds_940fcae1e5f5",
+                "datasetId": "ds_85c41f93a33c",
                 "filename": "category-a.csv",
                 "value": 10,
                 "validCount": 1,
                 "missing": false
               },
               {
-                "datasetId": "ds_5c139d2926e7",
+                "datasetId": "ds_d2eed3c8eb5b",
                 "filename": "category-b.csv",
                 "value": 30,
                 "validCount": 1,
@@ -2118,7 +2118,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.194881,
+      "latency": 0.338611,
       "answer": {
         "accepted": false,
         "errorCode": "empty_file"
@@ -2172,7 +2172,7 @@
       "category": "multifile",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.532563,
+      "latency": 0.691771,
       "answer": {
         "ok": false,
         "errorCode": "missing_join_field"
@@ -2226,7 +2226,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.429018,
+      "latency": 0.635176,
       "answer": {
         "answer": "华南"
       },
@@ -2278,7 +2278,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.453555,
+      "latency": 0.631588,
       "answer": {
         "answer": "华东"
       },
@@ -2330,7 +2330,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.557341,
+      "latency": 0.788444,
       "answer": {
         "filters": {
           "地区": "华南"
@@ -2384,7 +2384,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.604127,
+      "latency": 0.663575,
       "answer": {
         "metric": "利润"
       },
@@ -2436,11 +2436,11 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.652184,
+      "latency": 0.899226,
       "answer": {
         "value": 100,
-        "oldDatasetId": "ds_df3f4c19e695",
-        "currentDatasetId": "ds_2d1a60d16075"
+        "oldDatasetId": "ds_d72f865bcfb0",
+        "currentDatasetId": "ds_64dcb5f1cdbd"
       },
       "trace_summary": {
         "available": false,
@@ -2492,7 +2492,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.467411,
+      "latency": 0.685304,
       "answer": {
         "answer": "华南",
         "turns": 15
@@ -2546,7 +2546,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.549164,
+      "latency": 0.864247,
       "answer": {
         "metric": "利润",
         "answer": "已识别冲突并改看利润"
@@ -2600,7 +2600,7 @@
       "category": "conversation",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.137481,
+      "latency": 0.20121,
       "answer": {
         "stopReason": "needs_user_input",
         "answer": "请重新提供文件和分析目标。"
@@ -2656,7 +2656,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.142533,
+      "latency": 0.184294,
       "answer": {
         "code": "missing_field",
         "message": "字段“退款金额总和”不存在。",
@@ -2763,7 +2763,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.148433,
+      "latency": 0.18878,
       "answer": {
         "code": "empty_file",
         "message": "文件为空，无法分析。"
@@ -2848,7 +2848,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.145533,
+      "latency": 0.179035,
       "answer": {
         "code": "dirty_date_data",
         "message": "字段“日期”混有无法解析的日期，请统一日期格式后再分析。",
@@ -2956,7 +2956,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.133358,
+      "latency": 0.186827,
       "answer": {
         "code": "dirty_numeric_data",
         "message": "字段“销售额”混有非数值文本，请清洗或修正后再分析。",
@@ -3064,7 +3064,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.134571,
+      "latency": 0.187219,
       "answer": {
         "code": "missing_field",
         "message": "未找到问题中要求用于排序的数值字段。",
@@ -3171,7 +3171,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.137215,
+      "latency": 0.215377,
       "answer": "请明确分析目标（基础统计、分组对比、趋势或异常识别）以及相关字段。",
       "trace_summary": {
         "available": true,
@@ -3268,7 +3268,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.184472,
+      "latency": 0.242908,
       "answer": {
         "code": "inconsistent_columns",
         "message": "部分数据行的列数与表头不一致。",
@@ -3364,7 +3364,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.142552,
+      "latency": 0.268586,
       "answer": {
         "code": "unreadable_file",
         "message": "XLSX ZIP 目录无效。"
@@ -3454,7 +3454,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.142707,
+      "latency": 0.195674,
       "answer": {
         "code": "encoding_error",
         "message": "CSV 不是有效的 UTF-8 编码。"
@@ -3544,7 +3544,7 @@
       "category": "bad",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.142886,
+      "latency": 0.193799,
       "answer": {
         "code": "file_too_large",
         "message": "文件超过 20MB 限制。",
@@ -3631,7 +3631,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.154483,
+      "latency": 0.202784,
       "answer": "金额的总和为 6.75（有效记录 3 条）。",
       "trace_summary": {
         "available": true,
@@ -3735,7 +3735,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.162027,
+      "latency": 0.194682,
       "answer": "收入的平均值为 20（有效记录 3 条）。",
       "trace_summary": {
         "available": true,
@@ -3839,7 +3839,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.155071,
+      "latency": 0.168555,
       "answer": "共比较 2 个地区分组；南区的收入平均值最高，为 30。",
       "trace_summary": {
         "available": true,
@@ -3943,7 +3943,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.158949,
+      "latency": 0.171105,
       "answer": "利润的最小值为 -5（有效记录 4 条）。",
       "trace_summary": {
         "available": true,
@@ -4047,7 +4047,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.15029,
+      "latency": 0.162473,
       "answer": "利润的最大值为 40（有效记录 4 条）。",
       "trace_summary": {
         "available": true,
@@ -4151,7 +4151,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.152807,
+      "latency": 0.161087,
       "answer": "客户的计数为 3（有效记录 3 条）。",
       "trace_summary": {
         "available": true,
@@ -4255,7 +4255,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.14466,
+      "latency": 0.153756,
       "answer": "已按金额从高到低返回前 3 条记录。",
       "trace_summary": {
         "available": true,
@@ -4359,7 +4359,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.154616,
+      "latency": 0.182325,
       "answer": "趋势覆盖 2 个日期；2026-03-01 至 2026-03-02，访问量从 15 到 20，首尾相比上升。",
       "trace_summary": {
         "available": true,
@@ -4463,7 +4463,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.157607,
+      "latency": 0.178927,
       "answer": "共比较 2 个region分组；east的revenue总和最高，为 50。",
       "trace_summary": {
         "available": true,
@@ -4567,7 +4567,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.164378,
+      "latency": 0.185886,
       "answer": "趋势覆盖 2 个日期；2026-04-01 至 2026-04-02，revenue从 40 到 20，首尾相比下降。",
       "trace_summary": {
         "available": true,
@@ -4671,7 +4671,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.143929,
+      "latency": 0.175285,
       "answer": "使用 1.5×IQR 规则识别出 0 个温度异常值。",
       "trace_summary": {
         "available": true,
@@ -4775,7 +4775,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.154363,
+      "latency": 0.189551,
       "answer": "共比较 2 个客户分组；乙,二部的金额总和最高，为 200。",
       "trace_summary": {
         "available": true,
@@ -4879,7 +4879,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.190217,
+      "latency": 0.185686,
       "answer": "金额的总和为 3,200.5（有效记录 2 条）。",
       "trace_summary": {
         "available": true,
@@ -4983,7 +4983,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.208404,
+      "latency": 0.245205,
       "answer": "库存的总和为 24（有效记录 2 条）。",
       "trace_summary": {
         "available": true,
@@ -5087,7 +5087,7 @@
       "category": "holdout",
       "passed": true,
       "failure_reason": null,
-      "latency": 0.167634,
+      "latency": 0.432901,
       "answer": "评分的平均值为 2.5（有效记录 3 条）。",
       "trace_summary": {
         "available": true,

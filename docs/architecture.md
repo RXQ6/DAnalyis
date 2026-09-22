@@ -441,3 +441,28 @@ needs_approval
   observation 原位替换为真实 ToolResult；不继续触发新的 LLM 回合，也不改写 Loop 主流程。
 - `approval_requested`、`approval_decided`、`approval_resumed` 进入原 TraceCollector；
   `HITLEvaluator` 校验状态、approval/action 身份连续性，以及 reject/expire 后无底层执行。
+
+## 18. Day21.1 SQLite SessionStore
+
+SessionStore 是 Workflow 外层可选的持久化原语，本阶段不接管 Agent Loop、ConversationRunner、
+Memory、TraceCollector 或 Context Compression：
+
+```text
+调用方
+  → create_session / get_session
+  → append_message / get_messages
+  → append_event / get_events
+  → 调用方自行组合读取结果完成后续恢复
+```
+
+- `SessionRecord` 使用 `thread_id` 作为长期任务主键，记录 active 状态、JSON metadata、UTC
+  创建/更新时间和 schema version。
+- SQLite 使用 `sessions`、`session_messages`、`session_events` 三张业务表；message/event 分别
+  使用 thread 内单调 sequence，并在 `BEGIN IMMEDIATE` 事务内计算和写入，读取固定按 sequence
+  升序返回。
+- 默认数据库为 `:memory:`；文件路径会规范化为绝对路径并创建父目录，启用 foreign keys、
+  busy timeout 和 WAL，以支持进程关闭后由另一个进程重新读取。
+- message/event payload 必须可 JSON 序列化，写入时保存深拷贝快照；event type 不设业务白名单，
+  为 Guardrail、HITL、tool/MCP 和 validated result 等后续事件预留通用入口。
+- 本阶段不实现业务型 `resume()`、ConversationState 投影、DatasetRegistry 恢复、HITL payload
+  持久化或自动 Trace 归档。

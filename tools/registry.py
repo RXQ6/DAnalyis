@@ -267,6 +267,9 @@ class ToolRegistry:
             call_id=action.request.call_id,
             tool_result=tool_result,
         )
+        record_completed = getattr(self.approval_manager, "record_completed", None)
+        if callable(record_completed):
+            record_completed(action, tool_result)
         return ApprovalResolution(
             ok=tool_result["ok"],
             decision=resolution.decision,

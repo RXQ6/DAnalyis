@@ -17,8 +17,8 @@
     "badCasePassed": 5,
     "badCaseTotal": 5,
     "badCaseRecognitionRate": 1.0,
-    "averageResponseSeconds": 0.2302898,
-    "maximumResponseSeconds": 0.284022,
+    "averageResponseSeconds": 0.2786672,
+    "maximumResponseSeconds": 0.353031,
     "maximumCostCny": 0.0
   },
   "thresholds": {
@@ -50,7 +50,7 @@
       "category": "p0",
       "description": "CSV column sum",
       "passed": true,
-      "durationSeconds": 0.256467,
+      "durationSeconds": 0.236534,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -143,7 +143,7 @@
               }
             }
           ],
-          "elapsedMs": 35.357
+          "elapsedMs": 37.349
         }
       }
     },
@@ -152,7 +152,7 @@
       "category": "p0",
       "description": "XLSX column average",
       "passed": true,
-      "durationSeconds": 0.247548,
+      "durationSeconds": 0.274538,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -227,7 +227,7 @@
               }
             }
           ],
-          "elapsedMs": 30.808
+          "elapsedMs": 42.521
         }
       }
     },
@@ -236,7 +236,7 @@
       "category": "p0",
       "description": "group sales by region",
       "passed": true,
-      "durationSeconds": 0.186691,
+      "durationSeconds": 0.266529,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -342,7 +342,7 @@
               }
             }
           ],
-          "elapsedMs": 20.753
+          "elapsedMs": 32.156
         }
       }
     },
@@ -351,7 +351,7 @@
       "category": "p0",
       "description": "top 5 products",
       "passed": true,
-      "durationSeconds": 0.175514,
+      "durationSeconds": 0.234385,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -458,7 +458,7 @@
               }
             }
           ],
-          "elapsedMs": 9.684
+          "elapsedMs": 13.296
         }
       }
     },
@@ -467,7 +467,7 @@
       "category": "p0",
       "description": "daily sales trend",
       "passed": true,
-      "durationSeconds": 0.221874,
+      "durationSeconds": 0.277828,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -579,7 +579,7 @@
               }
             }
           ],
-          "elapsedMs": 24.979
+          "elapsedMs": 29.932
         }
       }
     },
@@ -588,7 +588,7 @@
       "category": "p0",
       "description": "obvious anomaly",
       "passed": true,
-      "durationSeconds": 0.248156,
+      "durationSeconds": 0.272339,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -661,7 +661,7 @@
               }
             }
           ],
-          "elapsedMs": 13.03
+          "elapsedMs": 14.971
         }
       }
     },
@@ -670,7 +670,7 @@
       "category": "p0",
       "description": "missing field",
       "passed": true,
-      "durationSeconds": 0.271203,
+      "durationSeconds": 0.353031,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -710,7 +710,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 13.493,
+          "elapsedMs": 10.519,
           "errorRecorded": true
         }
       }
@@ -720,7 +720,7 @@
       "category": "p0",
       "description": "empty input",
       "passed": true,
-      "durationSeconds": 0.237932,
+      "durationSeconds": 0.250072,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -741,7 +741,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 0.712,
+          "elapsedMs": 0.739,
           "errorRecorded": true
         }
       }
@@ -751,7 +751,7 @@
       "category": "p0",
       "description": "dirty numeric input",
       "passed": true,
-      "durationSeconds": 0.242798,
+      "durationSeconds": 0.27294,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -799,7 +799,7 @@
               }
             }
           ],
-          "elapsedMs": 13.239,
+          "elapsedMs": 6.516,
           "errorRecorded": true
         }
       }
@@ -809,7 +809,7 @@
       "category": "p0",
       "description": "insufficient question",
       "passed": true,
-      "durationSeconds": 0.213267,
+      "durationSeconds": 0.312564,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -885,7 +885,7 @@
               "status": "ok"
             }
           ],
-          "elapsedMs": 10.995
+          "elapsedMs": 11.796
         }
       }
     },
@@ -894,7 +894,7 @@
       "category": "bad",
       "description": "missing profit margin",
       "passed": true,
-      "durationSeconds": 0.284022,
+      "durationSeconds": 0.303294,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -934,7 +934,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 12.553,
+          "elapsedMs": 11.09,
           "errorRecorded": true
         }
       }
@@ -944,7 +944,7 @@
       "category": "bad",
       "description": "empty CSV stops analysis",
       "passed": true,
-      "durationSeconds": 0.196212,
+      "durationSeconds": 0.263336,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -965,7 +965,7 @@
               "status": "error"
             }
           ],
-          "elapsedMs": 0.601,
+          "elapsedMs": 0.616,
           "errorRecorded": true
         }
       }
@@ -975,7 +975,7 @@
       "category": "bad",
       "description": "text in numeric field",
       "passed": true,
-      "durationSeconds": 0.223424,
+      "durationSeconds": 0.297558,
       "exitCode": 1,
       "failures": [],
       "stderr": "",
@@ -1023,7 +1023,7 @@
               }
             }
           ],
-          "elapsedMs": 2.961,
+          "elapsedMs": 3.355,
           "errorRecorded": true
         }
       }
@@ -1033,7 +1033,7 @@
       "category": "bad",
       "description": "vague question",
       "passed": true,
-      "durationSeconds": 0.199821,
+      "durationSeconds": 0.279512,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -1109,7 +1109,7 @@
               "status": "ok"
             }
           ],
-          "elapsedMs": 9.719
+          "elapsedMs": 11.781
         }
       }
     },
@@ -1118,7 +1118,7 @@
       "category": "bad",
       "description": "trend tool selection",
       "passed": true,
-      "durationSeconds": 0.249418,
+      "durationSeconds": 0.285548,
       "exitCode": 0,
       "failures": [],
       "stderr": "",
@@ -1230,7 +1230,7 @@
               }
             }
           ],
-          "elapsedMs": 33.419
+          "elapsedMs": 26.395
         }
       }
     }

@@ -56,7 +56,7 @@
             ]
           },
           "error": null,
-          "duration": 192.364,
+          "duration": 165.829,
           "truncated": false
         },
         {
@@ -111,7 +111,7 @@
             ]
           },
           "error": null,
-          "duration": 198.369,
+          "duration": 164.048,
           "truncated": false
         }
       ],
@@ -169,7 +169,7 @@
             ]
           },
           "error": null,
-          "duration": 192.649,
+          "duration": 182.408,
           "truncated": false
         },
         {
@@ -209,7 +209,7 @@
             ]
           },
           "error": null,
-          "duration": 251.121,
+          "duration": 243.287,
           "truncated": false
         }
       ],
@@ -287,7 +287,7 @@
             }
           },
           "error": null,
-          "duration": 181.546,
+          "duration": 181.015,
           "truncated": false
         },
         {
@@ -327,7 +327,7 @@
             ]
           },
           "error": null,
-          "duration": 220.067,
+          "duration": 164.116,
           "truncated": false
         }
       ],
