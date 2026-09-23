@@ -1,28 +1,48 @@
-# Desktop M6.5
+# Desktop（Electron）
 
 Electron and TypeScript host for the existing Python data analysis Agent. In
 development it starts a Python JSONL supervisor, streams Runtime events, and
 supports run cancellation without moving business logic into Electron.
 
+The Renderer is **not a standalone website**. Opening
+`src/renderer/index.html` or `dist/src/renderer/index.html` in a browser
+does not provide Electron Main, the sandboxed preload API or the Python
+Runtime. Start the Electron app with the command below or launch a packaged
+exe. No separate browser or web server is required.
+
 ## Development
+
+From the repository root:
 
 ```powershell
 cd desktop
-npm install
-$env:DATA_AGENT_PYTHON = "C:\\path\\to\\python.exe"
-npm run dev
+npm.cmd ci
+$env:DATA_AGENT_PYTHON = "C:\path\to\python.exe"
+npm.cmd start
 ```
 
-Enter a message and select **Send**. Electron Main validates the IPC payload,
-starts a real Python Runtime run, and projects ordered JSONL events into the
-event list. **Stop** sends `run.cancel` to the Python supervisor.
+`npm.cmd start` builds Main, preload and Renderer, then starts the real
+Electron window. In PowerShell, the `npm.cmd` spelling also avoids machines
+whose execution policy blocks `npm.ps1`. `DATA_AGENT_PYTHON` may be omitted
+if the repository `.venv` or a compatible Python on PATH is available.
+
+Use **Choose CSV/XLSX** to open the native Windows file picker. The selected
+path goes through Renderer → preload → Main → Python; DatasetRegistry reads the
+file. Type a question and select **Send**. Run state and Runtime Events are
+projected from sequence-ordered Python events; **Stop** sends `run.cancel`.
+Sessions come from Python SessionStore, Charts consume existing Chart Specs,
+and approval decisions are validated by Python HITL. The Renderer does not
+parse datasets, recalculate analytical figures or decide whether an approval
+is valid.
 
 ## Tests
 
+From the repository root:
+
 ```powershell
 cd desktop
-$env:DATA_AGENT_PYTHON = "C:\\path\\to\\python.exe"
-npm test
+$env:DATA_AGENT_PYTHON = "C:\path\to\python.exe"
+npm.cmd test
 ```
 
 `DATA_AGENT_PYTHON` is optional when a project `.venv` or `python`/`python3`
@@ -31,8 +51,11 @@ is available on PATH.
 ## Windows packaging
 
 Set `DATA_AGENT_PYTHON` to a Windows Python 3.12 executable with `cryptography`
-installed on the build machine. From `desktop`, run `npm.cmd run pack:win` for both `release/win-unpacked` and the
-NSIS installer in `release`. Run `npm run pack:win:dir` for unpacked output only.
+installed on the build machine. From `desktop`, run `npm.cmd run pack:win` for
+both `release/win-unpacked` and `release/Data Analysis Agent Setup 0.1.0.exe`.
+Run `npm.cmd run pack:win:dir` for unpacked output only. These are local build
+artifacts excluded by `desktop/.gitignore`; pushing source or a README does not
+upload an installer to GitHub.
 The build uses the Electron distribution already installed in `node_modules`;
 it does not depend on an absolute development-machine path. Main, Preload and
 Renderer are in `resources/app.asar`. Main uses checkout-relative paths in dev
@@ -77,13 +100,37 @@ are written to `release/m6.4-smoke-*/first.json` and `resume.json`. Only the
 native file chooser result is supplied by the test; the chooser's manual UI,
 NSIS installation and clean-machine deployment are not covered by this smoke.
 
+## Installed application check
+
+For a new installer build, close old app processes and install into a known
+directory. Launch **that directory's** `Data Analysis Agent.exe`; do not use
+`win-unpacked`, dev mode or an old shortcut. Confirm the process location in
+Task Manager, then:
+
+1. Click **Choose CSV/XLSX** and manually select `../tests/fixtures/sales.csv`
+   in the real Windows dialog.
+2. Send “按地区汇总销售额”; expect running, Runtime Events and a final completed
+   response grounded in the CSV.
+3. Fully exit, reopen the installed exe, and select the previous Session.
+   Its messages and events should return without repeating the old run.
+
+The packaged smoke can verify an installed executable without using dev mode:
+
+```powershell
+node scripts/verify-packaged-smoke.cjs --executable "C:\path\to\installed\Data Analysis Agent.exe" --label installed-smoke
+```
+
+That automation supplies a deterministic file-dialog return path; **it does
+not prove that a human can click through the native dialog**. It also does
+not verify a clean-machine deployment, installer upgrade/uninstall behaviour
+or trusted code signing. Session and approval data use Electron's standard
+`app.getPath("userData")/runtime`; do not delete it for a routine smoke.
+
 ## Release gate
 
 The M6.5 release gate and artifact hashes are recorded in
-`../docs/Desktop-M6.5-Release-Report.md`. The current NSIS installer was
+`../docs/Desktop-M6.5-Release-Report.md`. That report's NSIS installer was
 actually installed into an isolated directory on the build machine; the
 installed executable passed the same two-process CSV analysis and Session
-recovery smoke. For an installed executable, pass its absolute path with
-`node scripts/verify-packaged-smoke.cjs --executable <path> --label installed-smoke`.
-This does not replace clean-machine, native file-dialog, upgrade/uninstall, or
-trusted-signature verification.
+recovery smoke. Its PASS does not automatically apply to a later rebuilt
+installer, which needs its own installed-app check.

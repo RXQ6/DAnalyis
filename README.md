@@ -1,6 +1,128 @@
 # Data Analysis Agent v1.1
 
 一个支持上传 CSV/XLSX、使用自然语言完成单文件或受控多文件分析的数据分析 Agent。
+仓库提供两种入口：根目录的 Node.js CLI，以及 Windows Electron 桌面应用。桌面端
+承载界面、文件对话框与 IPC；Python Runtime、DatasetRegistry、SessionStore、
+Guardrail 和 HITL 仍是业务事实源。
+
+> **不要直接双击 `desktop/src/renderer/index.html`，也不要把它当网页打开。**
+> 它依赖 Electron Main、sandboxed preload 和 Python Runtime；浏览器中没有这些桥接
+> 能力，文件选择、Send、Session 等操作无法工作。请启动真正的 Electron 应用。
+
+## Windows 桌面应用：开发启动
+
+前提：Windows x64、Node.js 20+、npm，以及可运行本项目 Python Runtime 的 Python。
+桌面依赖锁定在 `desktop/package-lock.json`。在 PowerShell 中使用 `npm.cmd`，
+可以避开系统禁止执行 `npm.ps1` 时的脚本策略错误。
+
+```powershell
+cd .\desktop
+npm.cmd ci
+$env:DATA_AGENT_PYTHON = "C:\path\to\python.exe"
+npm.cmd start
+```
+
+`DATA_AGENT_PYTHON` 指向 Python 可执行文件；开发模式也会依次尝试项目
+`.venv` 和 PATH 上的 Python。上述 `npm.cmd start` 会先构建 TypeScript 与
+Renderer 静态资源，然后启动 Electron Main、preload、Renderer 和 Python JSONL
+Runtime，不需要另开浏览器或单独启动前端服务器。
+
+启动后按以下顺序试用：
+
+1. 点击 **Choose CSV/XLSX**，通过 Windows 文件对话框选择文件。仓库内的
+   `tests/fixtures/sales.csv` 可用于试用；文件由 Python 数据输入层读取，
+   Renderer 不解析或计算 CSV/XLSX。
+2. 在 Message 中输入“按地区汇总销售额”，点击 **Send**。Run State 应由 idle/empty
+   进入 running，再依据 Runtime 结果进入 completed、partial、failed 等状态；
+   Runtime Events/Trace 按 sequence 展示路由、工具和最终事件。**Stop** 会请求
+   取消当前 run。
+3. Sessions 显示 Python SessionStore 中的历史记录。重新打开桌面应用后可选择旧
+   Session 恢复消息与事件；继续执行沿用原 `thread_id`，新 run 获得新 `trace_id`。
+   遇到 waiting_approval 时，审批卡仅显示安全摘要；Approve/Reject 的有效性由
+   Python Runtime 校验，前端不自行决定或重放动作。
+
+图表只渲染 Python Runtime 给出的 Chart Spec；前端不重新计算分组、趋势、占比、
+同比或异常。错误、Retry、partial 与 stale 均是 Runtime/Session 状态的展示与安全
+操作入口，不是另一份业务状态。
+
+## Windows 打包、安装与实际验收
+
+打包机需要 **Windows Python 3.12**，并在该解释器中安装 `cryptography`。
+构建脚本会校验 Python 版本相关文件，并把私有 Python、受控项目模块、JSONL Bridge
+和 Node 数据桥接打入应用资源；成品运行时不依赖开发机绝对路径，也无需设置
+`DATA_AGENT_PYTHON`。
+
+```powershell
+cd .\desktop
+npm.cmd ci
+$env:DATA_AGENT_PYTHON = "C:\path\to\python.exe"
+npm.cmd run pack:win
+```
+
+默认产物位于 `desktop/release/`：
+
+| 产物 | 默认路径 | 用途 |
+| --- | --- | --- |
+| NSIS 安装包 | `Data Analysis Agent Setup 0.1.0.exe` | 安装版人工验收与分发候选 |
+| Windows unpacked | `win-unpacked/Data Analysis Agent.exe` | 不安装即可运行的打包态检查 |
+
+只需要 unpacked 时运行 `npm.cmd run pack:win:dir`。这些二进制产物由
+`desktop/.gitignore` 排除，**不会因为 README 被推送到 GitHub 就自动出现在仓库里**；
+请在本机重新构建，或另行发布经过验证的 Release 附件。版本号以
+`desktop/package.json` 为准。
+
+安装版验收不能用 dev 或 unpacked 代替：
+
+1. 关闭旧进程，运行本次构建的 NSIS 安装包，选定安装目录。
+2. 从**安装目录内**的 `Data Analysis Agent.exe` 启动；在任务管理器中“打开文件所在
+   位置”，确认不是 `desktop/dist`、`win-unpacked` 或旧安装目录。
+3. 点击 **Choose CSV/XLSX**，人工确认真实 Windows 文件对话框弹出，选择
+   `tests/fixtures/sales.csv`；确认文件名显示。
+4. 输入“按地区汇总销售额”，点击 **Send**；确认状态变化、Runtime Events/Trace
+   出现且最终 completed，回答有实际数据依据。必要时再检查 Stop、图表、审批、
+   Error/Retry 和窄窗口布局。
+5. 完全退出后从同一安装目录重新启动，选择刚才的 Session，确认消息与事件恢复，
+   且旧动作没有再次执行。
+
+自动化 smoke 会给原生文件对话框提供确定性的测试返回路径，但不会替代第 3 步的
+人工点击验收。默认 Session 与审批持久化数据位于 Electron 标准
+`app.getPath("userData")/runtime` 下；不要为了重新测试而随意删除用户数据。
+已完成的 Desktop M6.5 发布门禁与当时产物哈希见
+[`docs/Desktop-M6.5-Release-Report.md`](docs/Desktop-M6.5-Release-Report.md)；
+该报告不证明以后重新构建的安装包已通过安装验收。
+
+## 自动化验证
+
+```powershell
+# 仓库根目录：Node 核心、Python 全量与确定性评测
+npm.cmd test
+python -m unittest discover -s tests -p "test_*.py"
+python tests/eval_agent.py
+python tests/eval_p1.py
+python tests/robustness_eval.py
+python tests/run_day19_eval.py
+
+# desktop 目录：构建、单元/集成、Electron smoke 与真实 Electron E2E
+cd .\desktop
+npm.cmd test
+npm.cmd run test:e2e:packaged
+npm.cmd run test:smoke:packaged
+npm.cmd run verify:packaged-sidecar
+```
+
+先运行 `pack:win`，再运行依赖默认 `release/win-unpacked` 的 packaged E2E、
+packaged smoke 和 sidecar 检查。若要对**安装目录的 exe** 做双启动 smoke：
+
+```powershell
+node scripts/verify-packaged-smoke.cjs --executable "C:\path\to\installed\Data Analysis Agent.exe" --label installed-smoke
+```
+
+`desktop/README.md` 记录了桌面端的开发与打包细节。完整门禁除测试通过外，
+还要求 Day19 Regression Gate 11/11、security violations=0、
+contract failures=0；不得以界面可见或 unpacked smoke 替代安装版验证。
+
+## 核心能力与边界
+
 项目已完成 PRD v1.1 的 M1–M3：P0 确定性分析、受控多步 Agent、图表、多文件、
 历史对话、Todo、三层 Memory、Context Compression、Historical Summary 和 Bad Case 优化。
 在这些能力外层提供规则优先的 Workflow / Router 统一入口，将请求分流到
@@ -34,29 +156,27 @@ LLM 只负责理解问题、选择受控工具、决定是否继续分析和解�
 分组、趋势、异常、占比、同比等真实计算由确定性工具执行。项目不运行用户提供的代码，
 不让模型动态生成并执行任意 Python，也不修改原始数据。
 
+## 命令行入口
+
 Requirements: Node.js 20 or newer. 核心 CLI 不需要第三方包；真实 MCP stdio 集成需要
 Python 3.10+ 并安装 `requirements-mcp.txt`。
 
 ```powershell
-python -m pip install -r requirements-mcp.txt
-node src/cli.js --file .\sales.csv --question "按地区分组统计销售额总和"
+node src/cli.js --file .\tests\fixtures\sales.csv --question "按地区分组统计销售额总和"
 node src/cli.js --file .\sales.xlsx --question "销售额平均值" --log .\audit.jsonl
-npm test
-python tests/eval_agent.py
-python tests/eval_p1.py
-python tests/robustness_eval.py
-python tests/run_day19_eval.py
-python tests/eval_context_compression.py
-python tests/eval_historical_summary.py
-python tests/eval_multistep_semantics.py
-python -m unittest discover -s tests -p "test_*.py"
+
+# 仅在使用真实 MCP stdio 集成时安装
+python -m pip install -r requirements-mcp.txt
 ```
 
 Exit code is non-zero for invalid input or unsafe/invalid calculations. A valid but
 underspecified question returns `status: "needs_input"`. See
 [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md) for the deliberately narrow MVP choices.
 
-## 稳定版本评测
+## 已验证基线（2026-09-23）
+
+以下是 Desktop M6.5 发布门禁记录对应的测试结果，不代表以后每一次本地重建的
+安装包都自动通过安装验收；细节和当时产物哈希见上文链接的 Release Report。
 
 | 评测 | 结果 |
 | --- | ---: |
@@ -65,8 +185,10 @@ underspecified question returns `status: "needs_input"`. See
 | P1 | 20/20 |
 | Robustness | 25/25 |
 | Day19.3 统一 Eval Harness（Metrics + Regression Gate + Unified Report） | 60/60 |
-| Python 全量 | 259/259 |
+| Python 全量 | 261/261 |
 | Node 全量 | 13/13 |
+| Desktop M6.5 发布门禁 | 27/27 Desktop 测试、Electron E2E、unpacked/installed 双启动 smoke PASS |
+| Day19 Regression Gate | 11/11；security violations=0；contract failures=0 |
 | Day20.1 Observability 专项 | 6/6 |
 | Day20.2 Guardrails 专项 | 7/7 |
 | Day20.3 HITL + Approval Resume 专项 | 8/8 |
@@ -104,6 +226,7 @@ underspecified question returns `status: "needs_input"`. See
 | `guardrails/` | Day20.2 确定性执行前安全策略：统一 allow、block、needs_approval 决策，并生成不含原始参数的 pending approval 摘要。 |
 | `hitl/` | Day20.3 进程内人工审批状态机：私有保存待执行动作，校验 approval ID/action hash，提供单次 approve/reject/expire 与安全恢复接口。 |
 | `session/` | Day21.1 独立 SQLite SessionStore：以 thread ID 管理 session，并按写入顺序持久化 messages 与通用 structured events。 |
+| `desktop/` | Windows Electron Main、sandboxed preload、Renderer、Runtime Bridge、打包脚本与桌面 E2E；只承载产品界面和状态投影。 |
 | `docs/` | 产品需求、架构设计、实现假设与鲁棒性复盘文档。 |
 | `tests/` | 自动化测试、P0/P1 语义评测、鲁棒性评测、测试数据与可审计评测结果。 |
 | `package.json` | Node.js 项目信息及 `npm test` 测试入口。 |
