@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import { RuntimeClient, RuntimeRequestError } from "../../bridge/runtimeClient";
+import { RuntimeStartupError } from "../../bridge/processManager";
 import type { DatasetSelectionResult, DatasetSummary, IpcError, IpcResult, RunCancelResult, RunStartResult, SessionListResult, SessionSnapshot } from "../../shared/ipc";
 import { IPC_CHANNELS } from "../../shared/ipc";
 import { validateFilesSelectInput } from "./files-select";
@@ -8,7 +9,7 @@ import { validateRunsStartInput } from "./runs-start";
 import { validateApprovalInput, validateSessionInput } from "./session-approval";
 
 function failure(error: unknown): IpcResult<never> {
-  const known = error instanceof RuntimeRequestError;
+  const known = error instanceof RuntimeRequestError || error instanceof RuntimeStartupError;
   const ipcError: IpcError = {
     code: known ? error.code : "RUNTIME_UNAVAILABLE",
     message: known ? error.message : "The Python Runtime is unavailable.",

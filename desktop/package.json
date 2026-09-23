@@ -6,13 +6,45 @@
   "main": "dist/src/main/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/copy-static.cjs",
+    "build:sidecar": "node scripts/stage-python-sidecar.cjs",
     "dev": "npm run build && electron .",
     "start": "npm run build && electron .",
-    "test": "npm run build && node --test dist/tests/*.test.js && electron dist/tests/electron-smoke.js"
+    "test": "npm run build && node --test dist/tests/*.test.js && electron dist/tests/electron-smoke.js && electron dist/tests/m6-electron-e2e.js",
+    "test:e2e": "npm run build && electron dist/tests/m6-electron-e2e.js",
+    "test:e2e:packaged": "npm run build && node scripts/run-packaged-e2e.cjs",
+    "test:smoke:packaged": "node scripts/verify-packaged-smoke.cjs",
+    "verify:packaged-sidecar": "node scripts/verify-packaged-sidecar.cjs",
+    "pack:win:dir": "npm run build && npm run build:sidecar && electron-builder --win --x64 --dir",
+    "pack:win": "npm run build && npm run build:sidecar && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.dataanalysisagent.desktop",
+    "productName": "Data Analysis Agent",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/src/**/*",
+      "!dist/src/**/*.map"
+    ],
+    "extraResources": [
+      { "from": ".sidecar-stage", "to": ".", "filter": ["**/*"] }
+    ],
+    "win": {
+      "target": "nsis",
+      "artifactName": "${productName} Setup ${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "electron": "^38.0.0",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.9.0"
   }
 }

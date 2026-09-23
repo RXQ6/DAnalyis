@@ -2,9 +2,67 @@
 
 ## 当前阶段
 
-Desktop M5：Trace Panel + Error/Retry + Product States 已完成实现与自动化验收。
+Desktop M6.5：Release Gate + Release Report 已完成；全部 required gate PASS，Desktop M6 完成。
+统一报告：`docs/Desktop-M6.5-Release-Report.md`。版本 0.1.0 的 NSIS installer 已实际安装到
+`desktop/release/m6.5-installed`，安装后 exe 首次完成 CSV 真实分析，退出并重启后恢复旧 Session；
+不是 unpacked/dev 启动。安装态 smoke 证据位于
+`desktop/release/m6.5-installed-smoke-xR3Qia/{first,resume}.json`。
 
-下一阶段尚未定义；在收到新的阶段目标前保持当前 Desktop M1–M5 架构与回归基线。
+最终门禁：TypeScript build、Desktop 27/27、开发态与打包资源态 Electron E2E 各 7/7、
+unpacked 与 installed 双启动 smoke、packaged sidecar、Python 261/261、Node 13/13、
+P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS；
+security violations=0、contract failures=0。未修改 Python Runtime 业务语义或评测标准。
+
+剩余非门禁风险：真实原生文件选择框交互未自动化、未在干净机器测试、安装包升级/卸载路径未验收，
+installer/exe 未签名。下一阶段等待用户明确指定，不自动继续。
+
+## 历史阶段：Desktop M6.4
+
+Desktop M6.4：Packaged Smoke 已完成。从重新构建的 electron-builder 真实
+`desktop/release/win-unpacked/Data Analysis Agent.exe` 先后启动两个独立进程，不用 dev 模式。
+首次确认 Main/Preload/Renderer 与 packaged Python sidecar，经过文件按钮、Send 和真实 Python
+数据分析得到 6 条 Runtime Events、`completed` 和销售额总和 1580。关闭进程后重启同一 exe，
+从标准 userData 恢复原 thread、4 条消息和 6 条 Trace，没有重复执行旧 run。
+NSIS installer 同时重新构建，但尚未执行独立安装；仅系统文件对话框的返回路径由测试提供，
+核心 IPC、Runtime、SessionStore 没有 mock。验收结果位于
+`desktop/release/m6.4-smoke-y1aRT9/first.json` 与 `resume.json`。
+
+当时的下一阶段候选为 Desktop M6.5；现已完成，见上文。
+
+M6.4 Desktop 单元 27/27、原 Electron smoke、M6.3 开发态与打包资源态 E2E 各 7 个场景、
+packaged sidecar、真实 exe 双启动 smoke 均 PASS；Python 全量 261/261、Node 13/13、
+P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、11 项 Regression Gate 全 PASS。
+未修改 Python Runtime 业务语义、评测标准或 P0/P1 逻辑。首次在受限测试沙箱中因标准
+AppData 缓存目录权限不足失败；正常桌面权限重跑通过，未修改产品路径。
+
+M6.3 新增真实 BrowserWindow UI 测试，在开发态和打包资源态各通过 7 个步骤，
+覆盖启动、CSV/XLSX 选择、Send、Run State、Runtime Events、Stop/Cancel、
+Session List/Resume、HITL Approve/Reject、真实文件错误/Retry 和 Trace Panel。
+
+M6.3 未修改 Python Runtime 业务语义、P0/P1 逻辑或评测标准。首次整套复跑发现
+E2E 测试将测试目录误作 Main 编译目录，已只修正测试入口路径并在两种模式重跑通过。
+Desktop 单元 27/27、原 Electron smoke、新开发态 E2E 与打包资源 E2E 均 PASS；
+Python 全量 261/261、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+Day19 60/60、11 项 Regression Gate 全 PASS。
+
+M6.2 的 Windows unpacked 与 NSIS installer 包含私有 Python 3.12、Python JSONL Bridge、
+项目业务模块、Node 数据桥和私有 Node 可执行文件。packaged Electron 经 Main/Preload
+成功启动真实 run，直接 packaged sidecar 完成 CSV 注册与分析 run；不依赖开发机绝对路径。
+
+M6.2 构建使用 `DATA_AGENT_PYTHON` 作为构建机输入，产物中使用
+`process.resourcesPath/python-runtime/python.exe`。Python stdout 只传协议 JSONL，
+stderr 为日志；缺少可执行文件/Bridge 时返回结构化 IPC 错误而不使 Electron 崩溃。
+未修改 Python Runtime 业务语义或评测标准。
+
+M6.1 使用 electron-builder 26.15.3、Electron 38.8.6；Main/Preload/Renderer 进入 app.asar。
+开发态使用仓库相对路径，打包态使用 process.resourcesPath，运行数据位于 Electron
+标准 userData/runtime。打包产物不引用开发机绝对路径。BrowserWindow 继续保持
+contextIsolation=true、nodeIntegration=false、sandbox=true。
+
+M6.2 验证：Desktop 单元 27/27、Electron E2E PASS、Windows unpacked 真实 run 烟测
+退出码 0；packaged CSV 分析返回销售额总和 1580，8 条 stdout 均为协议 JSONL。
+Python 全量 261/261、Node 13/13、Day19 60/60、P0 15/15、P1 20/20、
+Robustness 25/25、11 项 Regression Gate 全 PASS。安装包已构建，尚未做独立安装验证。
 
 桌面层继续保持零侵入边界：Electron Main 负责原生文件选择、IPC 和进程宿主；Python Runtime 是
 Workflow、Dataset、Agent、Tool、Chart 和安全决策的唯一业务事实源；Renderer 只投影事件和渲染
@@ -88,10 +146,11 @@ Workflow、Dataset、Agent、Tool、Chart 和安全决策的唯一业务事实�
 - Main 仍向所有窗口广播事件；当前 Renderer 做 thread 隔离，未来多窗口仍需 Main 订阅隔离。
 - 本地终止 worker 不能证明外部 MCP 写操作没有副作用；仍需远端幂等键、传输层取消和结果核对。
 - Renderer 当前只渲染既有 Chart Spec v1 的 bar/line/scatter；不支持交互图表、多系列或大于 100 点。
-- Python sidecar、安装包、代码签名、自动更新和干净机器部署仍属于后续 M6。
+- NSIS 独立安装后的完整 E2E、真实操作系统文件对话框自动化、代码签名、自动更新和
+  干净机器部署仍属于后续阶段；M6.4 已从真实 unpacked exe 完成双启动恢复，未做安装后测试。
 
 ## 下一阶段
 
-- 等待下一阶段范围确认；暂不加入 heartbeat、sequence gap 自动补洞、多窗口、Trace 导出/深度调试、
-  UI 深度美化、真实 Provider 扩展、安装包或自动更新。
+- 等待用户明确指定下一阶段；暂不加入 heartbeat、sequence gap 自动补洞、多窗口、Trace 导出/深度调试、
+  UI 深度美化、真实 Provider 扩展或自动更新。
 - 每次主要修改继续运行 Desktop 专项、Python 全量、Node、P0/P1/Robustness 和 Day19 regression gate。

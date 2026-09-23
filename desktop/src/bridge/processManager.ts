@@ -5,8 +5,16 @@ import { join } from "node:path";
 
 export interface RuntimeProcessOptions {
   repoRoot: string;
+  bridgeScriptPath?: string;
+  workingDirectory?: string;
   pythonExecutable?: string;
   environment?: NodeJS.ProcessEnv;
+}
+
+export class RuntimeStartupError extends Error {
+  constructor(readonly code: string, message: string) {
+    super(message);
+  }
 }
 
 export class RuntimeProcessManager extends EventEmitter {
@@ -25,12 +33,20 @@ export class RuntimeProcessManager extends EventEmitter {
     if (this.starting) {
       return this.starting;
     }
+    const bridgeScript = this.options.bridgeScriptPath ?? join(this.options.repoRoot, "desktop", "python", "runtime_bridge.py");
+    if (!existsSync(bridgeScript)) {
+      throw new RuntimeStartupError("PYTHON_BRIDGE_NOT_FOUND", "Packaged Python Runtime bridge is missing.");
+    }
+    const pythonExecutable = this.pythonExecutable();
+    if (this.options.pythonExecutable && !existsSync(pythonExecutable)) {
+      throw new RuntimeStartupError("PYTHON_RUNTIME_NOT_FOUND", "Packaged Python executable is missing.");
+    }
     this.starting = new Promise<void>((resolve, reject) => {
       const child = spawn(
-        this.pythonExecutable(),
-        [join(this.options.repoRoot, "desktop", "python", "runtime_bridge.py")],
+        pythonExecutable,
+        [bridgeScript],
         {
-          cwd: this.options.repoRoot,
+          cwd: this.options.workingDirectory ?? this.options.repoRoot,
           env: {
             ...process.env,
             PYTHONIOENCODING: "utf-8",
@@ -46,7 +62,9 @@ export class RuntimeProcessManager extends EventEmitter {
       this.expectedExit = false;
       const onError = (error: Error): void => {
         this.starting = null;
-        reject(error);
+        this.child = null;
+        this.emit("stderr", `Python spawn failed: ${error.message}\n`);
+        reject(new RuntimeStartupError("PYTHON_START_FAILED", "Python Runtime could not start."));
       };
       child.once("error", onError);
       child.once("spawn", () => {
