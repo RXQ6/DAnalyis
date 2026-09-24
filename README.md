@@ -5,9 +5,38 @@
 承载界面、文件对话框与 IPC；Python Runtime、DatasetRegistry、SessionStore、
 Guardrail 和 HITL 仍是业务事实源。
 
+## 下载 Windows 桌面版
+
+**[直接下载 Phase 1.4 安装包（Windows .exe）](https://github.com/RXQ6/Visor-Analyx/releases/download/desktop-phase1.4/Data.Analysis.Agent.Setup.0.1.0.exe)** ·
+[查看发布说明](https://github.com/RXQ6/Visor-Analyx/releases/tag/desktop-phase1.4)
+
+安装包放在 GitHub Releases 的 **Assets** 中，不在 `main` 或 `develop` 的文件列表里。
+Phase 1.4 源码位于 [`develop`](https://github.com/RXQ6/Visor-Analyx/tree/develop)。
+当前安装包未做代码签名；新 NSIS 包尚未单独做安装验收。
+
+## 桌面界面预览
+
+以下图片来自 Phase 1.4 的真实 Electron E2E 截图；分析结果使用仓库内
+`tests/fixtures/sales.csv` 测试数据。界面图形是可替换的工作占位，尚非最终品牌资产。
+
+**空首页：**选择 CSV/XLSX、查看示例问题和最近分析。
+
+![Phase 1.4 桌面端空首页](docs/images/desktop/workspace-empty.png)
+
+**分析工作台：**自然语言 Session 标题、数据概览和结构化分析摘要。
+
+![Phase 1.4 桌面端分析结果](docs/images/desktop/analysis-result.png)
+
+**设置与集成：**AI Providers、MCP 和外部服务仅展示“规划中”入口，不接收 API Key，也不建立真实连接。
+
+![Phase 1.4 桌面端设置与集成](docs/images/desktop/settings-integrations.png)
+
+当前应用标记见 [mark.svg](desktop/assets/brand/mark.svg)，Windows 图标见
+[icon.ico](desktop/assets/brand/icon.ico)；两者共用可替换的品牌资产入口。
+
 > **不要直接双击 `desktop/src/renderer/index.html`，也不要把它当网页打开。**
 > 它依赖 Electron Main、sandboxed preload 和 Python Runtime；浏览器中没有这些桥接
-> 能力，文件选择、Send、Session 等操作无法工作。请启动真正的 Electron 应用。
+> 能力，文件选择、发送、Session 等操作无法工作。请启动真正的 Electron 应用。
 
 ## Windows 桌面应用：开发启动
 
@@ -29,16 +58,15 @@ Runtime，不需要另开浏览器或单独启动前端服务器。
 
 启动后按以下顺序试用：
 
-1. 点击 **Choose CSV/XLSX**，通过 Windows 文件对话框选择文件。仓库内的
+1. 点击 **选择 CSV / XLSX** 或顶部 **添加数据**，通过 Windows 文件对话框选择文件。仓库内的
    `tests/fixtures/sales.csv` 可用于试用；文件由 Python 数据输入层读取，
    Renderer 不解析或计算 CSV/XLSX。
-2. 在 Message 中输入“按地区汇总销售额”，点击 **Send**。Run State 应由 idle/empty
-   进入 running，再依据 Runtime 结果进入 completed、partial、failed 等状态；
-   Runtime Events/Trace 按 sequence 展示路由、工具和最终事件。**Stop** 会请求
-   取消当前 run。
-3. Sessions 显示 Python SessionStore 中的历史记录。重新打开桌面应用后可选择旧
-   Session 恢复消息与事件；继续执行沿用原 `thread_id`，新 run 获得新 `trace_id`。
-   遇到 waiting_approval 时，审批卡仅显示安全摘要；Approve/Reject 的有效性由
+2. 在底部输入框提出问题，例如“按地区汇总销售额”，点击 **发送**。顶部状态会随
+   Runtime 结果更新；右侧 **分析过程** 默认收起，可展开查看脱敏后的步骤。
+   **停止** 会请求取消当前分析。
+3. **最近分析** 显示 Python SessionStore 中的历史记录。重新打开桌面应用后可选择旧
+   Session 恢复消息与事件，且不会重跑旧分析。遇到需要审批的操作时，卡片仅显示安全
+   摘要；批准/拒绝的有效性由
    Python Runtime 校验，前端不自行决定或重放动作。
 
 图表只渲染 Python Runtime 给出的 Chart Spec；前端不重新计算分组、趋势、占比、
@@ -68,7 +96,7 @@ npm.cmd run pack:win
 
 只需要 unpacked 时运行 `npm.cmd run pack:win:dir`。这些二进制产物由
 `desktop/.gitignore` 排除，**不会因为 README 被推送到 GitHub 就自动出现在仓库里**；
-请在本机重新构建，或另行发布经过验证的 Release 附件。版本号以
+请在本机重新构建，或从上方的 GitHub Release 下载当前附件。版本号以
 `desktop/package.json` 为准。
 
 安装版验收不能用 dev 或 unpacked 代替：
@@ -76,11 +104,11 @@ npm.cmd run pack:win
 1. 关闭旧进程，运行本次构建的 NSIS 安装包，选定安装目录。
 2. 从**安装目录内**的 `Data Analysis Agent.exe` 启动；在任务管理器中“打开文件所在
    位置”，确认不是 `desktop/dist`、`win-unpacked` 或旧安装目录。
-3. 点击 **Choose CSV/XLSX**，人工确认真实 Windows 文件对话框弹出，选择
+3. 点击 **选择 CSV / XLSX**，人工确认真实 Windows 文件对话框弹出，选择
    `tests/fixtures/sales.csv`；确认文件名显示。
-4. 输入“按地区汇总销售额”，点击 **Send**；确认状态变化、Runtime Events/Trace
-   出现且最终 completed，回答有实际数据依据。必要时再检查 Stop、图表、审批、
-   Error/Retry 和窄窗口布局。
+4. 输入“按地区汇总销售额”，点击 **发送**；确认状态变化、**分析过程**
+   出现且最终显示“已完成”，回答有实际数据依据。必要时再检查停止、图表、审批、
+   错误/重试和窄窗口布局。
 5. 完全退出后从同一安装目录重新启动，选择刚才的 Session，确认消息与事件恢复，
    且旧动作没有再次执行。
 

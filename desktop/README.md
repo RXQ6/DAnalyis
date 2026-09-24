@@ -10,6 +10,10 @@ does not provide Electron Main, the sandboxed preload API or the Python
 Runtime. Start the Electron app with the command below or launch a packaged
 exe. No separate browser or web server is required.
 
+Current desktop screenshots and the Phase 1.4 Windows installer link are in the
+[repository README](../README.md#桌面界面预览). The installer is a GitHub Release
+asset, not a file in the source branch.
+
 ## Development
 
 From the repository root:
@@ -26,10 +30,10 @@ Electron window. In PowerShell, the `npm.cmd` spelling also avoids machines
 whose execution policy blocks `npm.ps1`. `DATA_AGENT_PYTHON` may be omitted
 if the repository `.venv` or a compatible Python on PATH is available.
 
-Use **Choose CSV/XLSX** to open the native Windows file picker. The selected
+Use **选择 CSV / XLSX** or **添加数据** to open the native Windows file picker. The selected
 path goes through Renderer → preload → Main → Python; DatasetRegistry reads the
-file. Type a question and select **Send**. Run state and Runtime Events are
-projected from sequence-ordered Python events; **Stop** sends `run.cancel`.
+file. Type a question and select **发送**. The status and collapsible **分析过程**
+are projected from sequence-ordered Python events; **停止** sends `run.cancel`.
 Sessions come from Python SessionStore, Charts consume existing Chart Specs,
 and approval decisions are validated by Python HITL. The Renderer does not
 parse datasets, recalculate analytical figures or decide whether an approval
@@ -72,9 +76,10 @@ Run `npm.cmd run verify:packaged-sidecar` after packaging to verify CSV registra
 a real analysis run, and protocol-only stdout. The packaged Electron startup
 smoke is enabled with `DATA_AGENT_PACKAGING_SMOKE=1` and verifies a real run
 through Preload/Main/Python. Missing Python or Bridge files return structured
-IPC errors while Electron remains alive. The installer is currently unsigned,
-uses Electron's default icon, and has not been independently installed on a
-clean machine.
+IPC errors while Electron remains alive. The installer is currently unsigned
+and has not been independently installed on a clean machine. The window,
+installer and in-app icon use the same replaceable brand asset entry; the
+current mark is a working placeholder.
 
 ## Electron E2E
 
@@ -107,9 +112,9 @@ directory. Launch **that directory's** `Data Analysis Agent.exe`; do not use
 `win-unpacked`, dev mode or an old shortcut. Confirm the process location in
 Task Manager, then:
 
-1. Click **Choose CSV/XLSX** and manually select `../tests/fixtures/sales.csv`
+1. Click **选择 CSV / XLSX** and manually select `../tests/fixtures/sales.csv`
    in the real Windows dialog.
-2. Send “按地区汇总销售额”; expect running, Runtime Events and a final completed
+2. Send “按地区汇总销售额”; expect running, **分析过程** and a final completed
    response grounded in the CSV.
 3. Fully exit, reopen the installed exe, and select the previous Session.
    Its messages and events should return without repeating the old run.
