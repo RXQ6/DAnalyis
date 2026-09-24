@@ -1,14 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync } from "node:fs";
+import { existsSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { app, BrowserWindow, dialog } from "electron";
+import { app, BrowserWindow, dialog, Menu } from "electron";
 import { RuntimeProcessManager } from "../src/bridge/processManager";
 import { RuntimeClient } from "../src/bridge/runtimeClient";
 import type { AgentEvent } from "../src/bridge/protocol";
 import { IPC_CHANNELS } from "../src/shared/ipc";
-import { createWindow } from "../src/main/create-window";
+import { createWindow, WINDOW_CHROME } from "../src/main/create-window";
 import { registerIpcHandlers } from "../src/main/ipc/register-handlers";
 import { resolveRuntimePaths } from "../src/main/runtime-paths";
 import { secureWebPreferences } from "../src/main/window-options";
@@ -26,6 +26,7 @@ async function waitFor(window: BrowserWindow, label: string, predicate: string, 
         else if (Date.now() - started > ${timeout}) {
           clearInterval(timer);
           reject(new Error(${JSON.stringify(`${label} timed out`)} +
+            " viewport=" + window.innerWidth +
             " state=" + document.querySelector("#run-status")?.textContent +
             " error=" + document.querySelector("#error-code")?.textContent +
             " trace=" + document.querySelector("#event-list")?.textContent));
@@ -119,8 +120,11 @@ async function run(): Promise<void> {
         width: 800,
         height: 600,
         show: true,
+        ...WINDOW_CHROME,
         webPreferences: secureWebPreferences(join(resources, "app.asar", "dist", "src", "preload", "index.js")),
       });
+      Menu.setApplicationMenu(null);
+      window.setMenu(null);
       window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
       window.webContents.on("will-navigate", (event) => event.preventDefault());
       await window.loadFile(join(resources, "app.asar", "dist", "src", "renderer", "index.html"));
@@ -136,18 +140,161 @@ async function run(): Promise<void> {
     };
 
     await step("1 application startup", async () => {
-      await waitFor(activeWindow, "initial empty state", `document.querySelector("#run-status")?.textContent === "empty"`);
+      await waitFor(activeWindow, "initial empty state", `document.querySelector("#run-status")?.dataset.state === "empty"`);
       assert.equal(activeWindow.webContents.getURL().startsWith("file:"), true);
+      assert.equal(activeWindow.isMenuBarVisible(), false);
+      assert.equal(Menu.getApplicationMenu(), null);
       if (packagedAssets) assert.match(activeWindow.webContents.getURL(), /app\.asar/);
       assert.equal(await activeWindow.webContents.executeJavaScript(`Boolean(window.agent && document.querySelector("#file-select") && document.querySelector("#trace-panel"))`), true);
+      const layout = await activeWindow.webContents.executeJavaScript(`(() => {
+        const header = document.querySelector("#context-header").getBoundingClientRect();
+        const chrome = document.querySelector("#window-chrome").getBoundingClientRect();
+        const sidebar = document.querySelector("#left-sidebar").getBoundingClientRect();
+        const center = document.querySelector("#center-panel").getBoundingClientRect();
+        const trace = document.querySelector("#trace-panel").getBoundingClientRect();
+        const composer = document.querySelector("#composer").getBoundingClientRect();
+        const fileAction = document.querySelector("#header-file-action").getBoundingClientRect();
+        return {
+          stylesheetLoaded: [...document.styleSheets].some((sheet) => sheet.href?.endsWith("styles.css")),
+          compactChrome: chrome.top === 0 && chrome.height === 38 && chrome.bottom === header.top,
+          noGenericTitle: !document.querySelector("#app-shell").textContent.includes("Data Analysis Agent") && document.title === "分析工作台",
+          headerAboveWorkspace: header.bottom <= center.top,
+          sidebarCollapsed: sidebar.right <= 0,
+          traceCollapsed: !document.querySelector("#trace-panel").open && trace.width <= 45,
+          composerAtBottom: Math.abs(composer.bottom - center.bottom) <= 2,
+          fileActionVisible: fileAction.top >= header.top && fileAction.bottom <= header.bottom,
+        };
+      })()`);
+      assert.deepEqual(layout, {
+        stylesheetLoaded: true,
+        compactChrome: true,
+        noGenericTitle: true,
+        headerAboveWorkspace: true,
+        sidebarCollapsed: true,
+        traceCollapsed: true,
+        composerAtBottom: true,
+        fileActionVisible: true,
+      });
+    });
+
+    await step("1a responsive layout and scrolling", async () => {
+      try {
+        for (const width of [700, 520]) {
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, 150));
+          activeWindow.setContentSize(width, 600);
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, 150));
+          if (await activeWindow.webContents.executeJavaScript(`window.innerWidth`) !== width) {
+            activeWindow.restore();
+            activeWindow.setContentSize(width, 600);
+          }
+          await waitFor(activeWindow, `viewport ${width}px`, `window.innerWidth === ${width}`);
+          const layout = await activeWindow.webContents.executeJavaScript(`(() => {
+            const sidebar = document.querySelector("#left-sidebar").getBoundingClientRect();
+            const center = document.querySelector("#center-panel").getBoundingClientRect();
+            const trace = document.querySelector("#trace-panel").getBoundingClientRect();
+            const composer = document.querySelector("#composer").getBoundingClientRect();
+            const fileAction = document.querySelector("#header-file-action").getBoundingClientRect();
+            return {
+              viewportWidth: window.innerWidth,
+              noPageOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+              composerVisible: composer.height > 0 && composer.bottom <= window.innerHeight + 1,
+              traceBelowCenter: trace.top >= center.bottom,
+              sidebarCollapsed: sidebar.right <= 0,
+              fileActionVisible: fileAction.left >= 0 && fileAction.right <= window.innerWidth,
+            };
+          })()`);
+          assert.equal(layout.viewportWidth, width);
+          assert.equal(layout.noPageOverflow, true, `Horizontal page overflow at ${width}px`);
+          assert.equal(layout.composerVisible, true, `Composer not visible at ${width}px`);
+          assert.equal(layout.traceBelowCenter, true, `Trace did not reflow at ${width}px`);
+          assert.equal(layout.fileActionVisible, true, `File action not visible at ${width}px`);
+          assert.equal(layout.sidebarCollapsed, true, `Sidebar did not collapse at ${width}px`);
+        }
+      } finally {
+        activeWindow.setContentSize(800, 600);
+      }
+    });
+
+    await step("1b workspace layout, resizing and planned integrations", async () => {
+      try {
+        activeWindow.setContentSize(1440, 900);
+        await waitFor(activeWindow, "desktop viewport", `window.innerWidth === 1440`);
+        const initial = await activeWindow.webContents.executeJavaScript(`({
+          welcomeVisible: !document.querySelector("#welcome").hidden,
+          examples: document.querySelectorAll(".example-question").length,
+          recent: Boolean(document.querySelector("#recent-analyses")),
+          capability: Boolean(document.querySelector(".capability-note")),
+          brandLoaded: [...document.querySelectorAll(".brand-mark")].every((image) => image.complete && image.naturalWidth > 0),
+          traceClosed: !document.querySelector("#trace-panel").open,
+          leftWidth: document.querySelector("#left-sidebar").getBoundingClientRect().width,
+        })`);
+        assert.equal(initial.welcomeVisible, true);
+        assert.equal(initial.examples, 3);
+        assert.equal(initial.recent, true);
+        assert.equal(initial.capability, true);
+        assert.equal(initial.brandLoaded, true);
+        assert.equal(initial.traceClosed, true);
+        if (process.env.DATA_AGENT_CAPTURE_UI === "1") {
+          const path = join(electronData, "phase14-empty.png");
+          writeFileSync(path, (await activeWindow.webContents.capturePage()).toPNG());
+          console.log(`Phase 1.4 empty screenshot: ${path}`);
+        }
+        const left = await activeWindow.webContents.executeJavaScript(`(() => {
+          const rect = document.querySelector("#left-resizer").getBoundingClientRect();
+          return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + 150) };
+        })()`);
+        activeWindow.webContents.sendInputEvent({ type: "mouseMove", x: left.x, y: left.y });
+        activeWindow.webContents.sendInputEvent({ type: "mouseDown", x: left.x, y: left.y, button: "left", clickCount: 1 });
+        activeWindow.webContents.sendInputEvent({ type: "mouseMove", x: left.x + 42, y: left.y });
+        activeWindow.webContents.sendInputEvent({ type: "mouseUp", x: left.x + 42, y: left.y, button: "left", clickCount: 1 });
+        await waitFor(activeWindow, "left resize", `document.querySelector("#left-sidebar").getBoundingClientRect().width > ${initial.leftWidth + 20}`);
+        await click(activeWindow, "#trace-panel > summary");
+        await waitFor(activeWindow, "expanded trace", `document.querySelector("#trace-panel").open && document.querySelector("#trace-resizer").getBoundingClientRect().width > 0`);
+        const right = await activeWindow.webContents.executeJavaScript(`(() => {
+          const rect = document.querySelector("#trace-resizer").getBoundingClientRect();
+          return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + 150), width: document.querySelector("#trace-panel").getBoundingClientRect().width };
+        })()`);
+        activeWindow.webContents.sendInputEvent({ type: "mouseMove", x: right.x, y: right.y });
+        activeWindow.webContents.sendInputEvent({ type: "mouseDown", x: right.x, y: right.y, button: "left", clickCount: 1 });
+        activeWindow.webContents.sendInputEvent({ type: "mouseMove", x: right.x - 42, y: right.y });
+        activeWindow.webContents.sendInputEvent({ type: "mouseUp", x: right.x - 42, y: right.y, button: "left", clickCount: 1 });
+        await waitFor(activeWindow, "right resize", `document.querySelector("#trace-panel").getBoundingClientRect().width > ${right.width + 20}`);
+        await click(activeWindow, "#trace-panel > summary");
+        await click(activeWindow, "#settings-open");
+        const settings = await activeWindow.webContents.executeJavaScript(`({
+          shown: !document.querySelector("#settings-view").hidden,
+          workspaceHidden: document.querySelector("#analysis-scroll").hidden,
+          composerHidden: document.querySelector("#composer").hidden,
+          providers: document.querySelectorAll(".provider-grid > div").length,
+          planned: [...document.querySelectorAll(".settings-section .planned-badge")].every((badge) => badge.textContent === "规划中"),
+          noKeyInput: !document.querySelector("#settings-view input"),
+          traceHidden: getComputedStyle(document.querySelector("#trace-panel")).display === "none",
+          settingsRendered: getComputedStyle(document.querySelector("#settings-view")).display !== "none",
+          workspaceVisualHidden: getComputedStyle(document.querySelector("#analysis-scroll")).display === "none",
+        })`);
+        assert.deepEqual(settings, { shown: true, workspaceHidden: true, composerHidden: true, providers: 5, planned: true, noKeyInput: true, traceHidden: true, settingsRendered: true, workspaceVisualHidden: true });
+        if (process.env.DATA_AGENT_CAPTURE_UI === "1") {
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, 120));
+          const path = join(electronData, "phase14-settings.png");
+          writeFileSync(path, (await activeWindow.webContents.capturePage()).toPNG());
+          console.log(`Phase 1.4 settings screenshot: ${path}`);
+        }
+        await click(activeWindow, "#workspace-open");
+        assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#settings-view").hidden`), true);
+        await click(activeWindow, ".example-question");
+        assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#run-input").value`), "按地区汇总销售额");
+      } finally {
+        activeWindow.setContentSize(800, 600);
+      }
     });
 
     await step("2 file error and real Retry", async () => {
       selections.push(join(electronData, "missing.csv"));
-      await click(activeWindow, "#file-select");
+      await click(activeWindow, "#header-file-action");
       await waitFor(activeWindow, "structured file error", `!document.querySelector("#error-card").hidden && !document.querySelector("#error-retry").hidden`);
       const code = await activeWindow.webContents.executeJavaScript(`document.querySelector("#error-code").textContent`);
       assert.ok(String(code).length > 0);
+      assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#error-card").dataset.state`), "stale");
       selections.push(csv);
       await click(activeWindow, "#error-retry");
       await waitFor(activeWindow, "CSV retry selection", `document.querySelector("#dataset-summary").textContent.includes("sales.csv") && document.querySelector("#error-card").hidden`);
@@ -155,29 +302,64 @@ async function run(): Promise<void> {
 
     await step("3 XLSX then CSV selection through UI and Main dialog", async () => {
       selections.push(xlsx);
-      await click(activeWindow, "#file-select");
+      await click(activeWindow, "#header-file-action");
       await waitFor(activeWindow, "XLSX summary", `document.querySelector("#dataset-summary").textContent.includes("sample.xlsx")`);
       selections.push(csv);
-      await click(activeWindow, "#file-select");
+      await click(activeWindow, "#header-file-action");
       const summary = await waitFor(activeWindow, "CSV summary", `document.querySelector("#dataset-summary").textContent.includes("sales.csv") && document.querySelector("#dataset-summary").textContent`);
-      assert.match(String(summary), /5 rows/);
+      assert.match(String(summary), /5 行/);
+      const context = await activeWindow.webContents.executeJavaScript(`({
+        session: document.querySelector("#header-session").textContent,
+        dataset: document.querySelector("#header-dataset").textContent,
+      })`);
+      assert.equal(context.session, "新分析");
+      assert.doesNotMatch(context.session, /thread_/);
+      assert.equal(context.dataset, "sales.csv");
+      assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#file-select").textContent`), "选择 CSV / XLSX");
     });
 
     await step("4 Send, running/completed, Runtime Events and Trace", async () => {
       await fillAndSend(activeWindow, "各地区销售额总和是多少？");
-      await waitFor(activeWindow, "running state", `document.querySelector("#run-status").textContent === "running"`);
-      await waitFor(activeWindow, "completed state", `document.querySelector("#run-status").textContent === "completed"`, 20000);
+      await waitFor(activeWindow, "running state", `document.querySelector("#run-status").dataset.state === "running"`);
+      await waitFor(activeWindow, "completed state", `document.querySelector("#run-status").dataset.state === "completed"`, 20000);
       const snapshot = await activeWindow.webContents.executeJavaScript(`({
         answer: document.querySelector('[data-role="assistant"]:last-of-type p')?.textContent,
         sequences: [...document.querySelectorAll("#event-list > li")].map((item) => Number(item.dataset.sequence)),
         trace: document.querySelector("#event-list").textContent,
       })`);
       assert.match(String(snapshot.answer), /1580/);
+      assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#header-session").textContent`), "各地区销售额总和是多少");
+      assert.deepEqual(await activeWindow.webContents.executeJavaScript(`({ send: document.querySelector("#run-submit").textContent, stop: document.querySelector("#run-stop").textContent })`), { send: "发送", stop: "停止" });
+      const presented = await activeWindow.webContents.executeJavaScript(`({
+        summary: document.querySelector("#analysis-summary-content").textContent,
+        hasTable: Boolean(document.querySelector("#analysis-summary .result-table")),
+        metrics: [...document.querySelectorAll("#metric-cards .metric-card strong")].map((item) => item.textContent),
+        insightsHidden: document.querySelector("#insight-cards").hidden,
+      })`);
+      assert.equal(presented.hasTable, true);
+      assert.match(presented.summary, /1580/);
+      assert.doesNotMatch(presented.summary, /\{\s*"metric"|thread_|trace_|tool_args/);
+      assert.deepEqual(presented.metrics, ["5", "4"]);
+      assert.equal(presented.insightsHidden, true);
+      if (process.env.DATA_AGENT_CAPTURE_UI === "1") {
+        await activeWindow.webContents.executeJavaScript(`document.querySelector("#analysis-summary").scrollIntoView({ block: "center" })`);
+        const path = join(electronData, "phase14-analysis.png");
+        writeFileSync(path, (await activeWindow.webContents.capturePage()).toPNG());
+        console.log(`Phase 1.4 analysis screenshot: ${path}`);
+      }
       assert.deepEqual(snapshot.sequences, [...snapshot.sequences].sort((a: number, b: number) => a - b));
-      assert.match(snapshot.trace, /route_selected|route/);
-      assert.match(snapshot.trace, /tool_called|tool/);
-      assert.match(snapshot.trace, /run_completed/);
+      assert.match(snapshot.trace, /已选择处理方式|已选择分析路径/);
+      assert.match(snapshot.trace, /数据分析步骤/);
+      assert.match(snapshot.trace, /分析已完成/);
       assert.equal(snapshot.trace.includes(csv), false);
+      assert.doesNotMatch(snapshot.trace, /thread_|trace_|run_completed|tool_called|#\d+/);
+      const timeline = await activeWindow.webContents.executeJavaScript(`({
+        className: document.querySelector("#event-list").className,
+        structured: [...document.querySelectorAll("#event-list > li")].every((item) =>
+          Boolean(item.dataset.sequence && item.querySelector(".trace-label") && !item.querySelector(".trace-sequence"))),
+      })`);
+      assert.match(timeline.className, /trace-timeline/);
+      assert.equal(timeline.structured, true);
       assert.ok(events.some((event) => event.type === "run_completed"));
       await click(activeWindow, "#trace-panel > summary");
       await click(activeWindow, "#event-list > li:first-child summary");
@@ -186,47 +368,52 @@ async function run(): Promise<void> {
 
     await step("5 Stop/Cancel through UI", async () => {
       await fillAndSend(activeWindow, "hello");
-      await waitFor(activeWindow, "cancellable running state", `document.querySelector("#run-status").textContent === "running" && !document.querySelector("#run-stop").disabled`);
+      await waitFor(activeWindow, "cancellable running state", `document.querySelector("#run-status").dataset.state === "running" && !document.querySelector("#run-stop").disabled`);
       await click(activeWindow, "#run-stop");
-      await waitFor(activeWindow, "cancelled state", `document.querySelector("#run-status").textContent === "cancelled"`);
+      await waitFor(activeWindow, "cancelled state", `document.querySelector("#run-status").dataset.state === "cancelled"`);
       assert.ok(events.some((event) => event.type === "run_cancelled"));
     });
 
     await step("6 Session List and Resume", async () => {
       await click(activeWindow, "#sessions-refresh");
       await waitFor(activeWindow, "session list", `document.querySelector("#session-list button[data-thread-id]")`);
+      assert.equal(await activeWindow.webContents.executeJavaScript(`Boolean(document.querySelector("#session-list button .session-summary") && !document.querySelector("#session-list button .session-id"))`), true);
       const threadId = events.find((event) => event.type === "run_completed")?.thread_id;
       assert.ok(threadId);
       await click(activeWindow, `[data-thread-id="${threadId}"]`);
       await waitFor(activeWindow, "session messages", `document.querySelector("#messages").textContent.includes("各地区销售额总和")`);
+      assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#header-session").textContent`), "各地区销售额总和是多少");
+      assert.equal(await activeWindow.webContents.executeJavaScript(`document.querySelector("#session-list").textContent.includes("thread_")`), false);
       const trace = await activeWindow.webContents.executeJavaScript(`document.querySelector("#event-list").textContent`);
       assert.ok(String(trace).length > 0);
     });
 
     await step("7 HITL Reject then Approve", async () => {
       await fillAndSend(activeWindow, "分析数据并执行外部写操作");
-      await waitFor(activeWindow, "waiting approval", `document.querySelector("#run-status").textContent === "waiting_approval" && !document.querySelector("#approval-card").hidden`);
+      await waitFor(activeWindow, "waiting approval", `document.querySelector("#run-status").dataset.state === "waiting_approval" && !document.querySelector("#approval-card").hidden`);
       const approval = await activeWindow.webContents.executeJavaScript(`({
         action: document.querySelector("#approval-action").textContent,
         id: document.querySelector("#approval-id").textContent,
         expires: document.querySelector("#approval-expires").textContent,
-        body: document.querySelector("#approval-card").textContent,
+        body: document.querySelector("#approval-card").innerText,
       })`);
-      assert.equal(approval.action, "mcp_write");
+      assert.equal(approval.action, "向外部服务写入数据");
       assert.match(approval.id, /^approval_/);
       assert.ok(approval.expires);
+      assert.equal(approval.body.includes(approval.id), false);
       assert.equal(approval.body.includes("分析数据并执行外部写操作"), false);
+      assert.equal(approval.body.includes("action_hash"), false);
       await click(activeWindow, "#approval-reject");
-      await waitFor(activeWindow, "rejected state", `document.querySelector("#run-status").textContent === "failed"`);
+      await waitFor(activeWindow, "rejected state", `document.querySelector("#run-status").dataset.state === "failed"`);
       assert.ok(events.some((event) => event.type === "approval_resolved" && event.payload.status === "rejected"));
 
       await fillAndSend(activeWindow, "分析数据并执行外部写操作");
-      await waitFor(activeWindow, "second waiting approval", `document.querySelector("#run-status").textContent === "waiting_approval" && !document.querySelector("#approval-card").hidden`);
+      await waitFor(activeWindow, "second waiting approval", `document.querySelector("#run-status").dataset.state === "waiting_approval" && !document.querySelector("#approval-card").hidden`);
       await click(activeWindow, "#approval-approve");
-      await waitFor(activeWindow, "approved completion", `document.querySelector("#run-status").textContent === "completed"`, 20000);
+      await waitFor(activeWindow, "approved completion", `document.querySelector("#run-status").dataset.state === "completed"`, 20000);
       assert.ok(events.some((event) => event.type === "approval_resolved" && event.payload.status === "approved" && event.payload.executed === true));
       const trace = await activeWindow.webContents.executeJavaScript(`document.querySelector("#event-list").textContent`);
-      assert.match(trace, /approval_resolved/);
+      assert.match(trace, /确认已处理/);
     });
   } catch (error) {
     let ui = "unavailable";

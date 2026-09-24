@@ -18,7 +18,7 @@ async function waitFor(window: BrowserWindow, label: string, expression: string,
         else if (Date.now() - started > ${timeoutMs}) {
           clearInterval(timer);
           reject(new Error(${JSON.stringify(label)} + " timed out; state=" +
-            document.querySelector("#run-status")?.textContent + "; error=" +
+            document.querySelector("#run-status")?.dataset.state + "; error=" +
             document.querySelector("#error-code")?.textContent));
         }
       } catch (error) { clearInterval(timer); reject(error); }
@@ -56,7 +56,7 @@ export async function runPackagedSmoke(
     step = "Main / Preload / Renderer initialization";
     assert.match(window.webContents.getURL(), /app\.asar/);
     await waitFor(window, step, `Boolean(window.agent && document.querySelector("#file-select") &&
-      document.querySelector("#session-list") && document.querySelector("#run-status")?.textContent !== "loading")`);
+      document.querySelector("#session-list") && document.querySelector("#run-status")?.dataset.state !== "loading")`);
 
     if (phase === "first") {
       const file = process.env.DATA_AGENT_PACKAGING_SMOKE_FILE;
@@ -80,20 +80,21 @@ export async function runPackagedSmoke(
       step = "Send and completed Runtime event projection";
       await window.webContents.executeJavaScript(`document.querySelector("#run-input").value = ${JSON.stringify(question)}`);
       await click(window, "#run-submit");
-      await waitFor(window, "running UI state", `document.querySelector("#run-status")?.textContent === "running"`);
-      await waitFor(window, "completed UI state", `document.querySelector("#run-status")?.textContent === "completed"`, 45000);
+      await waitFor(window, "running UI state", `document.querySelector("#run-status")?.dataset.state === "running"`);
+      await waitFor(window, "completed UI state", `document.querySelector("#run-status")?.dataset.state === "completed"`, 45000);
       const ui = await window.webContents.executeJavaScript(`({
         dataset: document.querySelector("#dataset-summary")?.textContent,
         answer: [...document.querySelectorAll('#messages [data-role="assistant"] p')].at(-1)?.textContent,
-        status: document.querySelector("#run-status")?.textContent,
+        status: document.querySelector("#run-status")?.dataset.state,
         trace: document.querySelector("#event-list")?.textContent,
         sequences: [...document.querySelectorAll("#event-list > li")].map((item) => Number(item.dataset.sequence)),
       })`);
-      assert.match(String(ui.dataset), /sales\.csv.*5 rows/);
+      assert.match(String(ui.dataset), /sales\.csv.*5 行/);
       assert.match(String(ui.answer), /1580/);
-      assert.match(String(ui.trace), /route_selected/);
-      assert.match(String(ui.trace), /tool_called/);
-      assert.match(String(ui.trace), /run_completed/);
+      assert.match(String(ui.trace), /已选择处理方式|已选择分析路径/);
+      assert.match(String(ui.trace), /数据分析步骤/);
+      assert.match(String(ui.trace), /分析已完成/);
+      assert.doesNotMatch(String(ui.trace), /route_selected|tool_called|run_completed|thread_|trace_/);
       assert.deepEqual(ui.sequences, [...ui.sequences].sort((a: number, b: number) => a - b));
       const completed = events.find((event) => event.type === "run_completed");
       assert.ok(completed?.thread_id && completed.trace_id, "Packaged Python sidecar did not emit a completed run");
@@ -119,10 +120,10 @@ export async function runPackagedSmoke(
       await click(window, `[data-thread-id="${threadId}"]`);
       await waitFor(window, step, `document.querySelector("#messages")?.textContent?.includes(${JSON.stringify(question)}) &&
         document.querySelector("#messages")?.textContent?.includes("1580") &&
-        document.querySelector("#run-status")?.textContent === "completed"`);
+        document.querySelector("#run-status")?.dataset.state === "completed"`);
       const ui = await window.webContents.executeJavaScript(`({
         messages: document.querySelector("#messages")?.textContent,
-        status: document.querySelector("#run-status")?.textContent,
+        status: document.querySelector("#run-status")?.dataset.state,
         traceCount: document.querySelectorAll("#event-list > li").length,
       })`);
       assert.ok(ui.traceCount > 0, "Hydrated Session has no Runtime events");

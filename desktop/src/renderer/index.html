@@ -1,63 +1,150 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Data Analysis Agent</title>
+    <title>分析工作台</title>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main>
-      <h1>Data Analysis Agent</h1>
-      <aside aria-label="Sessions">
-        <h2>Recent sessions</h2>
-        <button id="sessions-refresh" type="button">Refresh</button>
-        <ol id="session-list"></ol>
-      </aside>
-      <section aria-label="Data file">
-        <button id="file-select" type="button">Choose CSV/XLSX</button>
-        <output id="dataset-summary">No file selected</output>
-      </section>
-      <section id="messages" aria-label="Chat messages" aria-live="polite"></section>
-      <section aria-label="Compose message">
-        <label for="run-input">Message</label>
-        <input id="run-input" type="text" autocomplete="off" />
-        <button id="run-submit" type="button">Send</button>
-        <button id="run-stop" type="button" disabled>Stop</button>
-      </section>
-      <section id="product-state" aria-label="Product state" data-state="loading" aria-live="polite">
-        <h2>State: <output id="run-status">loading</output></h2>
-        <p id="state-happening">Loading Runtime state.</p>
-        <p id="state-continuation">Please wait for the current request to finish.</p>
-        <p id="state-next-action">No action is required yet.</p>
-        <button id="state-refresh" type="button" hidden>Refresh</button>
-      </section>
-      <section id="error-card" aria-label="Error" aria-live="assertive" hidden>
-        <h2>Error</h2>
-        <dl>
-          <dt>Code</dt><dd id="error-code"></dd>
-          <dt>Message</dt><dd id="error-message"></dd>
-          <dt>Action</dt><dd id="error-action"></dd>
-        </dl>
-        <button id="error-retry" type="button" hidden>Retry</button>
-      </section>
-      <section id="approval-card" aria-label="Approval required" hidden>
-        <h2>Approval required</h2>
-        <dl>
-          <dt>Action</dt><dd id="approval-action"></dd>
-          <dt>Risk</dt><dd id="approval-risk"></dd>
-          <dt>Approval ID</dt><dd id="approval-id"></dd>
-          <dt>Expires</dt><dd id="approval-expires"></dd>
-        </dl>
-        <button id="approval-approve" type="button">Approve</button>
-        <button id="approval-reject" type="button">Reject</button>
-      </section>
-      <section id="charts" aria-label="Charts"></section>
-      <details id="trace-panel">
-        <summary>Trace / Runtime Events</summary>
-        <p id="trace-empty">No Runtime events for the selected run.</p>
-        <ol id="event-list" aria-label="Trace events"></ol>
-      </details>
+    <section id="desktop-only-note" aria-label="需要桌面应用">
+      <img class="brand-mark" src="./assets/mark.svg" alt="" />
+      <p class="eyebrow">DATA ANALYSIS AGENT</p>
+      <h1>请启动桌面应用</h1>
+      <p>文件选择、数据分析和历史会话需要 Electron 与 Python Runtime。请打开 Data Analysis Agent.exe。</p>
+    </section>
+
+    <main id="app-shell">
+      <div id="window-chrome" aria-hidden="true"><img src="./assets/mark.svg" alt="" /><span>工作台</span></div>
+      <header id="context-header" aria-label="应用导航">
+        <button id="sidebar-toggle" class="icon-button" type="button" aria-label="打开导航" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></svg></button>
+        <div class="header-context header-session"><span class="header-context-label">当前分析</span><output id="header-session">新分析</output></div>
+        <div class="header-context header-dataset"><span class="header-context-label">数据文件</span><output id="header-dataset">尚未选择</output></div>
+        <div class="header-actions">
+          <output id="run-status" data-state="loading">准备中</output>
+          <button id="header-file-action" class="quiet-button" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>添加数据</span></button>
+          <button id="settings-open" class="icon-button" type="button" aria-label="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15.1l1-1.8-1-1.7-2-.3a6 6 0 0 0-.7-1.2l.7-1.9-1.7-1-1.6 1.3a7 7 0 0 0-1.4 0L11 7.2l-1.7 1 .7 1.9a6 6 0 0 0-.7 1.2l-2 .3-1 1.7 1 1.8 2 .2a6 6 0 0 0 .7 1.2l-.7 1.9 1.7 1 1.6-1.3a7 7 0 0 0 1.4 0l1.6 1.3 1.7-1-.7-1.9a6 6 0 0 0 .7-1.2z" transform="translate(-1 -1)"/></svg></button>
+        </div>
+      </header>
+
+      <div id="workspace">
+        <div id="sidebar-backdrop" hidden></div>
+        <aside id="left-sidebar" aria-label="导航和数据">
+          <div class="sidebar-top">
+            <div class="sidebar-section-title"><span class="eyebrow">WORKSPACE</span><h2>工作台</h2></div>
+            <button id="workspace-open" class="nav-button is-active" type="button">分析工作台</button>
+          </div>
+          <section id="dataset-panel" aria-label="当前数据文件">
+            <div class="section-heading"><h2>当前数据</h2><span class="section-symbol" aria-hidden="true">▦</span></div>
+            <output id="dataset-summary">尚未选择数据文件</output>
+            <button id="file-select" class="primary-button" type="button">选择 CSV / XLSX</button>
+          </section>
+          <section id="sessions-panel" aria-label="最近分析">
+            <div class="section-heading"><h2>最近分析</h2><button id="sessions-refresh" class="text-button" type="button">刷新</button></div>
+            <p id="sessions-empty" hidden>还没有分析记录。选择数据文件，提出你的第一个问题。</p>
+            <ol id="session-list"></ol>
+          </section>
+          <div class="sidebar-footer"><button id="settings-nav" class="nav-button" type="button">设置与集成 <span>›</span></button></div>
+        </aside>
+        <div id="left-resizer" class="resizer" role="separator" tabindex="0" aria-label="调整导航宽度" aria-orientation="vertical" aria-valuemin="208" aria-valuemax="340" aria-valuenow="248"></div>
+
+        <section id="center-panel" aria-label="分析工作区">
+          <div id="analysis-scroll">
+            <section id="welcome" aria-label="开始分析" hidden>
+              <div class="welcome-lead">
+                <span class="welcome-orbit" aria-hidden="true"><img src="./assets/mark.svg" alt="" /></span>
+                <p class="eyebrow">从数据到清晰结论</p>
+                <h2 id="welcome-title">把问题交给数据。</h2>
+                <p id="welcome-copy">选择一个 CSV 或 XLSX 文件，然后用自然语言提问。分析结果、图表与过程会汇集在这里。</p>
+                <button id="welcome-select" class="primary-button" type="button">选择数据文件</button>
+              </div>
+              <div class="welcome-content">
+                <section class="welcome-questions" aria-label="示例问题">
+                  <div class="section-heading"><h3>试试这样提问</h3><span>选择后可编辑</span></div>
+                  <div class="example-grid">
+                    <button class="example-question" data-example="按地区汇总销售额" type="button">按地区汇总销售额 <span>↗</span></button>
+                    <button class="example-question" data-example="查看每月销售趋势" type="button">查看每月销售趋势 <span>↗</span></button>
+                    <button class="example-question" data-example="列出销量最高的 5 个产品" type="button">列出销量最高的 5 个产品 <span>↗</span></button>
+                  </div>
+                </section>
+                <section class="welcome-recent" aria-label="最近分析">
+                  <div class="section-heading"><h3>继续最近的分析</h3></div>
+                  <div id="recent-analyses" class="recent-list"><p>分析记录会出现在这里。</p></div>
+                </section>
+                <p class="capability-note">支持分组比较、趋势和 Top N 等受控分析。所有数值由数据工具计算。</p>
+              </div>
+            </section>
+
+            <div id="analysis-header" hidden>
+              <p class="eyebrow">ANALYSIS</p>
+              <h2 id="analysis-title">新分析</h2>
+              <p id="analysis-context">选择数据并提出问题。</p>
+            </div>
+            <section id="product-state" aria-label="分析状态" data-state="loading" aria-live="polite">
+              <div class="card-heading"><h2>分析状态</h2><span id="state-label" class="state-label">准备中</span></div>
+              <p id="state-happening">正在准备工作区。</p>
+              <p id="state-continuation"></p>
+              <p id="state-next-action"></p>
+              <button id="state-refresh" class="quiet-button" type="button" hidden>刷新</button>
+            </section>
+            <section id="error-card" aria-label="问题与恢复" aria-live="assertive" hidden>
+              <div class="card-heading"><h2 id="error-title">遇到问题</h2><span class="state-label">需要处理</span></div>
+              <p id="error-message"></p><p id="error-action"></p>
+              <span id="error-code" hidden></span>
+              <button id="error-retry" class="quiet-button" type="button" hidden>重试</button>
+            </section>
+            <section id="approval-card" aria-label="需要确认的操作" hidden>
+              <div class="card-heading"><h2>需要你确认</h2><span class="state-label">操作暂停</span></div>
+              <p class="approval-hint">请检查以下操作。只有你确认后，Python Runtime 才会继续执行。</p>
+              <dl><dt>操作</dt><dd id="approval-action"></dd><dt>风险</dt><dd id="approval-risk"></dd><dt>有效期</dt><dd id="approval-expires"></dd></dl>
+              <span id="approval-id" hidden></span>
+              <div class="approval-actions"><button id="approval-approve" class="primary-button" type="button">确认并继续</button><button id="approval-reject" class="quiet-button" type="button">拒绝</button></div>
+            </section>
+            <section id="dataset-overview" aria-label="数据概览" hidden>
+              <div class="section-heading"><h3>数据概览</h3><span id="dataset-overview-name"></span></div>
+              <div id="metric-cards" class="metric-grid"></div>
+            </section>
+            <section id="analysis-summary" aria-label="分析摘要" hidden>
+              <p class="eyebrow">RESULT</p><h3>分析摘要</h3>
+              <div id="analysis-summary-content"></div>
+            </section>
+            <section id="insight-cards" aria-label="关键发现" hidden></section>
+            <div id="charts-heading" class="content-heading" hidden><p class="eyebrow">VISUALIZATION</p><h3>数据图表</h3></div>
+            <section id="charts" aria-label="数据图表"></section>
+            <details id="conversation-panel" hidden>
+              <summary id="conversation-heading">查看对话记录</summary>
+              <section id="messages" aria-label="对话记录" aria-live="polite"></section>
+            </details>
+          </div>
+
+          <div id="settings-view" aria-label="设置与集成" hidden>
+            <div class="settings-heading"><p class="eyebrow">SETTINGS</p><h2>设置与集成</h2><p>为未来的模型和外部服务接入预留统一入口。当前版本尚未启用这些连接。</p></div>
+            <section class="settings-section"><div class="section-heading"><h3>AI Providers</h3><span class="planned-badge">规划中</span></div>
+              <div class="provider-grid"><div>OpenAI</div><div>Anthropic</div><div>Google Gemini</div><div>OpenAI-compatible Provider</div><div>Local Model</div></div>
+              <div class="settings-preview"><h4>未来的配置项</h4><p>Provider · Model · API Endpoint · API Key · Test Connection</p><p>API Key 将由安全配置层管理。本页面不接收、保存或测试密钥。</p></div>
+            </section>
+            <section class="settings-section"><div class="section-heading"><h3>更多集成</h3><span class="planned-badge">规划中</span></div>
+              <div class="integration-grid"><div><strong>MCP Servers</strong><span>外部工具协议</span></div><div><strong>Data Sources</strong><span>更多数据连接</span></div><div><strong>External Tools</strong><span>受控外部能力</span></div><div><strong>Chart / Report Providers</strong><span>可视化与报告服务</span></div></div>
+            </section>
+          </div>
+
+          <section id="composer" aria-label="提出分析问题">
+            <label for="run-input">分析问题</label>
+            <input id="run-input" type="text" autocomplete="off" placeholder="向你的数据提一个问题…" />
+            <button id="run-submit" class="primary-button" type="button">发送</button>
+            <button id="run-stop" class="quiet-button" type="button" disabled>停止</button>
+          </section>
+        </section>
+
+        <div id="trace-resizer" class="resizer" role="separator" tabindex="0" aria-label="调整分析过程宽度" aria-orientation="vertical" aria-valuemin="280" aria-valuemax="440" aria-valuenow="320"></div>
+        <details id="trace-panel" aria-label="分析过程">
+          <summary title="展开或折叠分析过程"><span class="trace-toggle-mark" aria-hidden="true">◫</span><span class="trace-toggle-label">分析过程</span></summary>
+          <p class="trace-intro">查看本次分析的关键步骤。</p>
+          <p id="trace-empty">开始分析后，步骤会显示在这里。</p>
+          <ol id="event-list" class="trace-timeline" aria-label="分析步骤"></ol>
+        </details>
+      </div>
     </main>
     <script src="./bundle.js" defer></script>
   </body>

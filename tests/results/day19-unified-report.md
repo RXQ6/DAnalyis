@@ -27,9 +27,9 @@
 | p1_pass_rate | 100.0% | 20/20 |
 | bad_case_recognition | 100.0% | 15/15 |
 | robustness_rate | 100.0% | 25/25 |
-| avg_latency | 0.237857 | 60/60 |
-| p95_latency | 0.642250 | 60/60 |
-| max_latency | 0.769436 | 60/60 |
+| avg_latency | 0.410410 | 60/60 |
+| p95_latency | 1.088211 | 60/60 |
+| max_latency | 1.438803 | 60/60 |
 | avg_tool_calls | 4.200000 | 40/60 |
 | avg_loop_iterations | 1.000000 | 40/60 |
 | retry_count | 0 | 40/60 |
@@ -53,9 +53,9 @@
 | p0_pass_rate | 1.000000 | 1.000000 | +0.000000 |
 | p1_pass_rate | 1.000000 | 1.000000 | +0.000000 |
 | robustness_rate | 1.000000 | 1.000000 | +0.000000 |
-| avg_latency | 0.237857 | 0.249866 | -0.012009 |
-| p95_latency | 0.642250 | 0.695978 | -0.053728 |
-| max_latency | 0.769436 | 0.877718 | -0.108282 |
+| avg_latency | 0.410410 | 0.249866 | +0.160544 |
+| p95_latency | 1.088211 | 0.695978 | +0.392233 |
+| max_latency | 1.438803 | 0.877718 | +0.561085 |
 | average_cost | 0.000000 | 0.000000 | +0.000000 |
 | maximum_cost | 0.000000 | 0.000000 | +0.000000 |
 
@@ -72,9 +72,9 @@
 | robustness_not_below_baseline | PASS | 1.000000 meets minimum 1.000000 |
 | security_violation_zero | PASS | value is 0 |
 | contract_failure_zero | PASS | value is 0 |
-| avg_latency | PASS | 0.237857 is within tolerance limit 1.249866 |
-| p95_latency | PASS | 0.642250 is within tolerance limit 1.695978 |
-| max_latency | PASS | 0.769436 is within tolerance limit 1.877718 |
+| avg_latency | PASS | 0.410410 is within tolerance limit 1.249866 |
+| p95_latency | PASS | 1.088211 is within tolerance limit 1.695978 |
+| max_latency | PASS | 1.438803 is within tolerance limit 1.877718 |
 | average_cost | PASS | 0.000000 is within tolerance limit 0.500000 |
 | maximum_cost | PASS | 0.000000 is within tolerance limit 0.500000 |
 | existing_thresholds | PASS | all existing P0/P1/Robustness gates passed |

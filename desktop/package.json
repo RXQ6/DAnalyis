@@ -34,11 +34,14 @@
     ],
     "win": {
       "target": "nsis",
+      "icon": "assets/brand/icon.ico",
       "artifactName": "${productName} Setup ${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/brand/icon.ico",
+      "uninstallerIcon": "assets/brand/icon.ico"
     }
   },
   "devDependencies": {

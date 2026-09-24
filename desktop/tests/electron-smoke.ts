@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { app, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import { RuntimeProcessManager } from "../src/bridge/processManager";
 import { RuntimeClient } from "../src/bridge/runtimeClient";
 import type { AgentEvent } from "../src/bridge/protocol";
@@ -72,7 +72,7 @@ async function run(): Promise<void> {
       document.querySelector('#run-submit').click();
       const timeout = setTimeout(() => reject(new Error('chat projection timeout')), 10000);
       const timer = setInterval(() => {
-        const status = document.querySelector('#run-status').textContent;
+        const status = document.querySelector('#run-status').dataset.state;
         const agent = document.querySelector('[data-role="assistant"] p')?.textContent;
         if (status === 'completed' && agent) {
           clearInterval(timer);
@@ -84,7 +84,8 @@ async function run(): Promise<void> {
   `);
   assert.equal(chatProjection.status, "completed");
   assert.match(chatProjection.agent, /你好|Desktop Runtime/);
-  assert.match(chatProjection.events, /run_completed/);
+  assert.match(chatProjection.events, /分析已完成/);
+  assert.doesNotMatch(chatProjection.events, /run_completed|thread_|trace_|tool_args/);
 
   const uiRun = observedEvents.filter((event) => event.type === "run_completed").at(-1);
   assert.ok(uiRun);
@@ -116,6 +117,43 @@ async function run(): Promise<void> {
     })
   `);
   assert.equal(renderedChart, "Sales");
+  window.show();
+  const chartCard = await window.webContents.executeJavaScript(`({
+    title: document.querySelector('#charts .chart-card figcaption')?.textContent,
+    svgInsideCard: Boolean(document.querySelector('#charts .chart-card .chart-card-visual svg')),
+    chartScrollsWithinCard: (() => {
+      const visual = document.querySelector('#charts .chart-card .chart-card-visual');
+      return visual && visual.scrollWidth > visual.clientWidth &&
+        getComputedStyle(visual).overflowX === 'auto';
+    })(),
+    noPageOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+    hasAxesAndGrid: Boolean(document.querySelector('#charts svg .axis-title') && document.querySelector('#charts svg .grid-line')),
+    hasDataTable: Boolean(document.querySelector('#charts .chart-data-details table td')),
+    hasTypeLabel: document.querySelector('#charts .chart-type')?.textContent,
+    tooltipOnFocus: (() => {
+      const mark = document.querySelector('#charts svg .data-mark');
+      mark?.focus();
+      const shown = !document.querySelector('#charts .chart-tooltip')?.hidden;
+      mark?.blur();
+      return shown;
+    })(),
+  })`);
+  assert.equal(chartCard.title, "Sales");
+  assert.equal(chartCard.svgInsideCard, true);
+  assert.equal(chartCard.chartScrollsWithinCard, true);
+  assert.equal(chartCard.noPageOverflow, true);
+  assert.equal(chartCard.hasAxesAndGrid, true);
+  assert.equal(chartCard.hasDataTable, true);
+  assert.equal(chartCard.hasTypeLabel, "分类比较");
+  assert.equal(chartCard.tooltipOnFocus, true);
+  if (process.env.DATA_AGENT_CAPTURE_UI === "1") {
+    window.show();
+    window.setContentSize(1280, 800);
+    await window.webContents.executeJavaScript(`document.querySelector('#charts .chart-card').scrollIntoView({ block: 'center' })`);
+    const path = join(electronData, "phase14-chart.png");
+    writeFileSync(path, (await window.webContents.capturePage()).toPNG());
+    console.log(`Phase 1.4 chart screenshot: ${path}`);
+  }
   const traceProjection = await window.webContents.executeJavaScript(`({
     sequences: [...document.querySelectorAll('#event-list > li')].map((item) => Number(item.dataset.sequence)),
     text: document.querySelector('#event-list').textContent,
@@ -136,24 +174,28 @@ async function run(): Promise<void> {
     error: { code: "PARTIAL_TOOL_FAILURE", message: "one tool failed" },
   });
   const partialProjection = await window.webContents.executeJavaScript(`({
-    state: document.querySelector('#run-status').textContent,
+    state: document.querySelector('#run-status').dataset.state,
     missing: document.querySelector('#error-message').textContent,
     retryVisible: !document.querySelector('#error-retry').hidden,
     chartPresent: Boolean(document.querySelector('#charts svg')),
     answerPresent: Boolean(document.querySelector('[data-role="assistant"] p')),
+    errorVisualState: document.querySelector('#error-card').dataset.state,
+    stateLabel: document.querySelector('#state-label').textContent,
   })`);
   assert.equal(partialProjection.state, "partial");
   assert.match(partialProjection.missing, /Regional breakdown/);
   assert.equal(partialProjection.retryVisible, true);
   assert.equal(partialProjection.chartPresent, true);
   assert.equal(partialProjection.answerPresent, true);
+  assert.equal(partialProjection.errorVisualState, "partial");
+  assert.equal(partialProjection.stateLabel, "部分完成");
 
   const partialRetry = await window.webContents.executeJavaScript(`
     new Promise((resolve, reject) => {
       document.querySelector('#error-retry').click();
       const timeout = setTimeout(() => reject(new Error('partial retry timeout')), 10000);
       const timer = setInterval(() => {
-        if (document.querySelector('#run-status').textContent === 'completed' && document.querySelector('#error-card').hidden) {
+        if (document.querySelector('#run-status').dataset.state === 'completed' && document.querySelector('#error-card').hidden) {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve(true);
@@ -183,14 +225,14 @@ async function run(): Promise<void> {
       const timeout = setTimeout(() => reject(new Error('failed retry timeout')), 10000);
       let sawFailure = false;
       const waitForFailure = setInterval(() => {
-        if (document.querySelector('#run-status').textContent === 'failed' && !document.querySelector('#error-retry').hidden) {
+        if (document.querySelector('#run-status').dataset.state === 'failed' && !document.querySelector('#error-retry').hidden) {
           sawFailure = true;
           clearInterval(waitForFailure);
           document.querySelector('#error-retry').click();
         }
       }, 20);
       const waitForCompletion = setInterval(() => {
-        if (sawFailure && document.querySelector('#run-status').textContent === 'completed' && document.querySelector('#error-card').hidden) {
+        if (sawFailure && document.querySelector('#run-status').dataset.state === 'completed' && document.querySelector('#error-card').hidden) {
           clearInterval(waitForCompletion);
           clearTimeout(timeout);
           resolve(true);
@@ -212,7 +254,7 @@ async function run(): Promise<void> {
       const timeout = setTimeout(() => reject(new Error('session list timeout')), 5000);
       const timer = setInterval(() => {
         const text = document.querySelector('#session-list').textContent;
-        if (text.includes('thread_')) {
+        if (document.querySelector('#session-list button')) {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve(text);
@@ -220,7 +262,7 @@ async function run(): Promise<void> {
       }, 20);
     })
   `);
-  assert.match(sessionProjection, /thread_/);
+  assert.doesNotMatch(sessionProjection, /thread_|trace_|\{"metric"/);
   const resumedMessages = await window.webContents.executeJavaScript(`
     new Promise((resolve, reject) => {
       document.querySelector('#session-list button').click();
@@ -241,10 +283,13 @@ async function run(): Promise<void> {
       const target = document.querySelector('[data-thread-id="${projection.startResult.data.threadId}"]');
       target.click();
       const timeout = setTimeout(() => reject(new Error('session isolation timeout')), 5000);
-      setTimeout(() => {
-        clearTimeout(timeout);
-        resolve(document.querySelector('#event-list').textContent);
-      }, 250);
+      const timer = setInterval(() => {
+        if (target.getAttribute('aria-current') === 'true' && document.querySelector('#header-session').textContent === 'hello') {
+          clearInterval(timer);
+          clearTimeout(timeout);
+          resolve(document.querySelector('#event-list').textContent);
+        }
+      }, 20);
     })
   `);
   const priorEventText = String(isolated);
@@ -281,25 +326,29 @@ async function run(): Promise<void> {
     new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('stale state timeout')), 5000);
       const timer = setInterval(() => {
-        if (document.querySelector('#run-status').textContent === 'stale') {
+        if (document.querySelector('#run-status').dataset.state === 'stale') {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve({
             refreshVisible: !document.querySelector('#state-refresh').hidden,
             action: document.querySelector('#state-next-action').textContent,
+            visualState: document.querySelector('#product-state').dataset.state,
+            errorVisualState: document.querySelector('#error-card').dataset.state,
           });
         }
       }, 20);
     })
   `);
   assert.equal(staleProjection.refreshVisible, true);
-  assert.match(staleProjection.action, /Refresh/);
+  assert.equal(staleProjection.visualState, "stale");
+  assert.equal(staleProjection.errorVisualState, "stale");
+  assert.match(staleProjection.action, /刷新/);
   await window.webContents.executeJavaScript(`
     new Promise((resolve, reject) => {
       document.querySelector('#state-refresh').click();
       const timeout = setTimeout(() => reject(new Error('stale refresh timeout')), 5000);
       const timer = setInterval(() => {
-        if (document.querySelector('#run-status').textContent === 'completed') {
+        if (document.querySelector('#run-status').dataset.state === 'completed') {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve(true);
@@ -326,13 +375,14 @@ async function run(): Promise<void> {
             action: document.querySelector('#approval-action').textContent,
             risk: document.querySelector('#approval-risk').textContent,
             approvalId: document.querySelector('#approval-id').textContent,
-            body: card.textContent,
+            body: card.innerText,
+            idHidden: document.querySelector('#approval-id').hidden,
             retryHidden: document.querySelector('#error-retry').hidden,
             trace: document.querySelector('#event-list').textContent,
           };
           document.querySelector('#approval-reject').click();
           const terminal = setInterval(() => {
-            if (document.querySelector('#run-status').textContent === 'failed') {
+            if (document.querySelector('#run-status').dataset.state === 'failed') {
               clearInterval(terminal);
               clearInterval(timer);
               clearTimeout(timeout);
@@ -343,9 +393,11 @@ async function run(): Promise<void> {
       }, 20);
     })
   `);
-  assert.equal(rejectedApproval.action, "mcp_write");
-  assert.match(rejectedApproval.risk, /high risk/);
+  assert.equal(rejectedApproval.action, "向外部服务写入数据");
+  assert.match(rejectedApproval.risk, /高风险/);
   assert.match(rejectedApproval.approvalId, /^approval_/);
+  assert.equal(rejectedApproval.idHidden, true);
+  assert.equal(rejectedApproval.body.includes(rejectedApproval.approvalId), false);
   assert.equal(rejectedApproval.body.includes("分析数据并执行外部写操作"), false);
   assert.equal(rejectedApproval.trace.includes("分析数据并执行外部写操作"), false);
   assert.equal(rejectedApproval.retryHidden, true);
@@ -385,7 +437,7 @@ async function run(): Promise<void> {
           submitted = true;
           document.querySelector('#approval-approve').click();
         }
-        if (document.querySelector('#run-status').textContent === 'completed') {
+        if (document.querySelector('#run-status').dataset.state === 'completed') {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve(document.querySelector('#event-list').textContent);
@@ -393,7 +445,7 @@ async function run(): Promise<void> {
       }, 20);
     })
   `);
-  assert.match(approvedProjection, /approval_resolved/);
+  assert.match(approvedProjection, /确认已处理/);
   assert.ok(observedEvents.some((event) =>
     event.type === "approval_resolved" && event.payload.status === "approved" && event.payload.executed === true,
   ));
@@ -442,7 +494,7 @@ async function run(): Promise<void> {
       document.querySelector('#run-submit').click();
       const timeout = setTimeout(() => reject(new Error('cancelled state timeout')), 5000);
       const timer = setInterval(() => {
-        const state = document.querySelector('#run-status').textContent;
+        const state = document.querySelector('#run-status').dataset.state;
         if (state === 'running') document.querySelector('#run-stop').click();
         if (state === 'cancelled') {
           clearInterval(timer);
@@ -457,7 +509,7 @@ async function run(): Promise<void> {
     })
   `);
   assert.equal(cancelledProjection.state, "cancelled");
-  assert.match(cancelledProjection.happening, /cancelled/);
+  assert.match(cancelledProjection.happening, /已停止/);
   assert.ok(cancelledProjection.next);
 
   await window.webContents.executeJavaScript(`
@@ -466,7 +518,7 @@ async function run(): Promise<void> {
     new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('run did not start')), 5000);
       const timer = setInterval(() => {
-        if (document.querySelector('#run-status').textContent === 'running') {
+        if (document.querySelector('#run-status').dataset.state === 'running') {
           clearInterval(timer);
           clearTimeout(timeout);
           resolve(true);
@@ -490,6 +542,23 @@ async function run(): Promise<void> {
   `);
   assert.equal(crashProjection.bodyPresent, true);
   assert.match(crashProjection.text, /RUNTIME_PROCESS_EXIT/);
+
+  const staticWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    show: false,
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+  });
+  await staticWindow.loadFile(join(repoRoot, "desktop", "src", "renderer", "index.html"));
+  const staticPage = await staticWindow.webContents.executeJavaScript(`({
+    noteVisible: getComputedStyle(document.querySelector('#desktop-only-note')).display !== 'none',
+    appHidden: getComputedStyle(document.querySelector('#app-shell')).display === 'none',
+    text: document.querySelector('#desktop-only-note').textContent,
+  })`);
+  assert.equal(staticPage.noteVisible, true);
+  assert.equal(staticPage.appHidden, true);
+  assert.match(staticPage.text, /请启动桌面应用/);
+  staticWindow.destroy();
 
   window.destroy();
   manager.stop();

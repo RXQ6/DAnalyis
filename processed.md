@@ -1,6 +1,181 @@
 # 项目进度
 
-更新时间：2026-09-23
+更新时间：2026-09-24
+
+## Phase 1.4 产品级桌面视觉重设计与标题栏收尾
+
+- 在现有 Renderer 和 Runtime 合约上实施新的分析工作台：主分析画布、数据文件和 Session
+  辅助导航、CSV/XLSX 与示例问题空首页、最近分析、数据概览、结构化分析摘要、Chart Card、
+  可折叠对话记录，以及默认收起并改称“分析过程”的 Trace。左右区域在宽屏下可拖拽、
+  键盘调整与折叠；900px 以下左侧成为抽屉，760px 以下 Trace 移至底部。设置页提供
+  AI Providers、MCP Servers、Data Sources、External Tools 和 Chart / Report Providers
+  的“规划中”入口，没有 API Key 输入、连接测试或真实 Provider 调用。
+- 新增 Renderer presentation mapping：Session 取首条真实用户问题作为自然语言标题，
+  无安全标题时显示“未命名分析”；状态、审批动作与风险、错误、Trace 事件和结构化回答
+  映射为人类可读内容。普通 UI 隐藏 thread / trace / run / approval ID、sequence、
+  raw JSON、tool args 和路径等内部字段。异步刷新 Session 列表时保留当前真实标题，
+  防止运行中回退为“未命名分析”。Metric Card 仅显示 DatasetSummary 已有行数和字段数；
+  没有从自然语言答案抽取或伪造业务 KPI / Insight。
+- Chart 仅消费现有 Chart Spec v1 数据，重做标题、副标题、轴、网格、负值基线、柱线散点
+  标记、键盘可达 Tooltip、图表数据表与宽图内部滚动。当前单系列 Spec 不携带系列图例
+  元数据，因此没有推断或生成多系列 Legend。设计 token 统一在 Renderer CSS 中。
+- 品牌资产统一从 `desktop/assets/brand/mark.svg` 派生应用内标记和 Windows `icon.ico`；
+  BrowserWindow、electron-builder 的窗口/安装器/卸载器配置指向同一资产入口。当前图形
+  在资产说明中明确标为工作占位，后续审核定稿后替换。窗口改为 38px 可拖动标题栏，
+  保留系统最小化、最大化与关闭区，移除可见通用英文标题和默认菜单；新增简洁图标按钮。
+- 仅调整 Desktop Main 窗口外观、Renderer、静态资产复制和 UI 测试/打包烟测；Python
+  Runtime、IPC/Event contract、Session/HITL/Dataset/Chart 业务事实源与评测目标未改。
+- 2026-09-24 实测：TypeScript build、Desktop 30/30、Electron smoke、开发态与打包资源态
+  E2E 各 9 步、最终 Windows unpacked exe 双启动 smoke、packaged sidecar、Python 全量
+  261/261、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、
+  Regression Gate 11/11 均通过；security violations=0、contract failures=0。NSIS
+  installer 重新构建成功，SHA256
+  `AE6C43AEB007C33BA0F41323432637B161DCCBF1829E5B45E696D0E8F88DB54D`。
+  Python 全量初跑所用的精简 sidecar 缺少测试专用 MCP SDK；按项目固定的
+  `requirements-mcp.txt` 在临时测试目录补齐依赖后 261/261 通过，未更改业务代码。
+- 剩余风险：工作占位图形仍需品牌定稿；新 NSIS installer 未单独安装验收；Chart Spec v1
+  仍仅支持单系列 bar / line / scatter 与最多 100 点，Runtime 未提供结构化 Insight；
+  原生文件选择框由 E2E 提供确定性选择结果，干净机器与多显示器缩放仍待后续人工检查。
+
+## Folio 启发的桌面工作区布局与 HTML 启动提示
+
+- 在保留既有未提交改动的基础上，重整 Renderer 的视觉层级：数据文件入口置于左侧首位，
+  最近 Session 位于其下；中间以分析对话为主，空态提供明确的文件选择入口；Trace 默认
+  折叠为窄侧栏，700px 以下移到主区下方，520px 时侧栏置顶。统一使用中性色工作台、
+  细分隔线、克制的状态色与紧凑按钮。保留原有 DOM ID、事件绑定、Runtime 状态投影及
+  Renderer→Preload→Main→Python 链路，没有向前端加入分析计算。
+- 直接打开源 HTML 或构建后的 HTML 时，页面明确提示必须启动 Electron 应用；没有
+  preload bridge 的浏览器页面不再展示看似可操作却无法调用 IPC 的假界面。Electron
+  环境仍显示完整应用。Electron smoke 新增无 preload 的静态 HTML 回归检查。
+- 真实 Electron 窗口检查 1600/1200/900/700/520px：五档均无页面横向溢出，
+  数据文件按钮、主区及 Composer 可见。TypeScript build、Desktop 27/27、Electron
+  smoke、开发态与打包资源态 E2E 各 8/8 PASS；Node 13/13、Python 261/261、P0
+  15/15、P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 PASS，
+  security violations=0、contract failures=0。新 Renderer 的独立 Windows unpacked
+  产物双启动 smoke PASS：真实 CSV run 完成，Session 可在重启后恢复。
+- 初次 NSIS 资源下载超时，重试后成功生成独立的新 installer：
+  `desktop/release/folio-polish/Data Analysis Agent Setup 0.1.0.exe`，SHA256
+  `379DA192257DA58294F634BF93990A657A696AD5EC5393048BF50F1F987B3585`。
+  同批产物 `desktop/release/folio-polish/win-unpacked/Data Analysis Agent.exe`
+  再次双启动 smoke PASS；原先安装目录未被覆盖。新版 NSIS 尚未实际安装验证，
+  原生文件选择框的人工可见检查也未在本轮完成。
+
+## Phase 1.4 Visual Design Polish：Renderer 展示层完成
+
+- 保留 Phase 1.1–1.3 未提交改动，仅在 Renderer 调整 App Bar、Session/Dataset Sidebar、
+  Chat/Analysis、Chart Card、Trace Timeline、Approval/Error/Product State 与底部 Composer。
+  Session 摘要优先、thread ID 次级显示、当前 Session 选中态和状态点均只投影既有字段；
+  Dataset 展示已有 filename/format/rowCount/columnCount。Chart 类型标签只来自 Chart Spec，
+  不解析回答生成指标、不重算图表或改变既有事件绑定。
+- 统一字体层级、4/8/12/16/24/32px 间距尺度、6px 控件/12px 卡片圆角、浅边框、
+  单一操作强调色和 Runtime 状态语义色。按钮 hover/focus/disabled/busy、长文本换行、
+  Chart 内滚动与折叠 Trace 沿用既有行为。保留全部原有 DOM ID、IPC/Event contract 和
+  Renderer→Preload→Main→Python 调用链。
+- 真实 Electron 几何/截图检查 1600/1200/900/700/520px：页面均无横向溢出；
+  700px Trace 下移，520px Sidebar 置顶且文件按钮、主区、Composer 仍可见。临时布局
+  检查窗口未注册 Runtime IPC，其 failed 画面仅用于观察布局，不作为业务链路结果。
+- TypeScript build PASS；Desktop 单元 27/27、Electron smoke、开发态与打包资源态
+  E2E 各 8/8 PASS；
+  最新 Renderer 重新构建的 Windows unpacked exe 双启动 smoke PASS，真实 CSV run 为
+  completed 且 Session 重启恢复。Python 全量 261/261、Node 13/13、P0 15/15、
+  P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS；
+  security violations=0、contract failures=0。未修改 Python Runtime 或业务语义。
+- 本轮未重新构建 NSIS installer；既有已安装版本仍为 Phase 1.3。现有 Chart Spec
+  未提供结构化 evidence/metrics/legend，Renderer 不补造这些内容；原生文件对话框
+  仍由系统提供，E2E 注入确定性选择结果而非自动点击系统对话框。
+
+## UI Product Polish 最终安装验收（已完成，用户人工确认）
+
+- 2026-09-23，用户在打开最终安装版进行人工验收后明确确认“都检查通过了”。
+  据此记录剩余人工检查项通过，Phase 1 UI/UX Product Polish 最终收尾完成。
+  人工结论来源为用户确认，不记作 Agent 独立完成了此前受阻的目视检查。
+
+- 使用最新 Renderer 重新构建 Windows NSIS installer：
+  `desktop/release/Data Analysis Agent Setup 0.1.0.exe`，SHA256
+  `59B68B68F17A35883142099C4C2164CFEE68A8629500EDB6E89C8BD48F91A356`。
+  旧 installer 另存为 `Data Analysis Agent Setup 0.1.0-pre-phase1.3.exe`，未丢失
+  历史产物。
+- 最终 installer 静默安装到独立目录
+  `desktop/release/phase1.3-final-installed`，退出码 0。安装目录含真实 exe、
+  `resources/app.asar` 和 `resources/python-runtime/python.exe`；可见窗口的
+  Renderer URL 指向该安装目录，不是 dev/unpacked。
+- 可见窗口发现 Recent sessions 的长摘要会把 Dataset 入口推到滚动区以下；
+  仅在 Renderer 将 Session 列表设为独立滚动、将 Dataset 固定在侧栏底部，
+  并分行/截断显示 thread ID、更新时间与摘要。重建并重装后 Empty 页布局和
+  Dataset 按钮可见。真实 Windows 打开对话框从该按钮弹出，CSV/XLSX 筛选器正确，
+  测试 CSV 路径已填入；确认“打开”前目标窗口被最小化且检测到其他用户输入，
+  工具恢复失败，当时未宣称真实文件确认后的人工链路通过；后续人工补验由用户
+  明确确认通过。
+- 安装版真实 exe 双启动自动烟测 PASS：CSV 分析完成、6 条 Runtime Events、
+  重启恢复原 thread 与 4 条消息；证据位于
+  `desktop/release/phase1.3-final-installed-smoke-17pfIK`。Desktop 27/27、
+  Electron smoke、开发态及打包资源态 E2E 各 8/8、packaged Python sidecar、
+  Python 261/261、Node 13/13、Day19 60/60 和 Regression Gate 11/11 全 PASS；
+  P0/P1/Robustness 为 15/15、20/20、25/25，security violation 与
+  contract failure 均为 0。
+- 用户确认安装版 Chart Card、长 Trace/长文本滚动、Partial/Stale/Failed/Completed、
+  HITL Approval Card、Error/Retry、700px/520px 缩放和真实文件选择链路均通过
+  人工检查。本次仅更新进度文档，沿用最近一次回归结果，没有修改代码或重复运行测试。
+  Python Runtime、IPC/Event contract 与业务逻辑保持原样；installer
+  Authenticode 状态仍为 NotSigned。下一阶段等待用户指定。
+
+## Phase 1.3 UI/UX Product Polish：视觉与交互细节统一
+
+- 仅调整 Renderer 展示层：统一 Segoe UI/system 字体、13px 基准字号、8/12/16px
+  间距、10px 卡片/6px 控件圆角、边框和浅色卡片层级。Sidebar、Header、Chat、
+  Chart、Trace、Approval、Error 沿用同一视觉变量，不改变 DOM ID、事件绑定或协议。
+- empty、loading、running、partial、stale、waiting_approval、completed、failed、
+  cancelled 使用一致的状态卡样式；蓝色表示处理中/审批，绿色表示完成，琥珀色表示
+  部分结果/过期，红色表示失败。状态说明仍直接来自既有 Product State 映射。
+- 按钮统一 hover、active、disabled、focus 样式；文件选择、Send、Stop、审批决策
+  和 Retry 的原有异步按钮增加文字与 aria-busy 加载反馈，仅改变展示。
+- 长消息、错误、Session 摘要和 Trace 文本可换行；Chart SVG 保持既有 Chart Spec
+  渲染，窄列内水平滚动而不撑宽整页。取消固定 600px 页面最小宽度，并在 760px/
+  640px 断点重排 Trace、Sidebar、Header 和输入区；无复杂动画。
+- Electron smoke 新增图表卡内滚动与页面无横向溢出断言；开发态/打包资源态
+  E2E 各新增 700px/520px 真实窗口缩放检查。TypeScript build、Desktop 27/27、
+  Electron smoke、两种 E2E 各 8/8、重建 unpacked 真实 exe 双启动 smoke、
+  Python 261/261、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、
+  Day19 Eval Harness 60/60、Regression Gate 11/11 全 PASS；security violation 与
+  contract failure 均为 0。
+- 未修改 Python Runtime、IPC/Event contract、Session/HITL/Dataset/Chart 业务逻辑。
+  本轮未生成新 NSIS installer；现有 installer 仍是 Phase 1 前 UI。真实原生文件
+  对话框的人手操作、干净机器与不同显示缩放下的人工视觉检查尚未在本轮验收。
+
+## Phase 1.2 UI/UX Product Polish：Chart / Trace / HITL / 状态卡
+
+- Chart Renderer 在原 Chart Spec SVG 外增加 `<figure>` Chart Card 和标题；只使用既有
+  `chartType`、`title`、`data.values` 作 SVG 绘制，不新增统计、分组或业务数据计算。
+- Trace Panel 将现有按 sequence 的脱敏 `TraceEntry` 渲染为可折叠时间线，显示 sequence、
+  category、受控 label、status 与 error code；不渲染 arguments、metadata、文件路径或错误正文。
+- waiting_approval 独立卡展示 action type、risk summary、approval ID、expires_at 与原
+  Approve/Reject 按钮；不显示 action hash 或原始参数，不在 Renderer 判断审批有效性。
+- Error Card 根据现有状态视觉区分 failed、partial、stale；partial 保留回答/Chart，stale
+  保留现有 Refresh，Retry 的显隐和安全边界仍沿用原逻辑。所有既有 DOM ID 与绑定不变。
+- 新增 Electron smoke/E2E 断言 Chart Card、Trace Timeline 与 partial/stale/error 视觉投影。
+  首次新增测试将既有 `file_not_found` 错误误判为 failed，已只把断言修正为原有 stale 映射。
+- TypeScript build、Desktop 单元 27/27、原 Electron smoke、开发态与打包资源态 E2E 各
+  7/7、重建 unpacked 真实 exe 双启动 smoke、Python 261/261、Node 13/13、P0 15/15、
+  P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS。
+  未改 Python Runtime、IPC/Event contract、Session/HITL/Dataset 业务逻辑或评测标准。
+- 本轮仍只重建 unpacked；现有 NSIS installer 为 Phase 1 前布局。原生文件对话框实际
+  人工交互、干净机器/安装态新 UI、窄窗口视觉检查和更深层样式仍待后续阶段。
+
+## Phase 1 UI/UX Product Polish：第一轮最小布局
+
+- Renderer 页面重排为顶部 Session/Dataset/Run Status、左侧 Session/Dataset Sidebar、
+  中间 Chat/Analysis/Chart 可滚动区域与底部固定输入区；原 Trace Panel 保留在右侧。
+  新增外部 `styles.css` 并由静态资源构建脚本复制，未放宽 CSP。
+- 保留全部原有按钮、DOM ID、事件绑定与 Renderer → Preload → Main → Python 调用链。
+  顶栏 Session/Dataset 只展示 Runtime 已返回的当前 thread ID 和 Dataset 摘要；恢复旧 Session
+  后仍按原逻辑清空当前 Dataset，不伪造文件已重新绑定。
+- Electron E2E 新增样式加载、布局位置、固定输入区和顶栏上下文断言。TypeScript build、
+  Desktop 27/27、原 Electron smoke、开发态及打包资源态 E2E 各 7/7、重新构建的真实
+  unpacked exe 双启动 smoke 均 PASS；Python 261/261、Node 13/13、P0 15/15、
+  P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 均 PASS。
+- 本轮只重建 Windows unpacked 产物用于 UI 回归，未重新生成 NSIS installer；此前
+  M6.5 安装包仍是布局改造前版本。原生文件对话框的实际人工交互、窄窗口视觉 QA、
+  深度样式和完整响应式体验留待后续轮次。
 
 ## Desktop M6.5 Release Gate + Release Report
 

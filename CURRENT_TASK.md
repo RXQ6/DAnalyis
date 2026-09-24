@@ -2,6 +2,65 @@
 
 ## 当前阶段
 
+**Phase 1.4 产品级桌面视觉重设计已实施并完成自动化回归。** 2026-09-24，
+Renderer 已切换到分析画布中心布局：自然语言 Session 标题、CSV/XLSX 引导空首页、
+确定性数据概览与结构化结果表、专业化 Chart Card、默认折叠的“分析过程”、可拖拽左右
+宽度与窄窗口重排，以及只标记“规划中”的 Settings / Integrations。Windows 原生通用
+标题文字和默认英文菜单已从可见窗口移除，使用简洁可拖动标题栏、系统窗口控制区和图标按钮。
+当前品牌图形仅为统一资产入口的工作占位，不作为最终品牌确认稿。
+
+本轮未修改 Python Runtime、IPC / Runtime Event contract、Session / HITL / Dataset /
+Chart 业务事实源。普通 UI 不展示 thread / trace / run 等内部 ID、sequence、raw JSON、
+tool args 或 API Key 值。数据行数、字段数量只取 DatasetSummary；当前 Runtime 投影没有
+结构化业务 KPI / Insight 字段，因此不生成业务 Metric / Insight Card。
+
+最终门禁：TypeScript build、Desktop 30/30、Electron smoke、开发态与打包资源态
+E2E 各 9 步、Windows unpacked exe 双启动 smoke、packaged sidecar、Python 261/261、
+Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate
+11/11 全 PASS；security violations=0、contract failures=0。NSIS installer 已重新构建，
+位于 `desktop/release/Data Analysis Agent Setup 0.1.0.exe`；本轮没有覆盖已安装的
+Phase 1.3 目录，也没有对新 installer 做独立安装验收。
+
+剩余限制：Chart Spec v1 仍只有单系列 bar / line / scatter，最多 100 点；无多系列
+legend 或独立结构化 insight 来源。真实系统文件选择框在自动化中提供确定性返回路径，
+新 installer 的人工视觉与安装流程尚未验收。下一阶段等待用户明确指定，不进入 Phase 2。
+
+## 历史阶段：Phase 1.3 UI/UX Product Polish
+
+Phase 1.3 UI/UX Product Polish 已完成。Renderer 的字体、间距、圆角、边框、卡片层级、
+状态语义色、按钮反馈和溢出/滚动规则已统一；700px/520px 窗口重排通过真实 Electron
+E2E 检查。仅展示层改变，原按钮 ID/事件绑定与 Python 业务事实源保持不变。
+
+验收：TypeScript build、Desktop 27/27、Electron smoke、开发态/打包资源态 E2E
+各 8/8、重建 unpacked 真实 exe 双启动 smoke、Python 261/261、Node 13/13、
+P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS。
+本轮未生成新 NSIS installer，现有 installer 仍是 Phase 1 前 UI；真实原生文件对话框
+人手操作及多显示缩放/干净机器人工视觉检查未覆盖。下一轮等待用户指定。
+
+## 历史阶段：Phase 1.2 UI/UX Product Polish
+
+Renderer 增加 Chart Card、按 sequence 的脱敏 Trace Timeline、仅显示安全字段的 HITL
+Approval Card，以及 failed/partial/stale 的 Error/Retry 状态视觉区分；所有原按钮 ID、
+事件绑定和 Python 业务事实源保持不变。当时验收为 TypeScript build、Desktop 27/27、
+原 Electron smoke、开发态/打包资源态 E2E 各 7/7、重建 unpacked 真实 exe 双启动 smoke、
+Python 261/261、Node 13/13、P0 15/15、P1 20/20、Robustness 25/25、Day19 60/60、
+Regression Gate 11/11 全 PASS。
+
+## 历史阶段：Phase 1 第一轮最小布局
+
+Phase 1 UI/UX Product Polish 第一轮最小布局已完成。Renderer 现在有顶部 Session/Dataset/
+Run Status、左侧 Session/Dataset Sidebar、中间 Chat/Analysis/Chart、底部固定输入区；
+右侧 Trace 和原有 Error/HITL/状态卡保留。所有原按钮 ID、事件绑定与 Python 业务边界不变。
+
+验收：TypeScript build、Desktop 27/27、原 Electron smoke、开发态/打包资源态 E2E 各 7/7、
+新 unpacked exe 双启动 smoke、Python 全量 261/261、Node 13/13、P0 15/15、P1 20/20、
+Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS。仅重新构建了 unpacked，
+现有 NSIS installer 仍为 Phase 1 之前的 UI；本轮没有进行新的安装包验收。
+
+当时的下一轮 UI/UX 工作现已完成 Phase 1.2，见上文；不自动进入深度美化或业务能力扩展。
+
+## 历史阶段：Desktop M6.5
+
 Desktop M6.5：Release Gate + Release Report 已完成；全部 required gate PASS，Desktop M6 完成。
 统一报告：`docs/Desktop-M6.5-Release-Report.md`。版本 0.1.0 的 NSIS installer 已实际安装到
 `desktop/release/m6.5-installed`，安装后 exe 首次完成 CSV 真实分析，退出并重启后恢复旧 Session；
