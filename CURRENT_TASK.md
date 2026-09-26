@@ -2,6 +2,35 @@
 
 ## 当前阶段
 
+**Phase 1.5 最终产品验收已完成，Phase 1 已冻结。** 2026-09-26，未新增产品功能，
+仅在 Electron E2E 中固化 1600/1200/900/700/520px 五档布局与普通 UI 工程字段
+不可见的断言。Empty、Session、Dataset、Analysis、Chart、“分析过程”、Approval、
+Error/Retry、左右区域拖拽与折叠均按 Phase 1.4 展示层和原有 Runtime 流程验收。
+Python Runtime、IPC/Event contract、Session/HITL/Dataset/Chart 业务事实源未改。
+
+最终回归：TypeScript build、Desktop 30/30、Electron smoke、开发态和打包资源态
+E2E 各 9 步、Node 13/13、Python 261/261、P0 15/15、P1 20/20、Robustness
+25/25、Day19 60/60、Regression Gate 11/11 全 PASS；security violations=0、
+contract failures=0。新 unpacked 与独立安装目录中的真实 exe 双启动 smoke、
+packaged sidecar 均通过。普通可见界面的整体文本断言不含 JSON、内部 ID、sequence
+或 tool args；Session 标题和结构化结果保持人类可读。
+
+最新 NSIS installer 为 `desktop/release/Data Analysis Agent Setup 0.1.0.exe`，
+SHA256 `95DC64EAB21D721AA17296E95419523272CC0205E1FCCCD2B638CA0ABFC2454B`。
+安装到独立目录 `desktop/release/phase1.5-installed-20260926`，安装退出码 0。
+从该目录的 `resources/app.asar` 启动真实窗口并做可见操作验收：Empty 首页、
+设置与集成、“分析过程”入口、系统 CSV/XLSX 文件对话框、测试 CSV 选择、
+5 行/4 列数据概览和结果 1580 均实际显示，普通 UI 未出现工程字段。
+这项可见验收由 Codex 操作并目视，未声称用户另行签收；Approval、Error/Retry、
+Chart 和五档宽度另由真实 Electron E2E/Smoke 覆盖。
+
+已知限制：installer 未签名；品牌图形仍为工作占位；Chart Spec v1 仍仅支持单系列
+bar/line/scatter 和最多 100 点；没有 Runtime 结构化 Insight 来源；干净机器、
+多显示器缩放及升级/卸载路径未验收。建议稳定标签名 `desktop-phase1.5-stable`，
+本轮仅提出建议，未创建标签。下一阶段等待用户明确指令，不进入 Phase 2。
+
+## 历史阶段：Phase 1.4 产品级桌面视觉重设计
+
 **Phase 1.4 产品级桌面视觉重设计已实施并完成自动化回归。** 2026-09-24，
 Renderer 已切换到分析画布中心布局：自然语言 Session 标题、CSV/XLSX 引导空首页、
 确定性数据概览与结构化结果表、专业化 Chart Card、默认折叠的“分析过程”、可拖拽左右

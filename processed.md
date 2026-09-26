@@ -1,6 +1,38 @@
 # 项目进度
 
-更新时间：2026-09-24
+更新时间：2026-09-26
+
+## Phase 1.5 最终产品验收与 Phase 1 冻结
+
+- 未新增产品功能。Electron E2E 增加 1600/1200/900/700/520px 五档宽度验收：
+  页面无横向溢出，主分析画布、文件入口和输入区可见；900px 及以下左侧折为抽屉，
+  760px 及以下“分析过程”移至底部。现有 E2E 还实测左右拖拽、折叠、Empty、
+  Session 恢复、Dataset CSV/XLSX、Analysis、Error/Retry、HITL Approval；
+  Electron smoke 验证 Chart Card 的轴、网格、Tooltip、数据表与滚动。
+- E2E 对整个普通可见 UI 加入工程字段断言，确认运行后不显示 JSON 对象、
+  thread/trace/run/approval ID、sequence 或 tool args。展示层单测确认 Session
+  自然语言标题、结构化结果、脱敏过程和不伪造 KPI/Insight。Python Runtime、
+  IPC/Event contract、Session/HITL/Dataset/Chart 业务事实源与原评测标准均未改。
+- 2026-09-26 最终回归：TypeScript build、Desktop 30/30、Electron smoke、
+  开发态和打包资源态 E2E 各 9 步、Node 13/13、Python 261/261、P0 15/15、
+  P1 20/20、Robustness 25/25、Day19 60/60、Regression Gate 11/11 全 PASS；
+  security violations=0、contract failures=0。Python 全量初跑遭受限环境 DLL
+  拒绝和测试专用 MCP/pywin32 搜索路径缺失；在正常桌面权限下补全测试路径后
+  261/261 通过，没有改产品代码或评测目标。
+- 重新构建 Windows NSIS installer 和 unpacked，安装包大小 131808855 字节，
+  SHA256 `95DC64EAB21D721AA17296E95419523272CC0205E1FCCCD2B638CA0ABFC2454B`。
+  新 unpacked 双启动 smoke、packaged sidecar 均通过。NSIS 安装到独立的
+  `desktop/release/phase1.5-installed-20260926`，退出码 0；安装目录真实 exe
+  双启动 smoke 通过，证据在 `desktop/release/phase1.5-installed-smoke-4l14sg`。
+- Codex 对安装目录 `resources/app.asar` 的真实窗口进行可见操作验收：空首页和
+  Settings / Integrations 正常；原生 Windows“打开”对话框显示 `*.csv;*.xlsx`
+  筛选；选择仓库测试 `sales.csv` 后可见 5 行、4 列和结构化结果 1580，
+  界面无内部 ID 或原始 JSON。此为 Codex 目视与操作记录，不冒称用户人工签收；
+  Approval、Error/Retry、Chart 与五档布局另由真实 Electron E2E/Smoke 验证。
+- Phase 1 完成并冻结。建议 stable tag：`desktop-phase1.5-stable`；未实际创建，
+  也未进入 Phase 2。已知限制为未签名 installer、品牌占位图形、Chart Spec v1
+  单系列/最多 100 点、无 Runtime 结构化 Insight，以及干净机器、多显示器缩放和
+  安装升级/卸载路径未验收。
 
 ## Phase 1.4 产品级桌面视觉重设计与标题栏收尾
 

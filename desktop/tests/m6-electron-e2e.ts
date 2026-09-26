@@ -179,7 +179,7 @@ async function run(): Promise<void> {
 
     await step("1a responsive layout and scrolling", async () => {
       try {
-        for (const width of [700, 520]) {
+        for (const width of [1600, 1200, 900, 700, 520]) {
           await new Promise((resolveDelay) => setTimeout(resolveDelay, 150));
           activeWindow.setContentSize(width, 600);
           await new Promise((resolveDelay) => setTimeout(resolveDelay, 150));
@@ -197,18 +197,22 @@ async function run(): Promise<void> {
             return {
               viewportWidth: window.innerWidth,
               noPageOverflow: document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+              centerVisible: center.width > 200 && center.left >= 0 && center.right <= window.innerWidth + 1,
               composerVisible: composer.height > 0 && composer.bottom <= window.innerHeight + 1,
               traceBelowCenter: trace.top >= center.bottom,
               sidebarCollapsed: sidebar.right <= 0,
+              sidebarVisible: sidebar.left >= 0 && sidebar.width > 100,
               fileActionVisible: fileAction.left >= 0 && fileAction.right <= window.innerWidth,
             };
           })()`);
           assert.equal(layout.viewportWidth, width);
           assert.equal(layout.noPageOverflow, true, `Horizontal page overflow at ${width}px`);
+          assert.equal(layout.centerVisible, true, `Analysis canvas not visible at ${width}px`);
           assert.equal(layout.composerVisible, true, `Composer not visible at ${width}px`);
-          assert.equal(layout.traceBelowCenter, true, `Trace did not reflow at ${width}px`);
           assert.equal(layout.fileActionVisible, true, `File action not visible at ${width}px`);
-          assert.equal(layout.sidebarCollapsed, true, `Sidebar did not collapse at ${width}px`);
+          if (width <= 760) assert.equal(layout.traceBelowCenter, true, `Trace did not reflow at ${width}px`);
+          if (width <= 900) assert.equal(layout.sidebarCollapsed, true, `Sidebar did not collapse at ${width}px`);
+          else assert.equal(layout.sidebarVisible, true, `Sidebar not visible at ${width}px`);
         }
       } finally {
         activeWindow.setContentSize(800, 600);
@@ -341,6 +345,8 @@ async function run(): Promise<void> {
       assert.doesNotMatch(presented.summary, /\{\s*"metric"|thread_|trace_|tool_args/);
       assert.deepEqual(presented.metrics, ["5", "4"]);
       assert.equal(presented.insightsHidden, true);
+      const ordinaryUi = await activeWindow.webContents.executeJavaScript(`document.body.innerText`);
+      assert.doesNotMatch(String(ordinaryUi), /thread_[a-z0-9]+|trace_[a-z0-9]+|run_[a-z0-9]+|approval_[a-z0-9]+|tool[_ ]args|sequence|\{\s*"/i);
       if (process.env.DATA_AGENT_CAPTURE_UI === "1") {
         await activeWindow.webContents.executeJavaScript(`document.querySelector("#analysis-summary").scrollIntoView({ block: "center" })`);
         const path = join(electronData, "phase14-analysis.png");

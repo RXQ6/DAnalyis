@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "report": "day19.3-unified-evaluation",
-  "generated_at": "2026-09-24T03:57:34.994798+00:00",
+  "generated_at": "2026-09-26T01:59:31.439364+00:00",
   "overall_status": "PASS",
   "summary": {
     "passed_cases": 60,
@@ -61,7 +61,7 @@
       },
       "avg_latency": {
         "available": true,
-        "value": 0.41040981666666665,
+        "value": 0.25341045,
         "unit": "seconds",
         "sample_count": 60,
         "total_count": 60,
@@ -69,7 +69,7 @@
       },
       "p95_latency": {
         "available": true,
-        "value": 1.088211,
+        "value": 0.654871,
         "unit": "seconds",
         "sample_count": 60,
         "total_count": 60,
@@ -77,7 +77,7 @@
       },
       "max_latency": {
         "available": true,
-        "value": 1.438803,
+        "value": 0.858254,
         "unit": "seconds",
         "sample_count": 60,
         "total_count": 60,
@@ -247,23 +247,23 @@
       },
       "avg_latency": {
         "available": true,
-        "current": 0.41040981666666665,
+        "current": 0.25341045,
         "baseline": 0.24986613333333335,
-        "delta": 0.1605436833333333,
+        "delta": 0.003544316666666658,
         "reason": null
       },
       "p95_latency": {
         "available": true,
-        "current": 1.088211,
+        "current": 0.654871,
         "baseline": 0.695978,
-        "delta": 0.39223300000000005,
+        "delta": -0.041107000000000005,
         "reason": null
       },
       "max_latency": {
         "available": true,
-        "current": 1.438803,
+        "current": 0.858254,
         "baseline": 0.877718,
-        "delta": 0.5610850000000001,
+        "delta": -0.019464000000000037,
         "reason": null
       },
       "average_cost": {
@@ -328,24 +328,24 @@
       {
         "name": "avg_latency",
         "status": "PASS",
-        "reason": "0.410410 is within tolerance limit 1.249866",
-        "actual": 0.41040981666666665,
+        "reason": "0.253410 is within tolerance limit 1.249866",
+        "actual": 0.25341045,
         "baseline": 0.24986613333333335,
         "limit": 1.2498661333333334
       },
       {
         "name": "p95_latency",
         "status": "PASS",
-        "reason": "1.088211 is within tolerance limit 1.695978",
-        "actual": 1.088211,
+        "reason": "0.654871 is within tolerance limit 1.695978",
+        "actual": 0.654871,
         "baseline": 0.695978,
         "limit": 1.695978
       },
       {
         "name": "max_latency",
         "status": "PASS",
-        "reason": "1.438803 is within tolerance limit 1.877718",
-        "actual": 1.438803,
+        "reason": "0.858254 is within tolerance limit 1.877718",
+        "actual": 0.858254,
         "baseline": 0.877718,
         "limit": 1.877718
       },
